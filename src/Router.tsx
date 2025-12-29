@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { AuthChangeRedirector, AnonymousRoute, AuthenticatedRoute } from './auth'
 import {
   createBrowserRouter,
   RouterProvider,
-  Router,
-  Outlet,
+  useRouteError,
 } from 'react-router-dom'
 import Login from './account/Login'
 import RequestLoginCode from './account/RequestLoginCode'
@@ -42,15 +41,30 @@ import Trust from './mfa/Trust'
 import Reauthenticate from './account/Reauthenticate'
 import Sessions from './usersessions/Sessions'
 import { useConfig } from './auth/hooks'
+import RootLayout from './components/RootLayout'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
-function createRouter (config) {
+
+function RouterErrorBoundary() {
+  let error = useRouteError();
+  console.error(error);
+  // Uncaught ReferenceError: path is not defined
+  return <div>Dang!</div>;
+}
+
+
+function createRouter () {
   return createBrowserRouter([
     {
       path: '/',
-      element: <AuthChangeRedirector><Outlet /></AuthChangeRedirector>,
+      element: <AuthChangeRedirector><RootLayout /></AuthChangeRedirector>,
       children: [
         {
           path: '/',
+          element: <Home />
+        },
+        {
+          path: '/home',
           element: <Home />
         },
         {
@@ -99,7 +113,7 @@ function createRouter (config) {
         },
         {
           path: '/account/verify-email',
-          element: config.data.account.email_verification_by_code_enabled ? <VerifyEmailByCode /> : <VerificationEmailSent />
+          element: <VerifyEmailByCode />,
         },
         {
           path: '/account/verify-email/:key',
@@ -196,19 +210,20 @@ function createRouter (config) {
           path: '/account/sessions',
           element: <AuthenticatedRoute><Sessions /></AuthenticatedRoute>
         }
-      ]
+      ].map(route => ({
+        ...route,
+        errorElement: <RouterErrorBoundary />
+      }))
     }
   ])
 }
 
+
+const router = createRouter()
+
 export default function BaseRouter () {
-  // If we create the router globally, the loaders of the routes already trigger
-  // even before the <AuthContext/> trigger the initial loading of the auth.
-  // state.
-  const [router, setRouter] = useState<null | Router>(null)
-  const config = useConfig()
-  useEffect(() => {
-    setRouter(createRouter(config))
-  }, [config])
-  return router ? <RouterProvider router={router} /> : null
+  // Create the router only once. Config is accessed via hooks inside components,
+  // so routes don't need to be recreated when config changes.
+
+  return <ErrorBoundary><RouterProvider router={router} /></ErrorBoundary>
 }

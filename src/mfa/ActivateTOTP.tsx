@@ -1,53 +1,139 @@
 import { useState } from 'react'
 import * as allauth from '../lib/allauth'
-import { Navigate, useLoaderData } from 'react-router-dom'
-import FormErrors from '../components/FormErrors'
-import Button from '../components/Button'
+import { Navigate, useLoaderData, Link } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 export async function loader ({ params }) {
   const resp = await allauth.getTOTPAuthenticator()
   return { totp: resp }
 }
 
-export default function ActivateTOTP (props) {
-  const { totp } = useLoaderData()
-  const [code, setCode] = useState('')
-  const [response, setResponse] = useState({ fetching: false, content: null })
+const formSchema = z.object({
+  code: z.string().min(1, "Authenticator code is required"),
+})
 
-  function submit () {
-    setResponse({ ...response, fetching: true })
-    allauth.activateTOTPAuthenticator(code).then((content) => {
-      setResponse((r) => { return { ...r, content } })
+export default function ActivateTOTP () {
+  const { totp } = useLoaderData() as { totp: any }
+  const [globalError, setGlobalError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      code: "",
+    },
+  })
+
+  function onSubmit (data: z.infer<typeof formSchema>) {
+    setGlobalError(null)
+    allauth.activateTOTPAuthenticator(data.code).then((content) => {
+      if (content.status === 200) {
+        setSuccess(true)
+      } else {
+        if (content.errors) {
+             if (content.errors.code) {
+                 form.setError("code", { message: content.errors.code.join(" ") })
+             }
+             if (content.errors.non_field_errors) {
+                 setGlobalError(content.errors.non_field_errors.join(" "))
+             }
+             if (!content.errors.code && !content.errors.non_field_errors) {
+                 setGlobalError("Activation failed.")
+             }
+        } else {
+            setGlobalError("An error occurred.")
+        }
+      }
     }).catch((e) => {
       console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+      setGlobalError("An unexpected error occurred.")
     })
   }
-  if (totp.status === 200 || response.content?.status === 200) {
+
+  if (totp.status === 200 || success) {
     return <Navigate to='/account/2fa' />
   }
-  return (
-    <section>
-      <h1>Activate TOTP</h1>
 
-      <div>
-        <label>
-          Authenticator secret:
-          <input disabled type='text' value={totp.meta?.secret} />
-          <span>You can store this secret and use it to reinstall your authenticator app at a later time.</span>
-        </label>
-      </div>
-      <div>
-        <label>
-          Authenticator code:
-          <input type='text' value={code} onChange={(e) => setCode(e.target.value)} />
-        </label>
-        <FormErrors param='code' errors={response.content?.errors} />
-        <FormErrors errors={totp.errors} />
-      </div>
-      <Button onClick={() => submit()}>Activate</Button>
-    </section>
+  return (
+    <div className="flex justify-center items-center min-h-[50vh] p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Activate TOTP</CardTitle>
+          <CardDescription>
+            Set up Two-Factor Authentication using an authenticator app.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {globalError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{globalError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="bg-white p-4 rounded-lg border">
+                <QRCodeSVG value={totp.meta?.totp_url || ''} size={192} />
+            </div>
+            <div className="text-center space-y-2 w-full">
+                <p className="text-sm text-muted-foreground">
+                    Scan the QR code with your authenticator app.
+                </p>
+                <div className="space-y-1">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Secret Key</p>
+                    <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold block break-all">
+                        {totp.meta?.secret}
+                    </code>
+                    <p className="text-xs text-muted-foreground">
+                        You can store this secret to reinstall your authenticator app later.
+                    </p>
+                </div>
+            </div>
+          </div>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Authenticator Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="123456" {...field} autoComplete="off" />
+                    </FormControl>
+                    <FormDescription>
+                        Enter the code generated by your app.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                Activate
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

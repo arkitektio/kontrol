@@ -3,16 +3,15 @@ import { login } from '../lib/allauth'
 import { Link } from 'react-router-dom'
 import { useConfig } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { GalleryVerticalEnd } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 
 const formSchema = z.object({
   username: z.string().min(1, "Username/Email is required"),
@@ -62,25 +61,24 @@ export const LoginForm = () => {
   }
 
   return (
-    <div className={cn("flex flex-col gap-6")}>
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Login to your account</h1>
-        <p className="text-muted-foreground text-sm text-balance">
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle>Login to your account</CardTitle>
+        <CardDescription>
           Enter your email below to login to your account
-        </p>
-      </div>
-      
-      {globalError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{globalError}</AlertDescription>
-        </Alert>
-      )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {globalError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{globalError}</AlertDescription>
+          </Alert>
+        )}
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="username"
@@ -99,75 +97,62 @@ export const LoginForm = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center">
-                    <FormLabel>Password</FormLabel>
-                    <Link
-                      to="/account/password/reset"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </Link>
-                  </div>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input type="password" {...field} autoComplete="current-password" />
                   </FormControl>
                   <FormMessage />
+                  <div className="text-sm text-right">
+                    <Link
+                      to="/account/password/reset"
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </div>
                 </FormItem>
               )}
             />
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
               Login
             </Button>
-            
-            {hasProviders && (
-                <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                <span className="relative z-10 bg-background px-2 text-muted-foreground">
-                    Or continue with
+          </form>
+        </Form>
+        
+        {hasProviders && (
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
                 </span>
-                </div>
-            )}
-            {hasProviders && (
-                <ProviderList />
-            )}
+              </div>
+            </div>
+            <div className="mt-4">
+              <ProviderList />
+            </div>
           </div>
-        </form>
-      </Form>
-      
-      <div className="text-center text-sm">
-        Don&apos;t have an account?{" "}
-        <Link to="/account/signup" className="underline underline-offset-4">
-          Sign up
-        </Link>
-      </div>
-    </div>
+        )}
+      </CardContent>
+      <CardFooter className="flex justify-center">
+        <p className="text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link to="/account/signup" className="underline text-primary">
+            Sign up
+          </Link>
+        </p>
+      </CardFooter>
+    </Card>
   )
 }
 
 export default function Login () {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <Link to="/" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
-            Acme Inc.
-          </Link>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <LoginForm />
-          </div>
-        </div>
-      </div>
-      <div className="bg-muted relative hidden lg:block">
-        <img
-          src="/placeholder.svg"
-          alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-        />
-      </div>
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <LoginForm />
     </div>
   )
 }

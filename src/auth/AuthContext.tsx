@@ -1,4 +1,4 @@
-import { useEffect, createContext, useState, type ReactNode } from 'react'
+import { useEffect, createContext, useState, useMemo, type ReactNode } from 'react'
 import { getAuth, getConfig } from '../lib/allauth'
 
 export interface AuthConfig {
@@ -71,8 +71,12 @@ export function AuthContextProvider (props: { children: ReactNode }) {
     }
   }, [])
   const loading = (typeof auth === 'undefined') || config?.status !== 200
+  
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({ auth, config }), [auth, config])
+  
   return (
-    <AuthContext.Provider value={{ auth, config }}>
+    <AuthContext.Provider value={contextValue}>
       {loading
         ? <Loading />
         : (auth === false

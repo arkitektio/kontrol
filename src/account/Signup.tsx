@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { signUp } from '../lib/allauth'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useConfig } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { useForm } from "react-hook-form"
@@ -33,6 +33,7 @@ export default function Signup() {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
   const hasProviders = config.data.socialaccount?.providers?.length > 0
+  const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -47,14 +48,8 @@ export default function Signup() {
     setGlobalError(null)
     signUp({ email: values.email, password: values.password }).then((content) => {
       if (content.status === 200) {
-        // Success, usually redirects or updates auth state
-        // The original code didn't have explicit redirect, maybe allauth handles it via events?
-        // Or maybe it just shows a success message?
-        // Assuming it might need a redirect or just let the auth context update handle it.
-        // If the user is logged in, the AuthContext might redirect them if they are on a protected route.
-        // But Signup is usually public.
-        // Let's assume we might want to redirect to login or home.
-        // For now, I'll leave it as is, assuming the library or context handles the state change.
+        // Redirect to login page after successful signup
+        navigate('/account/login')
       } else {
         if (content.errors) {
             Object.entries(content.errors).forEach(([key, value]) => {
