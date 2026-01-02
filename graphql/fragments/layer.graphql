@@ -1,0 +1,20 @@
+fragment Layer on ManagementLayer {
+  id
+  name
+  description
+  logo {
+    presignedUrl
+  }
+  instances {
+    ...ListServiceInstance
+  }
+}
+
+fragment ListLayer on ManagementLayer {
+  id
+  name
+  description
+  logo {
+    presignedUrl
+  }
+}

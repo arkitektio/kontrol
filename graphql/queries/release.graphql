@@ -1,0 +1,12 @@
+query Releases {
+  releases {
+    ...ListRelease
+  }
+}
+
+
+query DetailRelease($id: ID!) {
+  release(id: $id) {
+    ...DetailRelease
+  }
+}

@@ -30,19 +30,30 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { useUser, useConfig } from '../auth'
+import { useListOrganizationsQuery, useMeQuery } from "@/api/graphql"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser()
   const config = useConfig()
+  const { data: orgData } = useListOrganizationsQuery({ skip: !user })
+  const { data: meData } = useMeQuery({ skip: !user })
 
-  // Mock organizations data - replace with real data from your API
-  const organizations = [
-    {
-      name: "My Organization",
-      logo: Building2,
-      plan: "Active",
-    },
-  ]
+  const organizations = orgData?.organizations.map(org => ({
+    name: org.name,
+    logo: Building2,
+    plan: "Active",
+    id: org.id
+  })) || []
+
+  const userData = meData?.me ? {
+    name: meData.me.username,
+    email: meData.me.email,
+    avatar: meData.me.profile?.avatar?.presignedUrl || "",
+  } : {
+    name: user?.username || "User",
+    email: user?.email || "",
+    avatar: "",
+  }
 
   // Navigation items based on authentication
   const navMain = user ? [
@@ -60,6 +71,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {
           title: "Change Email",
           url: "/account/email",
+        },
+        {
+          title: "Reset Password",
+          url: "/account/password/reset",
         },
         {
           title: "Change Password",
@@ -164,15 +179,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user ? {
-          name: user.display || user.username || user.email,
-          email: user.email,
-          avatar: "",
-        } : {
-          name: "Guest",
-          email: "",
-          avatar: "",
-        }} />
+        {user && <NavUser user={userData} />}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

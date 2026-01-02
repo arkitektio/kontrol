@@ -7,7 +7,7 @@
 
 export const ArkitektLogo = ({
   strokeColor = "#000",
-  cubeColor = "#5CDECE",
+  cubeColor = "#745cdeff",
   aColor = "#000",
   width,
   height,

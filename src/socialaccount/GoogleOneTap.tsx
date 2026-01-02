@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useConfig } from '../auth'
 import { authenticateByToken } from '../lib/allauth'
+import GoogleOneTapLogin from 'react-google-one-tap-login';
+
 
 function installGoogleOneTap (cb: () => void) {
+  console.log('Installing Google One Tap...')
   const id = 'google-one-tap'
   const scr = document.getElementById(id)
   if (!scr) {
@@ -11,6 +14,7 @@ function installGoogleOneTap (cb: () => void) {
     scr.src = '//accounts.google.com/gsi/client'
     scr.async = true
     scr.addEventListener('load', function () {
+      console.log('Google One Tap script loaded')
       cb()
     })
     document.body.appendChild(scr)
@@ -22,8 +26,10 @@ function installGoogleOneTap (cb: () => void) {
 export default function GoogleOneTap (props: {process: string}) {
   const config = useConfig()
   const [enabled, setEnabled] = useState(() => window.sessionStorage.getItem('googleOneTapEnabled') === 'yes')
+  
+  
   function onGoogleOneTapInstalled () {
-    const provider = config.data.socialaccount.providers.find(p => p.id === 'google')
+    const provider = config?.data.socialaccount.providers.find(p => p.id === 'google')
     if (provider && window.google) {
       function handleCredentialResponse (token: {credential: string}) {
         authenticateByToken(provider.id, {
@@ -42,7 +48,7 @@ export default function GoogleOneTap (props: {process: string}) {
 
   if (enabled) {
     installGoogleOneTap(onGoogleOneTapInstalled)
-    return null
+    return <> One Tab enabled</>
   }
   function enable () {
     window.sessionStorage.setItem('googleOneTapEnabled', 'yes')
@@ -56,3 +62,4 @@ export default function GoogleOneTap (props: {process: string}) {
     </div>
   )
 }
+

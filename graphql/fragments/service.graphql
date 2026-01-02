@@ -1,0 +1,25 @@
+fragment ListService on ManagementService {
+  identifier
+  id
+  name
+  logo {
+    presignedUrl
+  }
+  description
+  instances {
+    ...ListServiceInstance
+  }
+}
+
+fragment Service on ManagementService {
+  identifier
+  id
+  name
+  logo {
+    presignedUrl
+  }
+  description
+  instances {
+    ...ListServiceInstance
+  }
+}

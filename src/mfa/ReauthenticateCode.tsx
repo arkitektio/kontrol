@@ -1,34 +1,50 @@
-import { useState } from 'react'
-import FormErrors from '../components/FormErrors'
-import { mfaReauthenticate } from '../lib/allauth'
-import ReauthenticateFlow from '../account/ReauthenticateFlow'
+import { useMFAReauthenticateForm } from '@/hooks/use-next'
 import Button from '../components/Button'
 
-export default function ReauthenticateCode (props) {
-  const [code, setCode] = useState('')
-  const [response, setResponse] = useState({ fetching: false, content: null })
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 
-  function submit () {
-    setResponse({ ...response, fetching: true })
-    mfaReauthenticate(code).then((content) => {
-      setResponse((r) => { return { ...r, content } })
-    }).catch((e) => {
-      console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
-    })
-  }
+export default function ReauthenticateCode () {
+  
+  const {form , onSubmit, globalError} = useMFAReauthenticateForm()
   return (
-    <ReauthenticateFlow>
-      {props.children}
+    <div>
 
-      <FormErrors errors={response.content?.errors} />
 
-      <div><label>Code: <input value={code} onChange={(e) => setCode(e.target.value)} type='text' required /></label>
-        <FormErrors param='code' errors={response.content?.errors} />
-      </div>
-      <Button disabled={response.fetching} onClick={() => submit()}>Confirm</Button>
-    </ReauthenticateFlow>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Code</FormLabel>
+                <FormControl>
+                  <div className="space-y-2 w-full">
+      <InputOTP
+        maxLength={6}
+        {...field}
+      >
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+          <InputOTPSlot index={1} />
+          <InputOTPSlot index={2} />
+          <InputOTPSlot index={3} />
+          <InputOTPSlot index={4} />
+          <InputOTPSlot index={5} />
+        </InputOTPGroup>
+      </InputOTP>
+    </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            Reauthenticate
+          </Button>
+        </form>
+      </Form>
+    </div>
   )
 }

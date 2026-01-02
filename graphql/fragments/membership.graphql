@@ -1,0 +1,10 @@
+fragment Membership on ManagementMembership {
+  id
+  roles {
+    identifier
+    id
+  }
+  organization {
+    ...ListOrganization
+  }
+}

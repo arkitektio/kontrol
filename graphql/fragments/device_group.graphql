@@ -1,0 +1,12 @@
+fragment DetailDeviceGroup on ManagementDeviceGroup {
+  id
+  name
+  devices {
+    ...ListDevice
+  }
+}
+
+fragment ListDeviceGroup on ManagementDeviceGroup {
+  id
+  name
+}

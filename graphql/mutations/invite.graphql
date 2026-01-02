@@ -1,0 +1,14 @@
+mutation CreateInvite($input: CreateInviteInput!) {
+  createInvite(input: $input) {
+    ...Invite
+  }
+}
+
+
+mutation AcceptInvite($input: AcceptInviteInput!) {
+  acceptInvite(input: $input) {
+    organization {
+      ...Organization
+    }
+  }
+}

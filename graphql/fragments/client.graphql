@@ -1,0 +1,58 @@
+fragment DetailClient on ManagementClient {
+  id
+  token
+  name
+  user {
+    id
+    username
+  }
+  kind
+  release {
+    ...ListRelease
+  }
+  logo {
+    presignedUrl
+  }
+  mappings {
+    ...ListServiceInstanceMapping
+  }
+  device {
+    id
+    name
+  }
+  issueUrl
+  publicSources {
+    kind
+    url
+  }
+}
+
+fragment ListClient on ManagementClient {
+  id
+  user {
+    id
+    username
+  }
+  logo {
+    presignedUrl
+  }
+  device {
+    id
+    name
+  }
+  name
+  kind
+  release {
+    version
+    logo {
+      presignedUrl
+    }
+    app {
+      id
+      identifier
+      logo {
+        presignedUrl
+      }
+    }
+  }
+}

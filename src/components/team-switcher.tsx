@@ -19,6 +19,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
+import { useNavigate } from "react-router-dom"
+
 export function TeamSwitcher({
   teams,
 }: {
@@ -26,10 +28,18 @@ export function TeamSwitcher({
     name: string
     logo: React.ElementType
     plan: string
+    id: string
   }[]
 }) {
   const { isMobile } = useSidebar()
+  const navigate = useNavigate()
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
+
+  React.useEffect(() => {
+    if (teams.length > 0 && !activeTeam) {
+      setActiveTeam(teams[0])
+    }
+  }, [teams, activeTeam])
 
   if (!activeTeam) {
     return null
@@ -66,7 +76,10 @@ export function TeamSwitcher({
             {teams.map((team, index) => (
               <DropdownMenuItem
                 key={team.name}
-                onClick={() => setActiveTeam(team)}
+                onClick={() => {
+                    setActiveTeam(team)
+                    navigate(`/organization/${team.id}`)
+                }}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">

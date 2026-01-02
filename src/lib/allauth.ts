@@ -1,3 +1,4 @@
+import type { AuthFlow } from '@/auth/types'
 import { getCSRFToken } from './django'
 
 export const Client = Object.freeze({
@@ -121,14 +122,32 @@ interface RequestOptions extends RequestInit {
   headers: Record<string, string>
 }
 
-interface APIResponse {
+
+export type Data = {
+
+  flows?: AuthFlow[],
+  user?: {
+    id: string,
+    username: string,
+    email: string,
+    [key: string]: unknown
+  }
+} 
+
+export type Error = {
+  field?: string,
+  message: string
+}
+
+export interface APIResponse {
   status: number
   meta?: {
     session_token?: string
     is_authenticated?: boolean
     [key: string]: unknown
   }
-  data?: unknown
+  errors?:  Error[]
+  data?: Data
   [key: string]: unknown
 }
 
@@ -180,6 +199,9 @@ async function request (method: string, path: string, data?: unknown, headers?: 
   }
   return msg
 }
+
+
+
 
 export async function login (data: Record<string, unknown>) {
   return await request('POST', URLs.LOGIN, data)
@@ -398,3 +420,22 @@ export function setup (client: ClientType, baseUrl: string, withCredentials: boo
   settings.baseUrl = baseUrl
   settings.withCredentials = withCredentials
 }
+
+
+
+
+
+export const PreAuthClient = ({callback_url}: {callback_url: string}) => ({
+
+
+
+
+  loginWithUsernameAndPassword: async (username: string, password: string) => {
+    const resp = await login({username, password})
+    return resp
+  },
+
+  loginWithSocialAccount: async (providerId: string, callback_url: string) => {
+    redirectToProvider(providerId, callback_url, AuthProcess.LOGIN)
+  }
+})

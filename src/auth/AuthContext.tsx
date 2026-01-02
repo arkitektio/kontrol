@@ -6,6 +6,7 @@ export interface AuthConfig {
   data: {
     account: {
       authentication_method: string
+      login_by_code_enabled?: boolean
     }
     socialaccount: {
       providers: Array<{

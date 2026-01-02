@@ -1,0 +1,9 @@
+fragment DeviceCode on ManagementDeviceCode {
+  id
+  code 
+  stagingManifest {
+    logo
+    identifier 
+    version
+  }
+}

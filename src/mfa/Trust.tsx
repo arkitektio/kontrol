@@ -1,36 +1,48 @@
-import { useState } from 'react'
-import AuthenticateCode from './AuthenticateCode'
-import { AuthenticatorType } from '../lib/allauth'
-import { useAuthInfo } from '../auth/hooks'
-import * as allauth from '../lib/allauth'
-import { Navigate } from 'react-router-dom'
-import Button from'../components/Button'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from '@/components/ui/form'
+import { Switch } from '@/components/ui/switch'
+import { useMFATrustForm } from '@/hooks/use-next'
+import Button from '../components/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function Trust (props) {
-  const [response, setResponse] = useState({ fetching: false, content: null })
-  const authInfo = useAuthInfo()
+  
+  const {form, onSubmit, globalError} = useMFATrustForm()
+   
 
-  if (authInfo?.pendingFlow?.id !== allauth.Flows.MFA_TRUST) {
-    return <Navigate to='/' />
-  }
-
-  function submit (trust) {
-    setResponse({ ...response, fetching: true })
-    allauth.mfaTrust(trust).then((content) => {
-      setResponse((r) => { return { ...r, content } })
-    }).catch((e) => {
-      console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
-    })
-  }
   return (
-      <section>
-      <h1>Trust this Browser?</h1>
-      <p>If you choose to trust this browser, you will not be asked for a verification code the next time you sign in.</p>
-      <Button onClick={() => submit(false)}>Don't Trust</Button>
-      <Button onClick={() => submit(true)}>Trust</Button>
-    </section>
+    <div className="flex justify-center items-center min-h-[50vh] p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Two-Factor Authentication</CardTitle>
+          <CardDescription>
+            Your account is protected by two-factor authentication.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {props.children}
+        </CardContent>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="trust"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trust this device</FormLabel>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                 <FormControl>
+                   By trusting this device, you won't be prompted for MFA on this device for future logins.
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            Sign In
+          </Button>
+        </form>
+      </Form>
+      </Card>
+    </div>
   )
 }

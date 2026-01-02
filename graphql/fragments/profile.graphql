@@ -1,0 +1,8 @@
+fragment Profile on ManagementProfile {
+  id
+  name
+  avatar {
+    presignedUrl
+  }
+  bio
+}

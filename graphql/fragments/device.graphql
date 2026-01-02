@@ -1,0 +1,17 @@
+fragment Device on ManagementDevice {
+  id
+  name
+  nodeId
+  clients {
+    ...ListClient
+  }
+  deviceGroups {
+    ...ListDeviceGroup
+  }
+}
+
+fragment ListDevice on ManagementDevice {
+  id
+  name
+  nodeId
+}

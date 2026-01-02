@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import * as allauth from '../lib/allauth'
-import { useAuthInfo } from '../auth/hooks'
-import { Navigate } from 'react-router-dom'
 import AuthenticateFlow from './AuthenticateFlow'
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -18,51 +16,19 @@ import {
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { handleFormErrors } from "@/lib/utils"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import type { AuthFlow } from '@/auth/types'
+import { useNavigate } from 'react-router'
+import { useAuthCodeForm } from '@/hooks/use-next'
 
 const formSchema = z.object({
   code: z.string().min(1, "Code is required"),
 })
 
 export default function AuthenticateCode (props: any) {
-  const [globalError, setGlobalError] = useState<string | null>(null)
-  const authInfo = useAuthInfo()
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      code: "",
-    },
-  })
-
-  if (authInfo?.pendingFlow?.id !== allauth.Flows.MFA_AUTHENTICATE) {
-    return <Navigate to='/' />
-  }
-
-  function onSubmit (data: z.infer<typeof formSchema>) {
-    setGlobalError(null)
-    allauth.mfaAuthenticate(data.code).then((content) => {
-        if (content.status === 200) {
-             window.location.href = "/"
-        } else {
-             if (content.errors) {
-                 if (content.errors.code) {
-                     form.setError("code", { message: content.errors.code.join(" ") })
-                 }
-                 if (content.errors.non_field_errors) {
-                     setGlobalError(content.errors.non_field_errors.join(" "))
-                 }
-                 if (!content.errors.code && !content.errors.non_field_errors) {
-                     setGlobalError("Authentication failed.")
-                 }
-            } else {
-                setGlobalError("An error occurred.")
-            }
-        }
-    }).catch((e) => {
-      console.error(e)
-      setGlobalError("An unexpected error occurred.")
-    })
-  }
+  const {form, onSubmit, globalError} = useAuthCodeForm()
+   
 
   return (
     <AuthenticateFlow authenticatorType={props.authenticatorType}>
@@ -85,7 +51,21 @@ export default function AuthenticateCode (props: any) {
               <FormItem>
                 <FormLabel>Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="123456" {...field} autoComplete="one-time-code" />
+                  <div className="space-y-2 w-full">
+      <InputOTP
+        maxLength={6}
+        {...field}
+      >
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+          <InputOTPSlot index={1} />
+          <InputOTPSlot index={2} />
+          <InputOTPSlot index={3} />
+          <InputOTPSlot index={4} />
+          <InputOTPSlot index={5} />
+        </InputOTPGroup>
+      </InputOTP>
+    </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

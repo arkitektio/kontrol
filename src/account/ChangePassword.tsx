@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { changePassword } from '../lib/allauth'
-import { Navigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useUser } from '../auth'
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import * as constants from '../constants'
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -31,8 +30,8 @@ const changePasswordSchema = z.object({
 
 export default function ChangePassword() {
   const user = useUser()
+  const navigate = useNavigate()
   const hasCurrentPassword = user.has_usable_password
-  const [success, setSuccess] = useState(false)
   const [globalError, setGlobalError] = useState<string | null>(null)
 
   const form = useForm<z.infer<typeof changePasswordSchema>>({
@@ -56,17 +55,20 @@ export default function ChangePassword() {
       new_password: values.new_password
     }).then((resp) => {
       if (resp.status === 200) {
-        setSuccess(true)
+        navigate('/account/password/success')
       } else if (resp.status === 400) {
         // Handle field errors
-        if (resp.data?.errors) {
-            Object.entries(resp.data.errors).forEach(([key, value]) => {
+        if (resp.data && typeof resp.data === 'object' && 'errors' in resp.data) {
+            const errors = (resp.data as any).errors
+            Object.entries(errors).forEach(([key, value]) => {
                 if (key === 'current_password' || key === 'new_password') {
                      form.setError(key, { message: Array.isArray(value) ? value.join(" ") : String(value) })
                 } else {
                     setGlobalError(Array.isArray(value) ? value.join(" ") : String(value))
                 }
             })
+        } else {
+          setGlobalError("Invalid request. Please check your input.")
         }
       } else {
           setGlobalError("An error occurred. Please try again.")
@@ -75,10 +77,6 @@ export default function ChangePassword() {
       console.error(e)
       setGlobalError("An unexpected error occurred.")
     })
-  }
-
-  if (success) {
-    return <Navigate to={constants.HOME_URL} />
   }
 
   return (

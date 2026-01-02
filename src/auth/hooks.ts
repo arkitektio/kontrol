@@ -1,5 +1,6 @@
 import { useContext, useRef, useState, useEffect } from 'react'
 import { AuthContext } from './AuthContext'
+import { getCSRFToken } from '@/lib/django'
 
 export function useAuth () {
   return useContext(AuthContext)?.auth
@@ -101,4 +102,24 @@ export function useAuthChange () {
 export function useAuthStatus () {
   const auth = useAuth()
   return [auth, authInfo(auth)]
+}
+
+
+
+
+
+
+
+
+
+export const useCSRFToken = () => {
+  const [csrfToken, setCsrfToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    getCSRFToken().then(token => {
+      setCsrfToken(token)
+    })
+  }, [])
+
+  return csrfToken
 }

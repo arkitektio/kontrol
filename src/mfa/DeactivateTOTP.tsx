@@ -1,36 +1,20 @@
-import { useState } from 'react'
-import * as allauth from '../lib/allauth'
-import { Navigate, Link } from 'react-router-dom'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form } from '@/components/ui/form'
+import { useDeactivateTotpForm } from '@/hooks/use-next'
 import { AlertCircle } from "lucide-react"
+import { Link } from 'react-router-dom'
 
 export default function DeactivateTOTP (props: any) {
-  const [response, setResponse] = useState<{ fetching: boolean, content: any, error?: string }>({ fetching: false, content: null })
-
-  function submit () {
-    setResponse({ ...response, fetching: true, error: undefined })
-    allauth.deactivateTOTPAuthenticator().then((content) => {
-      if (content.status === 200) {
-          setResponse((r) => { return { ...r, content } })
-      } else {
-          setResponse((r) => { return { ...r, content, error: "Deactivation failed." } })
-      }
-    }).catch((e) => {
-      console.error(e)
-      setResponse((r) => { return { ...r, fetching: false, error: "An unexpected error occurred." } })
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
-    })
-  }
-
-  if (response.content?.status === 200) {
-    return <Navigate to='/account/2fa' />
-  }
+  
+  const { form, onSubmit, globalError } = useDeactivateTotpForm()
+  
 
   return (
     <div className="flex justify-center items-center min-h-[50vh] p-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Deactivate Authenticator App</CardTitle>
@@ -39,11 +23,11 @@ export default function DeactivateTOTP (props: any) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            {response.error && (
+            {globalError && (
                 <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{response.error}</AlertDescription>
+                <AlertDescription>{globalError}</AlertDescription>
                 </Alert>
             )}
         </CardContent>
@@ -51,11 +35,13 @@ export default function DeactivateTOTP (props: any) {
             <Button variant="outline" asChild>
                 <Link to="/account/2fa">Cancel</Link>
             </Button>
-            <Button variant="destructive" onClick={() => submit()} disabled={response.fetching}>
+            <Button variant="destructive" type="submit" disabled={form.formState.isSubmitting}>
                 Deactivate
             </Button>
         </CardFooter>
       </Card>
+      </form>
+      </Form>
     </div>
   )
 }

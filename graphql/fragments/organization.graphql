@@ -1,0 +1,54 @@
+fragment Organization on ManagementOrganization {
+  id
+  name
+  slug
+  roles {
+    id
+    identifier
+    description
+  }
+  avatar {
+    presignedUrl
+  }
+  memberships {
+    id
+    roles {
+      identifier
+    }
+    user {
+      id
+      username
+      profile {
+        id
+        avatar {
+          presignedUrl
+        }
+      }
+    }
+  }
+  invites {
+    acceptedBy {
+      id
+      username
+      profile {
+        id
+        avatar {
+          presignedUrl
+        }
+      }
+    }
+    status
+    expiresAt
+    token
+    inviteUrl
+  }
+}
+
+fragment ListOrganization on ManagementOrganization {
+  id
+  name
+  slug
+  avatar {
+    presignedUrl
+  }
+}

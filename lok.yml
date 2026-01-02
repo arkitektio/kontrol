@@ -1,0 +1,17 @@
+overwrite: true
+schema: 
+  http://jhnnsrs-lab/lok/managementschema/:
+      handleAsSDL: true
+documents: "graphql/**/*.graphql"
+generates:
+  src/api/fragments.ts:
+    plugins:
+      - "fragment-matcher"
+  src/api/graphql.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
+    config:
+      withHooks: true
+      reactApolloVersion: 3

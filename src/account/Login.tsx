@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { login } from '../lib/allauth'
-import { Link } from 'react-router-dom'
-import { useConfig } from '../auth'
+import { Link, useNavigate } from 'react-router-dom'
+import { URLs, useConfig } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,53 +12,54 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import type { AuthFlow } from '@/auth/types'
+import { handleFormErrors } from "@/lib/utils"
+import { useLoginForm } from '@/hooks/use-next'
 
 const formSchema = z.object({
   username: z.string().min(1, "Username/Email is required"),
   password: z.string().min(1, "Password is required"),
 })
 
+
+
+export const flowToMessage = (flow: AuthFlow): string => {
+  switch (flow.id) {
+    case 'two_factor_auth':
+      return 'Two-Factor Authentication is required. Please complete the verification to proceed.'
+    case 'email_verification':
+      return 'Email verification is required. Please check your email for the verification link.'
+    default:
+      return `The authentication flow "${flow.id}" requires additional actions. Please complete them to proceed.`
+  }
+}
+
+
+export const flowToActionButton = (flow: AuthFlow): React.ReactNode => {
+  switch (flow.id) {
+    case 'mfa_authenticate':
+      return <Button asChild><Link to="/account/authenticate/totp">Complete Two-Factor Authentication</Link></Button>
+    case 'email_verification':
+      return <Button asChild><Link to="/account/verify-email">Resend Verification Email</Link></Button>
+    default:
+      return <Button asChild>Unknown action</Button>
+  }
+}
+
+
+
+
+
 export const LoginForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
   const hasProviders = config.data.socialaccount?.providers?.length > 0
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  })
 
-  function onSubmit (data: z.infer<typeof formSchema>) {
-    setGlobalError(null)
-    login({ username: data.username, password: data.password }).then((content) => {
-      if (content.status === 200) {
-        window.location.href = "/" 
-      } else {
-        if (content.errors) {
-             if (content.errors.username) {
-                 form.setError("username", { message: content.errors.username.join(" ") })
-             }
-             if (content.errors.password) {
-                 form.setError("password", { message: content.errors.password.join(" ") })
-             }
-             if (content.errors.non_field_errors) {
-                 setGlobalError(content.errors.non_field_errors.join(" "))
-             }
-             if (!content.errors.username && !content.errors.password && !content.errors.non_field_errors) {
-                 setGlobalError("Login failed.")
-             }
-        } else {
-            setGlobalError("An error occurred.")
-        }
-      }
-    }).catch((e) => {
-      console.error(e)
-      setGlobalError("An unexpected error occurred.")
-    })
-  }
+
+  const [pendingFlows, setPendingFlows] = useState<AuthFlow[]>([])
+
+  const {form, onSubmit} = useLoginForm()
 
   return (
     <Card className="w-full max-w-md">
@@ -75,6 +76,23 @@ export const LoginForm = () => {
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{globalError}</AlertDescription>
           </Alert>
+        )}
+
+        {pendingFlows.length > 0 && (
+          <>{pendingFlows.map((p) => <>
+
+            <Alert key={p.id} variant="default" className="mb-4">
+              <AlertTitle>Action Required: {p.id}</AlertTitle>
+              <AlertDescription>
+                {flowToMessage(p)}
+              </AlertDescription>
+              {flowToActionButton(p)}
+              
+            </Alert>
+
+
+
+          </>)}</>
         )}
 
         <Form {...form}>
@@ -118,7 +136,7 @@ export const LoginForm = () => {
             </Button>
           </form>
         </Form>
-        
+
         {hasProviders && (
           <div className="mt-6">
             <div className="relative">
@@ -132,7 +150,25 @@ export const LoginForm = () => {
               </div>
             </div>
             <div className="mt-4">
-              <ProviderList />
+              <ProviderList callbackURL='/' />
+            </div>
+          </div>
+        )}
+
+        {config?.data.account.login_by_code_enabled && (
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Link className='btn btn-secondary' to='/account/login/code'>Send me a sign-in code</Link>
             </div>
           </div>
         )}

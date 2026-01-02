@@ -1,55 +1,56 @@
-import { useState } from 'react'
-import { AuthChangeRedirector, AnonymousRoute, AuthenticatedRoute } from './auth'
 import {
   createBrowserRouter,
+  createHashRouter,
   RouterProvider,
   useRouteError,
 } from 'react-router-dom'
-import Login from './account/Login'
-import RequestLoginCode from './account/RequestLoginCode'
-import ConfirmLoginCode from './account/ConfirmLoginCode'
-import Logout from './account/Logout'
-import Signup from './account/Signup'
-import ProviderSignup from './socialaccount/ProviderSignup'
-import ProviderCallback from './socialaccount/ProviderCallback'
 import Home from './Home'
+import Organization from './Organization'
 import ChangeEmail from './account/ChangeEmail'
-import ManageProviders from './socialaccount/ManageProviders'
+import ChangePassword from './account/ChangePassword'
+import PasswordChangeSuccess from './account/PasswordChangeSuccess'
+import ConfirmLoginCode from './account/ConfirmLoginCode'
+import ConfirmPasswordResetCode from './account/ConfirmPasswordResetCode'
+import Login from './account/Login'
+import Logout from './account/Logout'
+import Reauthenticate from './account/Reauthenticate'
+import RequestLoginCode from './account/RequestLoginCode'
+import RequestPasswordReset from './account/RequestPasswordReset'
+import { ResetPasswordByCode, ResetPasswordByLink, resetPasswordByLinkLoader } from './account/ResetPassword'
+import Signup from './account/Signup'
 import VerifyEmail, { loader as verifyEmailLoader } from './account/VerifyEmail'
 import VerifyEmailByCode from './account/VerifyEmailByCode'
-import VerificationEmailSent from './account/VerificationEmailSent'
-import RequestPasswordReset from './account/RequestPasswordReset'
-import ConfirmPasswordResetCode from './account/ConfirmPasswordResetCode'
-import ChangePassword from './account/ChangePassword'
-import MFAOverview, { loader as mfaOverviewLoader } from './mfa/MFAOverview'
+import { AnonymousRoute, AuthChangeRedirector, AuthenticatedRoute } from './auth'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import RootLayout, { ErrorLayout } from './components/RootLayout'
 import ActivateTOTP, { loader as activateTOTPLoader } from './mfa/ActivateTOTP'
-import DeactivateTOTP from './mfa/DeactivateTOTP'
-import RecoveryCodes, { loader as recoveryCodesLoader } from './mfa/RecoveryCodes'
 import AddWebAuthn from './mfa/AddWebAuthn'
-import SignupByPasskey from './mfa/SignupByPasskey'
-import ReauthenticateWebAuthn from './mfa/ReauthenticateWebAuthn'
-import ListWebAuthn, { loader as listWebAuthnLoader } from './mfa/ListWebAuthn'
-import GenerateRecoveryCodes, { loader as generateRecoveryCodesLoader } from './mfa/GenerateRecoveryCodes'
-import { resetPasswordByLinkLoader, ResetPasswordByCode, ResetPasswordByLink } from './account/ResetPassword'
-import AuthenticateTOTP from './mfa/AuthenticateTOTP'
 import AuthenticateRecoveryCodes from './mfa/AuthenticateRecoveryCodes'
+import AuthenticateTOTP from './mfa/AuthenticateTOTP'
 import AuthenticateWebAuthn from './mfa/AuthenticateWebAuthn'
+import CreateSignupPasskey from './mfa/CreateSignupPasskey'
+import DeactivateTOTP from './mfa/DeactivateTOTP'
+import GenerateRecoveryCodes, { loader as generateRecoveryCodesLoader } from './mfa/GenerateRecoveryCodes'
+import ListWebAuthn, { loader as listWebAuthnLoader } from './mfa/ListWebAuthn'
+import MFAOverview, { loader as mfaOverviewLoader } from './mfa/MFAOverview'
 import ReauthenticateRecoveryCodes from './mfa/ReauthenticateRecoveryCodes'
 import ReauthenticateTOTP from './mfa/ReauthenticateTOTP'
-import CreateSignupPasskey from './mfa/CreateSignupPasskey'
+import ReauthenticateWebAuthn from './mfa/ReauthenticateWebAuthn'
+import RecoveryCodes, { loader as recoveryCodesLoader } from './mfa/RecoveryCodes'
+import SignupByPasskey from './mfa/SignupByPasskey'
 import Trust from './mfa/Trust'
-import Reauthenticate from './account/Reauthenticate'
+import ManageProviders from './socialaccount/ManageProviders'
+import ProviderCallback from './socialaccount/ProviderCallback'
+import ProviderSignup from './socialaccount/ProviderSignup'
 import Sessions from './usersessions/Sessions'
-import { useConfig } from './auth/hooks'
-import RootLayout from './components/RootLayout'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { ConfigurePage, ConfigurePageDesktop, ConfigurePageNoOrg, ConfigurePageWebsiteWithErrors } from './device/ConfigurePage'
 
 
 function RouterErrorBoundary() {
   let error = useRouteError();
   console.error(error);
   // Uncaught ReferenceError: path is not defined
-  return <div>Dang!</div>;
+  return <ErrorLayout>{JSON.stringify(error)}</ErrorLayout>;
 }
 
 
@@ -57,7 +58,8 @@ function createRouter () {
   return createBrowserRouter([
     {
       path: '/',
-      element: <AuthChangeRedirector><RootLayout /></AuthChangeRedirector>,
+      element: <RootLayout />,
+      errorElement: <RouterErrorBoundary />,
       children: [
         {
           path: '/',
@@ -66,6 +68,10 @@ function createRouter () {
         {
           path: '/home',
           element: <Home />
+        },
+        {
+          path: '/organization/:id',
+          element: <AuthenticatedRoute><Organization /></AuthenticatedRoute>
         },
         {
           path: '/account/login',
@@ -142,6 +148,10 @@ function createRouter () {
           element: <AuthenticatedRoute><ChangePassword /></AuthenticatedRoute>
         },
         {
+          path: '/account/password/success',
+          element: <AuthenticatedRoute><PasswordChangeSuccess /></AuthenticatedRoute>
+        },
+        {
           path: '/account/2fa',
           element: <AuthenticatedRoute><MFAOverview /></AuthenticatedRoute>,
           loader: mfaOverviewLoader
@@ -209,6 +219,22 @@ function createRouter () {
         {
           path: '/account/sessions',
           element: <AuthenticatedRoute><Sessions /></AuthenticatedRoute>
+        },
+        {
+          path: '/device/configure',
+          element: <ConfigurePage />
+        },
+        {
+          path: '/device/configure/desktop',
+          element: <ConfigurePageDesktop />
+        },
+        {
+          path: '/device/configure/website-errors',
+          element: <ConfigurePageWebsiteWithErrors />
+        },
+        {
+          path: '/device/configure/no-org',
+          element: <ConfigurePageNoOrg />
         }
       ].map(route => ({
         ...route,

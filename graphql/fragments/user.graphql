@@ -1,0 +1,45 @@
+fragment ListUser on ManagementUser {
+  username
+  firstName
+  lastName
+  email
+  avatar
+  id
+  profile {
+    ...Profile
+  }
+}
+
+fragment DetailUser on ManagementUser {
+  id
+  username
+  email
+  firstName
+  lastName
+  avatar
+  groups {
+    id
+    name
+  }
+  profile {
+    ...Profile
+  }
+  memberships {
+    ...Membership
+  }
+}
+
+fragment MeUser on ManagementUser {
+  id
+  username
+  email
+  firstName
+  lastName
+  avatar
+  profile {
+    ...Profile
+  }
+  memberships {
+    ...Membership
+  }
+}

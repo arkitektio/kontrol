@@ -13,9 +13,6 @@ labels[AuthenticatorType.WEBAUTHN] = 'Use security key'
 export default function AuthenticateFlow (props: any) {
   const authInfo = useAuthInfo()
 
-  if (authInfo?.pendingFlow?.id !== Flows.MFA_AUTHENTICATE) {
-    return <Navigate to='/' />
-  }
   const flow = authInfo.pendingFlow
 
   return (

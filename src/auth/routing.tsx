@@ -11,7 +11,7 @@ export const URLs = Object.freeze({
   LOGOUT_REDIRECT_URL: '/'
 })
 
-const flow2path = {}
+const flow2path: { [key: string]: string } = {}
 flow2path[Flows.LOGIN] = '/account/login'
 flow2path[Flows.LOGIN_BY_CODE] = '/account/login/code/confirm'
 flow2path[Flows.SIGNUP] = '/account/signup'
@@ -28,7 +28,7 @@ flow2path[`${Flows.MFA_REAUTHENTICATE}:${AuthenticatorType.RECOVERY_CODES}`] = '
 flow2path[`${Flows.MFA_REAUTHENTICATE}:${AuthenticatorType.WEBAUTHN}`] = '/account/reauthenticate/webauthn'
 flow2path[Flows.MFA_WEBAUTHN_SIGNUP] = '/account/signup/passkey/create'
 
-export function pathForFlow (flow, typ) {
+export function pathForFlow (flow: { id: string, types?: string[] }, typ: string | undefined = undefined) {
   let key = flow.id
   if (typeof flow.types !== 'undefined') {
     typ = typ ?? flow.types[0]
@@ -36,6 +36,7 @@ export function pathForFlow (flow, typ) {
   }
   const path = flow2path[key] ?? flow2path[flow.id]
   if (!path) {
+    console.error('Unknown flow:', flow)
     throw new Error(`Unknown path for flow: ${flow.id}`)
   }
   return path
@@ -80,6 +81,7 @@ export function AnonymousRoute ({ children }) {
 export function AuthChangeRedirector ({ children }) {
   const [auth, event] = useAuthChange()
   const location = useLocation()
+  console.log('AuthChangeRedirector: event=', event, auth)
   switch (event) {
     case AuthChangeEvent.LOGGED_OUT:
       return <Navigate to={URLs.LOGOUT_REDIRECT_URL} />
@@ -91,8 +93,10 @@ export function AuthChangeRedirector ({ children }) {
       return <Navigate to={next} />
     }
     case AuthChangeEvent.REAUTHENTICATION_REQUIRED: {
+      console.log('Reauthentication required')
       const next = `next=${encodeURIComponent(location.pathname + location.search)}`
       const path = pathForFlow(auth.data.flows[0])
+      console.log('Redirecting to reauthentication flow:', path)
       return <Navigate to={`${path}?${next}`} state={{ reauth: auth }} />
     }
     case AuthChangeEvent.FLOW_UPDATED:

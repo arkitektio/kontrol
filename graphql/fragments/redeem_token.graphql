@@ -1,0 +1,21 @@
+fragment ListRedeemToken on ManagementRedeemToken {
+  id
+  token
+  user {
+    id
+    email
+  }
+  client {
+    id
+    release {
+      version
+      app {
+        identifier
+      }
+    }
+  }
+}
+
+fragment DetailRedeemToken on ManagementRedeemToken {
+  ...ListRedeemToken
+}

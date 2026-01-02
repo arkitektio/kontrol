@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
   useLoaderData,
-  Navigate
+  Navigate,
+  useNavigate
 } from 'react-router-dom'
 import { getEmailVerification, verifyEmail } from '../lib/allauth'
 import { Button } from "@/components/ui/button"
@@ -21,11 +22,13 @@ export default function VerifyEmail () {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const navigate = useNavigate()
+
   function submit () {
     setLoading(true)
     verifyEmail(key).then((content) => {
       if (content.status === 200 || content.status === 401) {
-          setSuccess(true)
+          navigate('/account/email')
       } else {
           setError("Failed to verify email.")
       }
@@ -37,9 +40,6 @@ export default function VerifyEmail () {
     })
   }
 
-  if (success) {
-    return <Navigate to='/account/email' />
-  }
 
   let content
   if (verification.status === 200) {
@@ -53,12 +53,13 @@ export default function VerifyEmail () {
         </Button>
       </div>
     )
+
   } else if (!verification.data?.email) {
     content = (
         <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>Invalid verification link.</AlertDescription>
+            <AlertDescription>{verification.errors.map((e: any) => e.message).join(', ')}</AlertDescription>
         </Alert>
     )
   } else {
