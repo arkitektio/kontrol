@@ -30,8 +30,13 @@ fragment ListInstanceAlias on ManagementInstanceAlias {
   instance {
     id
     identifier
-    service {
-      identifier
+    release {
+      service {
+        id
+        identifier
+      }
+      version
+      
     }
   }
 }

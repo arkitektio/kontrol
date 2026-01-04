@@ -13,6 +13,7 @@ query ValidateDeviceCode($deviceCode: ID!, $organization: ID!) {
       serviceInstance {
         id
         identifier
+        
     }
   }
   }

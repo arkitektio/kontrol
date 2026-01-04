@@ -1,0 +1,11 @@
+query ListInstanceAlias($filters: ManagementInstanceAliasFilter, $pagination: OffsetPaginationInput, $order: ManagementInstanceAliasOrder) {
+  instanceAliases(filters: $filters, pagination: $pagination, order: $order) {
+    ...ListInstanceAlias
+  }
+}
+
+query DetailInstanceAlias($id: ID!) {
+  instanceAlias(id: $id) {
+    ...InstanceAlias
+  }
+}

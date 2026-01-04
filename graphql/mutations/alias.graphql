@@ -9,3 +9,10 @@ mutation DeleteAlias($input: DeleteAliasInput!) {
   deleteAlias(input: $input) 
     
 }
+
+
+mutation UpdateAlias($input: UpdateAliasInput!) {
+  updateAlias(input: $input) {
+    ...InstanceAlias
+  }
+}

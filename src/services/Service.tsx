@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { useGetServiceQuery } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
@@ -32,15 +32,14 @@ export default function Service() {
         <CardContent>
             <p className="text-muted-foreground mb-4">{service.description}</p>
             
-            <h3 className="font-semibold mb-2">Instances</h3>
+            <h3 className="font-semibold mb-2">Versions</h3>
             <div className="grid gap-2">
-                {service.instances.map(instance => (
-                    <div key={instance.id} className="p-2 border rounded-md">
-                        <div className="font-medium">{instance.name}</div>
-                        <div className="text-xs text-muted-foreground">{instance.identifier}</div>
-                    </div>
+                {service.releases.map(rel => (
+                    <Link to={`/service-releases/${rel.id}`} key={rel.id} className="p-2 border rounded-md">
+                        <div className="font-medium">{rel.version}</div>
+                    </Link>
                 ))}
-                {service.instances.length === 0 && (
+                {service.releases.length === 0 && (
                     <div className="text-sm text-muted-foreground">No instances found</div>
                 )}
             </div>

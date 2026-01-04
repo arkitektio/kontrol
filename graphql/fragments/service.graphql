@@ -6,8 +6,8 @@ fragment ListService on ManagementService {
     presignedUrl
   }
   description
-  instances {
-    ...ListServiceInstance
+  releases {
+    ...ListServiceRelease
   }
 }
 
@@ -19,7 +19,7 @@ fragment Service on ManagementService {
     presignedUrl
   }
   description
-  instances {
-    ...ListServiceInstance
+  releases {
+    ...ListServiceRelease
   }
 }

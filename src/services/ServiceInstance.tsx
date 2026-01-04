@@ -81,7 +81,8 @@ export default function ServiceInstance() {
                 <CardTitle className="text-2xl">{instance.identifier}</CardTitle>
                 <CardDescription className="font-mono text-sm">{instance.identifier}</CardDescription>
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline">{instance.service.identifier}</Badge>
+                  <Badge variant="outline">{instance.release.service.identifier}</Badge>
+                  <Badge variant="outline">v{instance.release.version}</Badge>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -180,16 +181,17 @@ export default function ServiceInstance() {
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <h3 className="font-semibold mb-2 text-sm text-muted-foreground uppercase tracking-wide">Service</h3>
-                    <Link to={`/services/${instance.service.id}`}>
+                    <h3 className="font-semibold mb-2 text-sm text-muted-foreground uppercase tracking-wide">Provides Service</h3>
+                    <Link to={`/service-releases/${instance.release.id}`}>
                         <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center gap-3">
                             <Avatar className="h-10 w-10">
-                                <AvatarImage src={instance.service.logo?.presignedUrl || undefined} />
-                                <AvatarFallback>{instance.service.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                <AvatarImage src={instance.release.service.logo?.presignedUrl || undefined} />
+                                <AvatarFallback>{instance.release.service.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <div className="font-medium">{instance.service.name}</div>
-                                <div className="text-xs text-muted-foreground font-mono">{instance.service.identifier}</div>
+                                <div className="font-medium">{instance.release.service.name}</div>
+                                <div className="text-xs text-muted-foreground font-mono">{instance.release.service.identifier}</div>
+                                <div className="text-xs text-muted-foreground">v{instance.release.version}</div>
                             </div>
                         </div>
                     </Link>
@@ -202,18 +204,17 @@ export default function ServiceInstance() {
                             <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">Aliases</h3>
                             <div className="grid gap-2">
                                 {instance.aliases.map(alias => (
-                                    <div key={alias.id} className="p-3 border rounded-md space-y-2">
+                                    <Link to={`/instance-aliases/${alias.id}`} key={alias.id} className="p-3 border rounded-md space-y-2">
                                         <div className="flex items-center gap-2">
                                             <Badge variant="outline" className="text-xs">{alias.kind}</Badge>
                                             <code className="text-xs">
                                                 {alias.ssl ? 'https://' : 'http://'}
-                                                {alias.host || alias.layer.name}
+                                                {alias.host || alias.layer?.name}
                                                 {alias.port ? `:${alias.port}` : ''}
                                                 {alias.path || ''}
                                             </code>
                                         </div>
-                                        <AliasChallenge alias={alias} />
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         </div>

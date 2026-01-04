@@ -1,0 +1,28 @@
+fragment ServiceDeviceCode on ManagementServiceDeviceCode {
+  id
+  code 
+  stagingAliases {
+    host
+    port
+  }
+  stagingManifest {
+    identifier 
+    version
+    logo
+    description
+    url
+  }
+  instance {
+    id
+    identifier 
+    release {
+      id
+      service {
+        id
+        identifier
+      } 
+      version
+    }
+    
+  }
+}

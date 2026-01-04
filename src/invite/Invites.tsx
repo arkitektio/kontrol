@@ -80,7 +80,7 @@ export default function Invites() {
             ))}
         </CardContent>
       </Card>
-      <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} orgId={org.id} />
+      <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} />
     </div>
   )
 }

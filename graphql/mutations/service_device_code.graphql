@@ -1,0 +1,11 @@
+mutation AcceptServiceDeviceCode($input: AcceptServiceDeviceCodeInput!) {
+  acceptServiceDeviceCode(input: $input) {
+    ...ServiceInstance
+  }
+}
+
+mutation DeclineServiceDeviceCode($input: DeclineServiceDeviceCodeInput!) {
+  declineServiceDeviceCode(input: $input) {
+    ...ServiceDeviceCode
+  }
+}

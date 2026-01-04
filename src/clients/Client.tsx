@@ -24,7 +24,7 @@ export default function Client() {
         {/* Background Flow */}
         <div className="fixed top-0 right-0 h-screen w-[40vw] z-0 pointer-events-none ">
              <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 w-10" />
-             <ClientUsedAliasFlow aliases={client.usedAliases || []} />
+             <ClientUsedAliasFlow client={client || []} />
         </div>
 
         <div className="relative z-10 max-w-[30vw] space-y-6">

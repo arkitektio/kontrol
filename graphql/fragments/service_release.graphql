@@ -1,0 +1,15 @@
+fragment ListServiceRelease on ManagementServiceRelease {
+  id
+  version
+  instances {
+    ...ListServiceInstance
+  }
+}
+
+fragment ServiceRelease on ManagementServiceRelease {
+  id
+  version
+  service {
+    ...Service
+  }
+}

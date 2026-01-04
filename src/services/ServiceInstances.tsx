@@ -24,7 +24,7 @@ export default function ServiceInstances() {
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center gap-4 pb-3">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={instance.logo?.presignedUrl || undefined} />
+                  <AvatarImage src={instance.release.service?.logo?.presignedUrl || undefined} />
                   <AvatarFallback>{instance.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-1">
@@ -34,7 +34,7 @@ export default function ServiceInstances() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">{instance.service.id}</Badge>
+                  <Badge variant="outline" className="text-xs">{instance.id}</Badge>
                   
                 </div>
               </CardContent>

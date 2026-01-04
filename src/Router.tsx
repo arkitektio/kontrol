@@ -12,12 +12,16 @@ import Services from './services/Services'
 import Service from './services/Service'
 import Releases from './releases/Releases'
 import Release from './releases/Release'
+import ServiceReleases from './service-releases/ServiceReleases'
+import ServiceRelease from './service-releases/ServiceRelease'
 import Clients from './clients/Clients'
 import Client from './clients/Client'
 import ServiceInstances from './services/ServiceInstances'
 import ServiceInstance from './services/ServiceInstance'
 import ServiceInstanceMappings from './services/ServiceInstanceMappings'
 import ServiceInstanceMapping from './services/ServiceInstanceMapping'
+import InstanceAliases from './aliases/InstanceAliases'
+import InstanceAlias from './aliases/InstanceAlias'
 import Apps from './apps/Apps'
 import App from './apps/App'
 import Devices from './devices/Devices'
@@ -62,6 +66,7 @@ import ProviderCallback from './socialaccount/ProviderCallback'
 import ProviderSignup from './socialaccount/ProviderSignup'
 import Sessions from './usersessions/Sessions'
 import { ConfigurePage, } from './device/ConfigurePage'
+import { ServiceConfigurePage } from './service/ServiceConfigurePage'
 import { InvitePage } from './invite/InvitePage'
 import Members from './members/Members'
 import Invites from './invite/Invites'
@@ -85,11 +90,11 @@ function createRouter () {
       children: [
         {
           path: '/',
-          element: <Home />
+          element: <AuthenticatedRoute><Home /></AuthenticatedRoute>
         },
         {
           path: '/home',
-          element: <Home />
+          element: <AuthenticatedRoute><Home /></AuthenticatedRoute>
         }
         ,{          path: '/profile',
           element: <AuthenticatedRoute><Profile /></AuthenticatedRoute>
@@ -122,6 +127,14 @@ function createRouter () {
           element: <AuthenticatedRoute><Release /></AuthenticatedRoute>
         },
         {
+          path: '/service-releases',
+          element: <AuthenticatedRoute><ServiceReleases /></AuthenticatedRoute>
+        },
+        {
+          path: '/service-releases/:id',
+          element: <AuthenticatedRoute><ServiceRelease /></AuthenticatedRoute>
+        },
+        {
           path: '/clients',
           element: <AuthenticatedRoute><Clients /></AuthenticatedRoute>
         },
@@ -144,6 +157,14 @@ function createRouter () {
         {
           path: '/service-instance-mappings/:id',
           element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>
+        },
+        {
+          path: '/instance-aliases',
+          element: <AuthenticatedRoute><InstanceAliases /></AuthenticatedRoute>
+        },
+        {
+          path: '/instance-aliases/:id',
+          element: <AuthenticatedRoute><InstanceAlias /></AuthenticatedRoute>
         },
         {
           path: '/apps',
@@ -343,6 +364,10 @@ function createRouter () {
         {
           path: '/configure/:deviceCode',
           element: <ConfigurePage />
+        },
+        {
+          path: '/serviceconfigure/:serviceCode',
+          element: <ServiceConfigurePage />
         },
         {
           path: '/invite/:code',

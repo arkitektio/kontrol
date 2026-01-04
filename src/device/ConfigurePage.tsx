@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   useDeviceCodeByCodeQuery,
   useAcceptDeviceCodeMutation,
@@ -64,6 +64,8 @@ export function ConfigurePage() {
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
 
+  const navigate = useNavigate();
+
   // Preset the active organization
   useEffect(() => {
     if (meData?.me && orgData?.organizations) {
@@ -97,7 +99,7 @@ export function ConfigurePage() {
   const onAllow = async () => {
     if (!selectedOrganization) return;
     try {
-      await acceptDeviceCode({
+      let data = await acceptDeviceCode({
         variables: {
           input: {
             deviceCode: deviceCode.id,
@@ -105,8 +107,12 @@ export function ConfigurePage() {
           }
         }
       });
-      setAuthorized(true);
-      setSubmitted(true);
+      if (data.data?.acceptDeviceCode?.id){
+        navigate(`/clients/${data.data.acceptDeviceCode.id}`);
+      }
+      else {
+        setAuthorized(false);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -154,7 +160,7 @@ export function ConfigurePage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start gap-4">
-          {deviceCode.stagingManifest.logo ? (
+          {deviceCode?.stagingManifest?.logo ? (
             <img src={deviceCode.stagingManifest.logo} alt="App Logo" className="h-16 w-16 rounded-lg" />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">

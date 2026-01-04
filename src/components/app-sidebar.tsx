@@ -63,11 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   // Build services navigation items
-  const servicesItems = servicesData?.services.map(service => ({
-    title: service.identifier,
-    url: `/services/${service.id}`,
-  })) || []
-
+  const servicesItems = []
   // Navigation items based on authentication
   const navMain = user ? [
     {
