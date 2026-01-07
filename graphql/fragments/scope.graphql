@@ -8,6 +8,9 @@ fragment Scope on ManagementScope {
   organization {
     id
   }
+  usedBy {
+    ...ListServiceInstance
+  }
 }
 
 fragment ListScope on ManagementScope {

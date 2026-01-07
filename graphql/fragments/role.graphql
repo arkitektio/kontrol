@@ -8,6 +8,9 @@ fragment Role on ManagementRole {
   organization {
     id
   }
+  usedBy {
+    ...ListServiceInstance
+  }
 }
 
 fragment ListRole on ManagementRole {

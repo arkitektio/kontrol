@@ -1,0 +1,12 @@
+query Memberships($filters: ManagementMembershipFilter, $order: ManagementMembershipOrder, $pagination: OffsetPaginationInput) {
+  memberships(filters: $filters, order: $order, pagination: $pagination) {
+    ...ListMembership
+  }
+}
+
+
+query GetMembership($id: ID!) {
+  membership(id: $id) {
+    ...Membership
+  }
+}

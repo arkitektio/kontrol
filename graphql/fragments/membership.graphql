@@ -4,7 +4,44 @@ fragment Membership on ManagementMembership {
     identifier
     id
   }
+  user {
+    id
+    username
+    email
+    profile {
+      id
+      avatar {
+        presignedUrl
+      }
+    }
+  }
   organization {
     ...ListOrganization
+    roles {
+        id
+        identifier
+        description
+    }
+  }
+}
+
+fragment ListMembership on ManagementMembership {
+  id
+  roles {
+    identifier
+    id
+  }
+  user {
+    id
+    username
+    profile {
+      id
+      avatar {
+        presignedUrl
+      }
+    }
+  }
+  organization {
+    ...SidebarOrganization
   }
 }

@@ -1,0 +1,10 @@
+
+mutation UpdateMembership($input: UpdateMembershipInput!) {
+  updateMembership(input: $input) {
+    ...Membership
+  }
+}
+
+mutation DeleteMembership($input: DeleteMembershipInput!) {
+  deleteMembership(input: $input) 
+}

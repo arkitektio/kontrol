@@ -11,48 +11,40 @@ export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanc
   const { theme } = useTheme();
 
   return (
-    <Card className="group overflow-hidden transition-all hover:shadow-md border-border/60">
-      <div className="flex md:flex-row flex-col md:h-36">
+    <Link to={`/organization/${instance.organization.id}/service-instances/${instance.id}`} >
+      <Card className="group grid grid-cols-3 grid-cols-reverse hover:shadow-lg transition-shadow overflow-hidden p-0 h-40">
+        {/* Content Section */}
+        <div className="col-span-2 flex flex-col p-4 justify-between gap-4 relative">
+          <div className="space-y-1.5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-lg hover:text-primary transition-colors truncate">
+                    {instance.identifier.slice(0, 20)}
+                </h3>
+                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                    
+                    <span className='flex flex-row gap-2'><Box className="w-3.5 h-3.5 my-auto" />{instance.release.service.identifier}</span>
+                    <Badge variant="secondary" className="font-mono text-xs">
+                v{instance.release.version}
+              </Badge>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
         {/* Logo Section */}
-        <div className="md:w-36 w-full h-36 md:h-auto relative flex-shrink-0 bg-muted/10 border-b md:border-b-0 md:border-r border-border/50">
-          <div className="absolute inset-0">
+        <div className="col-span-1 relative right-0 top-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 right-0">
             <ServiceLogo 
               service={instance.release.service.identifier} 
               theme={theme} 
             />
           </div>
-          <div className="absolute w-full h-full bg-gradient-to-t from-background via-background/80 to-transparent" />
-          
-        </div>
+          <div className="absolute w-full h-full bg-gradient-to-r from-card via-card/80 to-transparent" />
 
-        {/* Content Section */}
-        <div className="flex flex-col flex-1 p-4 justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-lg hover:text-primary transition-colors">
-                    {instance.identifier}
-                </h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Box className="w-3.5 h-3.5" />
-                    <span>{instance.release.service.identifier}</span>
-                </div>
-              </div>
-              <Badge variant="secondary" className="font-mono text-xs shadow-sm">
-                v{instance.release.version}
-              </Badge>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end pt-2">
-            <Button variant="default" size="sm" className="gap-2 group-hover:translate-x-0.5 transition-transform" asChild>
-              <Link to={`/organization/${instance.organization.id}/service-instances/${instance.id}`}>
-                View Instance <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </Button>
-          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 };

@@ -41,7 +41,8 @@ import Home from './Home'
 import Invite from './invite/Invite'
 import { InvitePage } from './invite/InvitePage'
 import Invites from './invite/Invites'
-import Members from './members/Members'
+import Memberships from './members/Memberships'
+import Membership from './members/Membership'
 import ActivateTOTP, { loader as activateTOTPLoader } from './mfa/ActivateTOTP'
 import AddWebAuthn from './mfa/AddWebAuthn'
 import AuthenticateRecoveryCodes from './mfa/AuthenticateRecoveryCodes'
@@ -263,7 +264,7 @@ function createRouter () {
             },
             {
               path: '/invite/:code',
-              element: <InvitePage />
+              element: <AuthenticatedRoute><InvitePage /></AuthenticatedRoute>
             },
           ]
         },
@@ -282,11 +283,19 @@ function createRouter () {
             },
             {
               path: 'members',
-              element: <AuthenticatedRoute><Members /></AuthenticatedRoute>
+              element: <AuthenticatedRoute><Memberships /></AuthenticatedRoute>
+            },
+            {
+              path: 'members/:id',
+              element: <AuthenticatedRoute><Membership /></AuthenticatedRoute>
             },
             {
               path: 'invites',
               element: <AuthenticatedRoute><Invites /></AuthenticatedRoute>
+            },
+            {
+              path: 'invites/:id',
+              element: <AuthenticatedRoute><Invite /></AuthenticatedRoute>
             },
             {
               path: 'danger-zone',

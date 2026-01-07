@@ -5,6 +5,12 @@ import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { Separator } from "../components/ui/separator"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../components/ui/tooltip"
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -66,17 +72,17 @@ export default function ServiceInstance() {
   }
 
   return (
-    <div className="container mx-auto py-10 space-y-6">
+    <div className="container mx-auto py-10 relative min-h-screen">
+        {/* Background Flow */}
+        <div className="fixed top-0 right-0 h-screen w-[40vw] z-0 pointer-events-none opacity-100">
+             <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 py-10" />
+             <ServiceLogo service={instance.release.service.identifier} theme={theme} size={9}/>
+        </div>
+
+        <div className="relative z-10 max-w-[50vw] space-y-6">
          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
               <div className="flex items-center gap-4">
-                  <div className="md:w-16 w-16 h-16 md:h-16 relative flex-shrink-0 bg-muted/10 border border-border/50 rounded overflow-hidden">
-                    <div className="absolute inset-0">
-                        <ServiceLogo 
-                        service={instance.release.service.identifier} 
-                        theme={theme} 
-                        />
-                    </div>
-                  </div>
+                  
                 <div>
                   <CardTitle className="text-2xl">{instance.identifier}</CardTitle>
                   <p className="text-muted-foreground text-sm font-mono text-xs mt-1">{instance.release.service.identifier} v{instance.release.version}</p>
@@ -179,7 +185,7 @@ export default function ServiceInstance() {
               </div>
         </CardHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
              <div className="space-y-4">
                  <h3 className="font-semibold text-lg">Aliases</h3>
                   {(instance.aliases && instance.aliases.length > 0) ? (
@@ -204,6 +210,58 @@ export default function ServiceInstance() {
                         <div className="text-muted-foreground text-sm italic">No aliases configured.</div>
                     )}
             </div>
+
+            <div className="space-y-4">
+                 <h3 className="font-semibold text-lg">Roles</h3>
+                 {(instance.roles && instance.roles.length > 0) ? (
+                    <TooltipProvider>
+                      <div className="flex flex-wrap gap-2">
+                          {instance.roles.map(role => (
+                              <Tooltip key={role.id}>
+                                <TooltipTrigger asChild>
+                                  <Link to={`/organization/${instance.organization.id}/roles/${role.id}`}>
+                                    <Badge variant="secondary" className="cursor-pointer hover:opacity-80 transition-opacity">
+                                        {role.identifier}
+                                    </Badge>
+                                  </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{role.description}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                          ))}
+                      </div>
+                    </TooltipProvider>
+                 ) : (
+                    <div className="text-muted-foreground text-sm italic">No roles assigned.</div>
+                 )}
+            </div>
+
+             <div className="space-y-4">
+                 <h3 className="font-semibold text-lg">Scopes</h3>
+                 {(instance.scopes && instance.scopes.length > 0) ? (
+                     <TooltipProvider>
+                       <div className="flex flex-wrap gap-2">
+                          {instance.scopes.map(scope => (
+                              <Tooltip key={scope.id}>
+                                <TooltipTrigger asChild>
+                                  <Link to={`/organization/${instance.organization.id}/scopes/${scope.id}`}>
+                                    <Badge variant="outline" className="cursor-pointer hover:opacity-80 transition-opacity">
+                                        {scope.identifier}
+                                    </Badge>
+                                  </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{scope.description}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                          ))}
+                      </div>
+                     </TooltipProvider>
+                 ) : (
+                    <div className="text-muted-foreground text-sm italic">No scopes assigned.</div>
+                 )}
+            </div>
             
              <div className="space-y-4">
                  <h3 className="font-semibold text-lg">Details</h3>
@@ -220,7 +278,7 @@ export default function ServiceInstance() {
                          {instance.device && (
                             <div className="flex justify-between items-center">
                                 <span className="font-medium">Device</span>
-                                <Link to={`/devices/${instance.device.id}`} className="flex items-center gap-1 text-sm text-primary hover:underline">
+                                <Link to={`/organization/${instance.organization.id}/devices/${instance.device.id}`} className="flex items-center gap-1 text-sm text-primary hover:underline">
                                     {instance.device.name}
                                     <ArrowRight className="h-3 w-3" />
                                 </Link>
@@ -237,6 +295,7 @@ export default function ServiceInstance() {
                  </Card>
             </div>
         </div>
+      </div>
     </div>
   )
 }

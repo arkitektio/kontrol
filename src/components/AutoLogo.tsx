@@ -147,7 +147,6 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
         <PerspectiveCamera makeDefault position={[0, 0, size]} />
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={0.5} />
-        <Environment preset={isDark ? "night" : "city"} />
 
         <group>
            {shapesData.map((shape, index) => (

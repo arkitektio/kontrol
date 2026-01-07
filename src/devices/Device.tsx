@@ -1,23 +1,88 @@
-import { useParams, Link } from "react-router-dom"
-import { useGetDeviceQuery } from "../api/graphql"
+import { useParams, Link, useNavigate } from "react-router-dom"
+import { useGetDeviceQuery, useUpdateDeviceMutation, useDeleteDeviceMutation } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { Laptop, Smartphone, Tablet } from "lucide-react"
+import { Laptop, Smartphone, Tablet, Pencil, Trash2 } from "lucide-react"
 import { AddToGroupDialog } from "./AddToGroupDialog"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
+import { Button } from "../components/ui/button"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "../components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "../components/ui/alert-dialog"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import { useState } from "react"
+import { toast } from "sonner"
 
 export default function Device() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { data, loading, error, refetch } = useGetDeviceQuery({
     variables: { id: id! },
     skip: !id,
   })
+
+  const [updateDevice] = useUpdateDeviceMutation()
+  const [deleteDevice] = useDeleteDeviceMutation()
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [name, setName] = useState("")
 
   if (loading) return <div className="p-4">Loading...</div>
   if (error) return <div className="p-4">Error: {error.message}</div>
   if (!data?.device) return <div className="p-4">Device not found</div>
 
   const device = data.device
+
+  const handleUpdate = async () => {
+    try {
+        await updateDevice({
+            variables: {
+                input: {
+                    id: device.id,
+                    name: name
+                }
+            }
+        })
+        toast.success("Device updated")
+        setIsEditOpen(false)
+        refetch()
+    } catch (e: any) {
+        toast.error("Failed to update device: " + e.message)
+    }
+  }
+
+  const handleDelete = async () => {
+      try {
+          await deleteDevice({
+              variables: {
+                  input: {
+                      id: device.id
+                  }
+              }
+          })
+          toast.success("Device deleted")
+          navigate("/devices")
+      } catch (e: any) {
+          toast.error("Failed to delete device: " + e.message)
+      }
+  }
 
   // Helper function to get device icon
   const getDeviceIcon = (name: string | undefined) => {
@@ -42,7 +107,57 @@ export default function Device() {
                   <p className="text-muted-foreground text-sm font-mono">{device.nodeId}</p>
                 </div>
               </div>
-              <AddToGroupDialog deviceId={device.id} currentGroups={device.deviceGroups} onSuccess={() => refetch()} />
+              <div className="flex items-center gap-2">
+                  <Dialog open={isEditOpen} onOpenChange={(open) => {
+                      if (open) setName(device.name || "")
+                      setIsEditOpen(open)
+                  }}>
+                      <DialogTrigger asChild>
+                          <Button variant="outline" size="icon">
+                              <Pencil className="h-4 w-4" />
+                          </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                          <DialogHeader>
+                              <DialogTitle>Edit Device</DialogTitle>
+                              <DialogDescription>Update the device details.</DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                  <Label htmlFor="name">Name</Label>
+                                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                              </div>
+                          </div>
+                          <DialogFooter>
+                              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                              <Button onClick={handleUpdate}>Save Changes</Button>
+                          </DialogFooter>
+                      </DialogContent>
+                  </Dialog>
+
+                  <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="icon">
+                              <Trash2 className="h-4 w-4" />
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the device
+                                  and remove it from all groups.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <AddToGroupDialog deviceId={device.id} currentGroups={device.deviceGroups} onSuccess={() => refetch()} />
+              </div>
         </CardHeader>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

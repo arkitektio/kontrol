@@ -7,6 +7,6 @@ query InviteByCode($code: String!) {
 
 query GetInvite($id: ID!) {
   invite(id: $id) {
-    ...Invite
+    ...DetailInvite
   }
 }

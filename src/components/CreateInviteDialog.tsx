@@ -21,6 +21,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useCreateInviteMutation } from "../api/graphql";
+import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 
 const formSchema = z.object({
   expiresInDays: z.coerce.number().min(1).default(1),
@@ -31,7 +33,7 @@ interface CreateInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organizationId: string;
-  availableRoles: { identifier: string; id: string }[];
+  availableRoles: { identifier: string; id: string; description?: string | null }[];
 }
 
 export const CreateInviteDialog = ({
@@ -40,6 +42,9 @@ export const CreateInviteDialog = ({
   organizationId,
   availableRoles,
 }: CreateInviteDialogProps) => {
+  const [createdInviteToken, setCreatedInviteToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const [createInvite] = useCreateInviteMutation({
     refetchQueries: ['Organization']
   });
@@ -61,21 +66,60 @@ export const CreateInviteDialog = ({
           roles: values.roles,
         },
       },
-    }).then(() => {
-      onOpenChange(false);
-      form.reset();
+    }).then((res) => {
+      if (res.data?.createInvite?.token) {
+        setCreatedInviteToken(res.data.createInvite.token);
+      }
     });
   };
 
+  const handleCopy = () => {
+    if (createdInviteToken) {
+        const url = `${window.location.origin}/invite/${createdInviteToken}`;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleClose = () => {
+    setCreatedInviteToken(null);
+    form.reset();
+    onOpenChange(false);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Invite</DialogTitle>
+          <DialogTitle>{createdInviteToken ? "Invite Created" : "Create Invite"}</DialogTitle>
           <DialogDescription>
-            Create a new invite link for this organization.
+            {createdInviteToken 
+                ? "Share this link with the person you want to invite." 
+                : "Create a new invite link for this organization."}
           </DialogDescription>
         </DialogHeader>
+
+        {createdInviteToken ? (
+            <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                    <div className="grid flex-1 gap-2">
+                        <Input
+                            readOnly
+                            value={`${window.location.origin}/invite/${createdInviteToken}`}
+                        />
+                    </div>
+                    <Button type="submit" size="sm" className="px-3" onClick={handleCopy}>
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleClose}>
+                        Done
+                    </Button>
+                </DialogFooter>
+            </div>
+        ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -124,9 +168,16 @@ export const CreateInviteDialog = ({
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal">
-                              {role.identifier}
-                            </FormLabel>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-normal">
+                                {role.identifier}
+                              </FormLabel>
+                              {role.description && (
+                                <p className="text-sm text-muted-foreground">
+                                  {role.description}
+                                </p>
+                              )}
+                            </div>
                           </FormItem>
                         );
                       }}
@@ -141,6 +192,7 @@ export const CreateInviteDialog = ({
             </DialogFooter>
           </form>
         </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

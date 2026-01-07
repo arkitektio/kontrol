@@ -71,7 +71,7 @@ export default function OrganizationDashboard() {
             <div>
                 <h2 className="text-xl font-semibold mb-4">Services</h2>
                 {hasServices ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 flex flex-col gap-2">
                          {latestServices.map(service => (
                             <ServiceInstanceCard key={service.id} instance={service} />
                         ))}

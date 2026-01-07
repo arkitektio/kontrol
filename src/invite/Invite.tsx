@@ -126,6 +126,35 @@ export default function Invite() {
                 </div>
             )}
 
+            {invite.createdMemberships && invite.createdMemberships.length > 0 && (
+                <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Created Memberships ({invite.createdMemberships.length})</p>
+                    <div className="space-y-2">
+                        {invite.createdMemberships.map((membership) => (
+                            <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8 border">
+                                        <AvatarImage src={membership.user.profile?.avatar?.presignedUrl || undefined} />
+                                        <AvatarFallback className="text-xs">{membership.user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-medium text-sm">{membership.user.username}</p>
+                                        <p className="text-xs text-muted-foreground">{membership.user.email}</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    {membership.roles.map((role) => (
+                                        <Badge key={role.id} variant="secondary">
+                                            {role.identifier}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
         </CardContent>
         <CardFooter className="justify-between border-t pt-6">
             <Button variant="ghost" onClick={() => navigate(-1)}>Back</Button>

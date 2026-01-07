@@ -28,7 +28,7 @@ export default function Scope() {
               </div>
         </CardHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
             {scope.creatingInstance && (
                 <div className="space-y-4">
                      <h3 className="font-semibold text-lg">Creating Instance</h3>
@@ -51,6 +51,17 @@ export default function Scope() {
                     </CardContent>
                  </Card>
             </div>
+
+            {scope.usedBy && scope.usedBy.length > 0 && (
+                <div className="space-y-4">
+                     <h3 className="font-semibold text-lg">Used By Service Instances ({scope.usedBy.length})</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {scope.usedBy.map(instance => (
+                            <ServiceInstanceCard key={instance.id} instance={instance} />
+                        ))}
+                     </div>
+                </div>
+            )}
         </div>
     </div>
   )

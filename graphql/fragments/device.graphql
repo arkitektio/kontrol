@@ -8,6 +8,9 @@ fragment Device on ManagementDevice {
   deviceGroups {
     ...ListDeviceGroup
   }
+  serviceInstances {
+    ...ListServiceInstance
+  }
 }
 
 fragment DetailDevice on ManagementDevice {

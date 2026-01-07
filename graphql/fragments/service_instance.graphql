@@ -18,6 +18,9 @@ fragment ServiceInstance on ManagementServiceInstance {
     id
     name
   }
+  organization {
+    id
+  }
 
   allowedUsers {
     ...ListUser
@@ -33,6 +36,16 @@ fragment ServiceInstance on ManagementServiceInstance {
   }
   logo {
     presignedUrl
+  }
+  roles {
+    id
+    identifier
+    description
+  }
+  scopes {
+    id
+    identifier
+    description
   }
 }
 

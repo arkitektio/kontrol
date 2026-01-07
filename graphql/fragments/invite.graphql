@@ -44,3 +44,54 @@ fragment Invite on ManagementInvite {
   createdAt
   expiresAt
 }
+
+
+fragment DetailInvite on ManagementInvite {
+  id
+  token
+  createdBy {
+    id
+    username
+    profile {
+      id
+      avatar {
+        presignedUrl
+      }
+    }
+  }
+  createdFor {
+    ...Organization
+  }
+  acceptedBy {
+    id
+    username
+    profile {
+      id
+      avatar {
+        presignedUrl
+      }
+    }
+  }
+  createdMemberships {
+    id
+    roles {
+      identifier
+      id
+    }
+    user {
+      id
+      username
+      email
+      profile {
+        id
+        avatar {
+          presignedUrl
+        }
+      }
+    }
+  }
+  status
+  inviteUrl
+  createdAt
+  expiresAt
+}
