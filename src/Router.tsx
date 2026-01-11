@@ -89,6 +89,7 @@ import Layers from './layers/Layers'
 import Scope from './scopes/Scope'
 import Scopes from './scopes/Scopes'
 import Callback from './Callback'
+import Authorize from './oauth/Authorize'
 import { AnonymousLayout } from './components/layouts/AnonymousLayout'
 
 
@@ -120,9 +121,6 @@ function createRouter () {
           ]
 
         },
-
-
-
         {
           element: <ManagementLayout />,
           children: [
@@ -289,6 +287,11 @@ function createRouter () {
               path: '/invite/:code',
               element: <AuthenticatedRoute><InvitePage /></AuthenticatedRoute>
             },
+
+        {
+          path: '/authorize',
+          element: <AuthenticatedRoute><Authorize /></AuthenticatedRoute>
+        },
           ]
         },
         // Organization Routes

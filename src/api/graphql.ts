@@ -28,6 +28,15 @@ export type Scalars = {
   _Any: { input: any; output: any; }
 };
 
+export type AcceptAuthorizeCodeInput = {
+  clientId: Scalars['String']['input'];
+  nonce?: InputMaybe<Scalars['String']['input']>;
+  organization: Scalars['String']['input'];
+  redirectUri: Scalars['String']['input'];
+  scope: Scalars['String']['input'];
+  state: Scalars['String']['input'];
+};
+
 export type AcceptCompositionDeviceCodeInput = {
   deviceCode: Scalars['ID']['input'];
   organization: Scalars['ID']['input'];
@@ -111,6 +120,12 @@ export type CreateOrganizationProfileInput = {
 export type CreateProfileInput = {
   name: Scalars['String']['input'];
   user: Scalars['ID']['input'];
+};
+
+export type DeclineAuthorizeCodeInput = {
+  clientId: Scalars['String']['input'];
+  redirectUri: Scalars['String']['input'];
+  state: Scalars['String']['input'];
 };
 
 export type DeclineCompositionDeviceCodeInput = {
@@ -764,6 +779,18 @@ export type ManagementMembershipOrder = {
   createdAt?: InputMaybe<Ordering>;
   lastReportedAt?: InputMaybe<Ordering>;
   name?: InputMaybe<Ordering>;
+};
+
+/** An Organization is a group of users that can work together on a project. */
+export type ManagementOAuth2Client = {
+  __typename?: 'ManagementOAuth2Client';
+  authorizationGrantType: Scalars['String']['output'];
+  clientId: Scalars['String']['output'];
+  clientType: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  redirectUris: Scalars['String']['output'];
+  skipAuthorization: Scalars['Boolean']['output'];
 };
 
 /**
@@ -1436,6 +1463,7 @@ export type ManagementUserMembershipsArgs = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  acceptAuthorizeCode: Scalars['String']['output'];
   acceptCompositionDeviceCode: ManagementComposition;
   acceptDeviceCode: ManagementClient;
   acceptInvite: ManagementMembership;
@@ -1451,6 +1479,7 @@ export type Mutation = {
   createOrganization: ManagementOrganization;
   createOrganizationProfile: ManagementOrganizationProfile;
   createProfile: ManagementProfile;
+  declineAuthorizeCode: Scalars['String']['output'];
   declineCompositionDeviceCode: ManagementCompositionDeviceCode;
   declineDeviceCode: ManagementDeviceCode;
   /** Decline an invite to join an organization. */
@@ -1473,6 +1502,11 @@ export type Mutation = {
   updateOrganization: ManagementOrganization;
   updateOrganizationProfile: ManagementOrganizationProfile;
   updateProfile: ManagementProfile;
+};
+
+
+export type MutationAcceptAuthorizeCodeArgs = {
+  input: AcceptAuthorizeCodeInput;
 };
 
 
@@ -1549,6 +1583,11 @@ export type MutationCreateOrganizationProfileArgs = {
 
 export type MutationCreateProfileArgs = {
   input: CreateProfileInput;
+};
+
+
+export type MutationDeclineAuthorizeCodeArgs = {
+  input: DeclineAuthorizeCodeInput;
 };
 
 
@@ -1731,6 +1770,7 @@ export type Query = {
   me: ManagementUser;
   membership: ManagementMembership;
   memberships: Array<ManagementMembership>;
+  oauth2ClientByClientId: ManagementOAuth2Client;
   organization: ManagementOrganization;
   organizations: Array<ManagementOrganization>;
   redeemTokens: Array<ManagementRedeemToken>;
@@ -1893,6 +1933,11 @@ export type QueryMembershipsArgs = {
   filters?: InputMaybe<ManagementMembershipFilter>;
   order?: InputMaybe<ManagementMembershipOrder>;
   pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryOauth2ClientByClientIdArgs = {
+  clientId: Scalars['String']['input'];
 };
 
 
@@ -2222,6 +2267,8 @@ export type MembershipFragment = { __typename?: 'ManagementMembership', id: stri
 
 export type ListMembershipFragment = { __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, latestClients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, latestServices: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } };
 
+export type Oauth2ClientFragment = { __typename?: 'ManagementOAuth2Client', id: string, name: string, clientId: string, redirectUris: string };
+
 export type OrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> };
 
 export type ListOrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name: string, slug: string };
@@ -2493,6 +2540,13 @@ export type DeleteMembershipMutationVariables = Exact<{
 
 export type DeleteMembershipMutation = { __typename?: 'Mutation', deleteMembership: string };
 
+export type AcceptAuthorizeCodeMutationVariables = Exact<{
+  input: AcceptAuthorizeCodeInput;
+}>;
+
+
+export type AcceptAuthorizeCodeMutation = { __typename?: 'Mutation', acceptAuthorizeCode: string };
+
 export type CreateOrganizationMutationVariables = Exact<{
   input: CreateOrganizationInput;
 }>;
@@ -2758,6 +2812,13 @@ export type GetMembershipQueryVariables = Exact<{
 
 
 export type GetMembershipQuery = { __typename?: 'Query', membership: { __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } } };
+
+export type GetOauth2ClientByClientIdQueryVariables = Exact<{
+  clientId: Scalars['String']['input'];
+}>;
+
+
+export type GetOauth2ClientByClientIdQuery = { __typename?: 'Query', oauth2ClientByClientId: { __typename?: 'ManagementOAuth2Client', id: string, name: string, clientId: string, redirectUris: string } };
 
 export type OrganizationQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -3552,6 +3613,14 @@ export const ListMembershipFragmentDoc = gql`
   }
 }
     ${SidebarOrganizationFragmentDoc}`;
+export const Oauth2ClientFragmentDoc = gql`
+    fragment Oauth2Client on ManagementOAuth2Client {
+  id
+  name
+  clientId
+  redirectUris
+}
+    `;
 export const PresignedPostCredentialsFragmentDoc = gql`
     fragment PresignedPostCredentials on PresignedPostCredentials {
   xAmzAlgorithm
@@ -4718,6 +4787,37 @@ export function useDeleteMembershipMutation(baseOptions?: Apollo.MutationHookOpt
 export type DeleteMembershipMutationHookResult = ReturnType<typeof useDeleteMembershipMutation>;
 export type DeleteMembershipMutationResult = Apollo.MutationResult<DeleteMembershipMutation>;
 export type DeleteMembershipMutationOptions = Apollo.BaseMutationOptions<DeleteMembershipMutation, DeleteMembershipMutationVariables>;
+export const AcceptAuthorizeCodeDocument = gql`
+    mutation AcceptAuthorizeCode($input: AcceptAuthorizeCodeInput!) {
+  acceptAuthorizeCode(input: $input)
+}
+    `;
+export type AcceptAuthorizeCodeMutationFn = Apollo.MutationFunction<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>;
+
+/**
+ * __useAcceptAuthorizeCodeMutation__
+ *
+ * To run a mutation, you first call `useAcceptAuthorizeCodeMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAcceptAuthorizeCodeMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [acceptAuthorizeCodeMutation, { data, loading, error }] = useAcceptAuthorizeCodeMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useAcceptAuthorizeCodeMutation(baseOptions?: Apollo.MutationHookOptions<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>(AcceptAuthorizeCodeDocument, options);
+      }
+export type AcceptAuthorizeCodeMutationHookResult = ReturnType<typeof useAcceptAuthorizeCodeMutation>;
+export type AcceptAuthorizeCodeMutationResult = Apollo.MutationResult<AcceptAuthorizeCodeMutation>;
+export type AcceptAuthorizeCodeMutationOptions = Apollo.BaseMutationOptions<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>;
 export const CreateOrganizationDocument = gql`
     mutation CreateOrganization($input: CreateOrganizationInput!) {
   createOrganization(input: $input) {
@@ -6115,6 +6215,49 @@ export type GetMembershipQueryHookResult = ReturnType<typeof useGetMembershipQue
 export type GetMembershipLazyQueryHookResult = ReturnType<typeof useGetMembershipLazyQuery>;
 export type GetMembershipSuspenseQueryHookResult = ReturnType<typeof useGetMembershipSuspenseQuery>;
 export type GetMembershipQueryResult = Apollo.QueryResult<GetMembershipQuery, GetMembershipQueryVariables>;
+export const GetOauth2ClientByClientIdDocument = gql`
+    query GetOauth2ClientByClientId($clientId: String!) {
+  oauth2ClientByClientId(clientId: $clientId) {
+    ...Oauth2Client
+  }
+}
+    ${Oauth2ClientFragmentDoc}`;
+
+/**
+ * __useGetOauth2ClientByClientIdQuery__
+ *
+ * To run a query within a React component, call `useGetOauth2ClientByClientIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetOauth2ClientByClientIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetOauth2ClientByClientIdQuery({
+ *   variables: {
+ *      clientId: // value for 'clientId'
+ *   },
+ * });
+ */
+export function useGetOauth2ClientByClientIdQuery(baseOptions: Apollo.QueryHookOptions<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables> & ({ variables: GetOauth2ClientByClientIdQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>(GetOauth2ClientByClientIdDocument, options);
+      }
+export function useGetOauth2ClientByClientIdLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>(GetOauth2ClientByClientIdDocument, options);
+        }
+// @ts-ignore
+export function useGetOauth2ClientByClientIdSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>): Apollo.UseSuspenseQueryResult<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>;
+export function useGetOauth2ClientByClientIdSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>): Apollo.UseSuspenseQueryResult<GetOauth2ClientByClientIdQuery | undefined, GetOauth2ClientByClientIdQueryVariables>;
+export function useGetOauth2ClientByClientIdSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>(GetOauth2ClientByClientIdDocument, options);
+        }
+export type GetOauth2ClientByClientIdQueryHookResult = ReturnType<typeof useGetOauth2ClientByClientIdQuery>;
+export type GetOauth2ClientByClientIdLazyQueryHookResult = ReturnType<typeof useGetOauth2ClientByClientIdLazyQuery>;
+export type GetOauth2ClientByClientIdSuspenseQueryHookResult = ReturnType<typeof useGetOauth2ClientByClientIdSuspenseQuery>;
+export type GetOauth2ClientByClientIdQueryResult = Apollo.QueryResult<GetOauth2ClientByClientIdQuery, GetOauth2ClientByClientIdQueryVariables>;
 export const OrganizationDocument = gql`
     query Organization($id: ID!) {
   organization(id: $id) {

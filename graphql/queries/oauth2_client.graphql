@@ -1,0 +1,5 @@
+query GetOauth2ClientByClientId($clientId: String!) {
+  oauth2ClientByClientId(clientId: $clientId) {
+    ...Oauth2Client
+  }
+}
