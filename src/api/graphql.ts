@@ -294,7 +294,7 @@ export type ManagementClientUsedAliasesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Client(id, composition, functional, name, release, oauth2_client, kind, user, organization, redirect_uris, public, token, node, public_sources, tenant, created_at, requirements_hash, logo, last_reported_at, manifest) */
+/** Client(id, composition, functional, name, release, oauth2_client, kind, user, organization, membership, redirect_uris, public, token, node, public_sources, tenant, created_at, requirements_hash, logo, last_reported_at, manifest) */
 export type ManagementClientFilter = {
   AND?: InputMaybe<ManagementClientFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -678,10 +678,16 @@ export type ManagementLayer = {
   kind: LayerKind;
   /** The logo of the layer. This should be a url to a logo that can be used to represent the layer. */
   logo?: Maybe<ManagementMediaStore>;
+  /** A specific machine associated with this layer (only works for IonscaleLayers) */
+  machine?: Maybe<ManagementMachine>;
+  /** The machines associated with this layer (only works for IonscaleLayers) */
+  machines: Array<ManagementMachine>;
   /** The name of the layer */
   name: Scalars['String']['output'];
   /** The organization that owns this alias. */
   organization: ManagementOrganization;
+  /** The tailnet name of the layer. This is only set for Ionscale layers. */
+  tailnetName?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -692,7 +698,13 @@ export type ManagementLayerAliasesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Layer(id, name, identifier, organization, logo, description, dns_probe, get_probe, kind) */
+
+/** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
+export type ManagementLayerMachineArgs = {
+  id: Scalars['String']['input'];
+};
+
+/** IonscaleLayer(id, name, identifier, organization, logo, description, dns_probe, get_probe, kind, layer_ptr, tailnet_name) */
 export type ManagementLayerFilter = {
   AND?: InputMaybe<ManagementLayerFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -707,6 +719,19 @@ export type ManagementLayerOrder = {
   createdAt?: InputMaybe<Ordering>;
   lastReportedAt?: InputMaybe<Ordering>;
   name?: InputMaybe<Ordering>;
+};
+
+export type ManagementMachine = {
+  __typename?: 'ManagementMachine';
+  connected: Scalars['Boolean']['output'];
+  ephemeral: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  ipv4?: Maybe<Scalars['String']['output']>;
+  ipv6?: Maybe<Scalars['String']['output']>;
+  lastSeen?: Maybe<Scalars['DateTime']['output']>;
+  localId: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  tags: Array<Scalars['String']['output']>;
 };
 
 /**
@@ -1498,6 +1523,7 @@ export type Mutation = {
   updateAlias: ManagementInstanceAlias;
   updateComposition: ManagementComposition;
   updateDevice: ManagementDevice;
+  updateIonscaleLayer: ManagementLayer;
   updateMembership: ManagementMembership;
   updateOrganization: ManagementOrganization;
   updateOrganizationProfile: ManagementOrganizationProfile;
@@ -1676,6 +1702,11 @@ export type MutationUpdateDeviceArgs = {
 };
 
 
+export type MutationUpdateIonscaleLayerArgs = {
+  input: UpdateIonscaleLayerInput;
+};
+
+
 export type MutationUpdateMembershipArgs = {
   input: UpdateMembershipInput;
 };
@@ -1766,6 +1797,7 @@ export type Query = {
   inviteByCode: ManagementInvite;
   layer: ManagementLayer;
   layers: Array<ManagementLayer>;
+  machine: ManagementMachine;
   managementLayers: Array<ManagementLayer>;
   me: ManagementUser;
   membership: ManagementMembership;
@@ -1914,6 +1946,11 @@ export type QueryLayersArgs = {
   filters?: InputMaybe<ManagementLayerFilter>;
   order?: InputMaybe<ManagementLayerOrder>;
   pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryMachineArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -2161,6 +2198,17 @@ export type UpdateDeviceInput = {
   name: Scalars['String']['input'];
 };
 
+export type UpdateIonscaleLayerInput = {
+  /** List of membership IDs to block from accessing this layer. */
+  blockedFor?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** The description of the tailnet layer. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of the Ionscale layer to update. */
+  id: Scalars['ID']['input'];
+  /** The name of the tailnet layer. */
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateMembershipInput = {
   id: Scalars['ID']['input'];
   roles?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -2253,9 +2301,11 @@ export type InviteFragment = { __typename?: 'ManagementInvite', id: string, toke
 
 export type DetailInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> };
 
-export type LayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }> };
+export type LayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, name: string, ipv4?: string | null, ipv6?: string | null }> };
 
 export type ListLayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
+
+export type MachineFragment = { __typename?: 'ManagementMachine', id: string, name: string, ipv4?: string | null, ipv6?: string | null };
 
 export type ManifestFragment = { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> };
 
@@ -2517,7 +2567,14 @@ export type CreateIonscaleLayerMutationVariables = Exact<{
 }>;
 
 
-export type CreateIonscaleLayerMutation = { __typename?: 'Mutation', createIonscaleLayer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }> } };
+export type CreateIonscaleLayerMutation = { __typename?: 'Mutation', createIonscaleLayer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, name: string, ipv4?: string | null, ipv6?: string | null }> } };
+
+export type UpdateIonscaleLayerMutationVariables = Exact<{
+  input: UpdateIonscaleLayerInput;
+}>;
+
+
+export type UpdateIonscaleLayerMutation = { __typename?: 'Mutation', updateIonscaleLayer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, name: string, ipv4?: string | null, ipv6?: string | null }> } };
 
 export type DeleteIonscaleLayerMutationVariables = Exact<{
   input: DeleteIonscaleLayerInput;
@@ -2785,7 +2842,14 @@ export type DetailLayerQueryVariables = Exact<{
 }>;
 
 
-export type DetailLayerQuery = { __typename?: 'Query', layer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }> } };
+export type DetailLayerQuery = { __typename?: 'Query', layer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, name: string, ipv4?: string | null, ipv6?: string | null }> } };
+
+export type DetailMachineQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DetailMachineQuery = { __typename?: 'Query', machine: { __typename?: 'ManagementMachine', id: string, name: string, ipv4?: string | null, ipv6?: string | null } };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3534,6 +3598,14 @@ export const DetailInviteFragmentDoc = gql`
   expiresAt
 }
     ${OrganizationFragmentDoc}`;
+export const MachineFragmentDoc = gql`
+    fragment Machine on ManagementMachine {
+  id
+  name
+  ipv4
+  ipv6
+}
+    `;
 export const LayerFragmentDoc = gql`
     fragment Layer on ManagementLayer {
   id
@@ -3545,8 +3617,12 @@ export const LayerFragmentDoc = gql`
   aliases {
     ...ListInstanceAlias
   }
+  machines {
+    ...Machine
+  }
 }
-    ${ListInstanceAliasFragmentDoc}`;
+    ${ListInstanceAliasFragmentDoc}
+${MachineFragmentDoc}`;
 export const ListLayerFragmentDoc = gql`
     fragment ListLayer on ManagementLayer {
   id
@@ -4692,6 +4768,39 @@ export function useCreateIonscaleLayerMutation(baseOptions?: Apollo.MutationHook
 export type CreateIonscaleLayerMutationHookResult = ReturnType<typeof useCreateIonscaleLayerMutation>;
 export type CreateIonscaleLayerMutationResult = Apollo.MutationResult<CreateIonscaleLayerMutation>;
 export type CreateIonscaleLayerMutationOptions = Apollo.BaseMutationOptions<CreateIonscaleLayerMutation, CreateIonscaleLayerMutationVariables>;
+export const UpdateIonscaleLayerDocument = gql`
+    mutation UpdateIonscaleLayer($input: UpdateIonscaleLayerInput!) {
+  updateIonscaleLayer(input: $input) {
+    ...Layer
+  }
+}
+    ${LayerFragmentDoc}`;
+export type UpdateIonscaleLayerMutationFn = Apollo.MutationFunction<UpdateIonscaleLayerMutation, UpdateIonscaleLayerMutationVariables>;
+
+/**
+ * __useUpdateIonscaleLayerMutation__
+ *
+ * To run a mutation, you first call `useUpdateIonscaleLayerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateIonscaleLayerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateIonscaleLayerMutation, { data, loading, error }] = useUpdateIonscaleLayerMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateIonscaleLayerMutation(baseOptions?: Apollo.MutationHookOptions<UpdateIonscaleLayerMutation, UpdateIonscaleLayerMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateIonscaleLayerMutation, UpdateIonscaleLayerMutationVariables>(UpdateIonscaleLayerDocument, options);
+      }
+export type UpdateIonscaleLayerMutationHookResult = ReturnType<typeof useUpdateIonscaleLayerMutation>;
+export type UpdateIonscaleLayerMutationResult = Apollo.MutationResult<UpdateIonscaleLayerMutation>;
+export type UpdateIonscaleLayerMutationOptions = Apollo.BaseMutationOptions<UpdateIonscaleLayerMutation, UpdateIonscaleLayerMutationVariables>;
 export const DeleteIonscaleLayerDocument = gql`
     mutation DeleteIonscaleLayer($input: DeleteIonscaleLayerInput!) {
   deleteIonscaleLayer(input: $input)
@@ -6085,6 +6194,49 @@ export type DetailLayerQueryHookResult = ReturnType<typeof useDetailLayerQuery>;
 export type DetailLayerLazyQueryHookResult = ReturnType<typeof useDetailLayerLazyQuery>;
 export type DetailLayerSuspenseQueryHookResult = ReturnType<typeof useDetailLayerSuspenseQuery>;
 export type DetailLayerQueryResult = Apollo.QueryResult<DetailLayerQuery, DetailLayerQueryVariables>;
+export const DetailMachineDocument = gql`
+    query DetailMachine($id: ID!) {
+  machine(id: $id) {
+    ...Machine
+  }
+}
+    ${MachineFragmentDoc}`;
+
+/**
+ * __useDetailMachineQuery__
+ *
+ * To run a query within a React component, call `useDetailMachineQuery` and pass it any options that fit your needs.
+ * When your component renders, `useDetailMachineQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useDetailMachineQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useDetailMachineQuery(baseOptions: Apollo.QueryHookOptions<DetailMachineQuery, DetailMachineQueryVariables> & ({ variables: DetailMachineQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<DetailMachineQuery, DetailMachineQueryVariables>(DetailMachineDocument, options);
+      }
+export function useDetailMachineLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<DetailMachineQuery, DetailMachineQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<DetailMachineQuery, DetailMachineQueryVariables>(DetailMachineDocument, options);
+        }
+// @ts-ignore
+export function useDetailMachineSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<DetailMachineQuery, DetailMachineQueryVariables>): Apollo.UseSuspenseQueryResult<DetailMachineQuery, DetailMachineQueryVariables>;
+export function useDetailMachineSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<DetailMachineQuery, DetailMachineQueryVariables>): Apollo.UseSuspenseQueryResult<DetailMachineQuery | undefined, DetailMachineQueryVariables>;
+export function useDetailMachineSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<DetailMachineQuery, DetailMachineQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<DetailMachineQuery, DetailMachineQueryVariables>(DetailMachineDocument, options);
+        }
+export type DetailMachineQueryHookResult = ReturnType<typeof useDetailMachineQuery>;
+export type DetailMachineLazyQueryHookResult = ReturnType<typeof useDetailMachineLazyQuery>;
+export type DetailMachineSuspenseQueryHookResult = ReturnType<typeof useDetailMachineSuspenseQuery>;
+export type DetailMachineQueryResult = Apollo.QueryResult<DetailMachineQuery, DetailMachineQueryVariables>;
 export const MeDocument = gql`
     query Me {
   me {

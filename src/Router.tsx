@@ -86,6 +86,7 @@ import Role from './roles/Role'
 import Roles from './roles/Roles'
 import Layer from './layers/Layer'
 import Layers from './layers/Layers'
+import Machine from './layers/Machine'
 import Scope from './scopes/Scope'
 import Scopes from './scopes/Scopes'
 import Callback from './Callback'
@@ -398,6 +399,10 @@ function createRouter () {
             {
               path: 'layers/:id',
               element: <AuthenticatedRoute><Layer /></AuthenticatedRoute>
+            },
+            {
+              path: 'layers/:layerId/machines/:id',
+              element: <AuthenticatedRoute><Machine /></AuthenticatedRoute>
             },
           ]
         },

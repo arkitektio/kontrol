@@ -1,8 +1,20 @@
 import { Link, useParams, useNavigate } from "react-router-dom"
-import { useDetailLayerQuery, useDeleteIonscaleLayerMutation } from "../api/graphql"
+import { useDetailLayerQuery, useDeleteIonscaleLayerMutation, useUpdateIonscaleLayerMutation } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
-import { Layers as LayersIcon, Trash2 } from "lucide-react"
+import { Layers as LayersIcon, Trash2, Pencil } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,11 +42,43 @@ export default function Layer() {
     refetchQueries: ['Layers']
   })
 
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+
+  const [updateLayer, { loading: updating }] = useUpdateIonscaleLayerMutation({
+    refetchQueries: ['DetailLayer']
+  })
+
+  useEffect(() => {
+    if (data?.layer) {
+      setName(data.layer.name || "")
+      setDescription(data.layer.description || "")
+    }
+  }, [data])
+
   if (loading) return <div className="p-4">Loading...</div>
   if (error) return <div className="p-4">Error: {error.message}</div>
   if (!data?.layer) return <div className="p-4">Layer not found</div>
 
   const layer = data.layer
+
+  const handleUpdate = async () => {
+    try {
+      await updateLayer({
+        variables: {
+          input: {
+            id: layer.id,
+            name,
+            description
+          }
+        }
+      })
+      setUpdateDialogOpen(false)
+    } catch (e) {
+      console.error("Error updating layer:", e)
+    }
+  }
 
   const handleDelete = async () => {
     try {
@@ -71,6 +115,53 @@ export default function Layer() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Update Layer</DialogTitle>
+                  <DialogDescription>
+                    Update the layer details.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="description" className="text-right">
+                      Description
+                    </Label>
+                    <Input
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="secondary" onClick={() => setUpdateDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleUpdate} disabled={updating}>
+                    {updating ? "Updating..." : "Update"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="icon">
@@ -105,6 +196,24 @@ export default function Layer() {
                     ))}
                     {(!layer.aliases || layer.aliases.length === 0) && (
                         <div className="text-muted-foreground">No services in this layer</div>
+                    )}
+                 </div>
+             </div>
+
+             <div className="mt-6">
+                <h3 className="text-lg font-medium mb-4">Machines</h3>
+                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {layer.machines?.map((machine: any) => (
+                        <Link key={machine.id} to={`/organization/${orgId}/layers/${layer.id}/machines/${machine.id}`}>
+                            <Card className="p-4 hover:bg-muted/50 transition-colors">
+                                <div className="font-medium">{machine.name}</div>
+                                <div className="text-sm text-muted-foreground">{machine.ipv4}</div>
+                                <div className="text-sm text-muted-foreground">{machine.ipv6}</div>
+                            </Card>
+                        </Link>
+                    ))}
+                    {(!layer.machines || layer.machines.length === 0) && (
+                        <div className="text-muted-foreground">No machines in this layer</div>
                     )}
                  </div>
              </div>

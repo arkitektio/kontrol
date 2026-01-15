@@ -202,7 +202,7 @@ export default function Login () {
           </div>
         </div>
       </div>
-      <div className="fixed top-0 right-0 h-screen w-[40vw] lg:block">
+      <div className="fixed top-0 right-0 h-screen w-[40vw] lg:block hidden">
          <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 py-10" />
         <ServiceLogo service={"arkitekt.live"} />
       </div>

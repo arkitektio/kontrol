@@ -1,0 +1,10 @@
+fragment Machine on ManagementMachine {
+    id
+    name
+    ipv4
+    ipv6
+    connected
+    ephemeral
+    lastSeen
+    tags
+}

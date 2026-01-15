@@ -8,6 +8,9 @@ fragment Layer on ManagementLayer {
   aliases {
     ...ListInstanceAlias
   }
+  machines {
+    ...Machine
+  }
 }
 
 fragment ListLayer on ManagementLayer {

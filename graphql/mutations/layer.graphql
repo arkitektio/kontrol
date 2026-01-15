@@ -4,6 +4,14 @@ mutation CreateIonscaleLayer($input: CreateIonscaleLayerInput!) {
   }
 }
 
+mutation UpdateIonscaleLayer($input: UpdateIonscaleLayerInput!) {
+  updateIonscaleLayer(input: $input) {
+    ...Layer
+  }
+}
+
+
+
 mutation DeleteIonscaleLayer($input: DeleteIonscaleLayerInput!) {
   deleteIonscaleLayer(input: $input) 
 }

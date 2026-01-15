@@ -2,9 +2,9 @@ FROM node:22
 
 WORKDIR /workspace/
 COPY package.json .
+COPY . . 
 COPY yarn.lock .
 RUN yarn install
-COPY . . 
 EXPOSE 80
 
     

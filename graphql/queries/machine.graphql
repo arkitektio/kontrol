@@ -1,0 +1,6 @@
+
+query DetailMachine($id: ID!) {
+  machine(id: $id) {
+    ...Machine
+  }
+}

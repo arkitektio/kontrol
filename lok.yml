@@ -1,6 +1,6 @@
 overwrite: true
 schema: 
-  http://jhnnsrs-lab/lok/managementschema/:
+  https://go.arkitekt.live/lok/managementschema/:
       handleAsSDL: true
 documents: "graphql/**/*.graphql"
 generates:
