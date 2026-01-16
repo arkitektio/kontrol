@@ -31,6 +31,7 @@ import { DetailLayout } from './components/layouts/DetailLayout'
 import { ManagementLayout } from './components/layouts/ManagementLayout'
 import { OrganizationLayout } from './components/layouts/OrganizationLayout'
 import { ProfileLayout } from './components/layouts/ProfileLayout'
+import { LandingLayout } from './components/layouts/LandingLayout'
 import RootLayout, { ErrorLayout } from './components/RootLayout'
 import { ConfigurePage, } from './device/ConfigurePage'
 import Device from './devices/Device'
@@ -38,6 +39,7 @@ import DeviceGroup from './devices/DeviceGroup'
 import DeviceGroups from './devices/DeviceGroups'
 import Devices from './devices/Devices'
 import Home from './Home'
+import Landing from './Landing'
 import Invite from './invite/Invite'
 import { InvitePage } from './invite/InvitePage'
 import Invites from './invite/Invites'
@@ -110,6 +112,15 @@ function createRouter () {
       errorElement: <RouterErrorBoundary />,
       children: [
         {
+          element: <LandingLayout />,
+          children: [
+            {
+              path: '/',
+              element: <Landing />
+            },
+          ]
+        },
+        {
           element: <AnonymousLayout />,
           children: [
             {
@@ -127,7 +138,7 @@ function createRouter () {
           element: <ManagementLayout />,
           children: [
             {
-              path: '/',
+              path: '/home',
               element: <AuthenticatedRoute><Home /></AuthenticatedRoute>
             },
             {

@@ -7,7 +7,7 @@ import { Flows, AuthenticatorType } from '../lib/allauth'
 
 export const URLs = Object.freeze({
   LOGIN_URL: '/account/login',
-  LOGIN_REDIRECT_URL: '/',
+  LOGIN_REDIRECT_URL: '/home',
   LOGOUT_REDIRECT_URL: '/'
 })
 
