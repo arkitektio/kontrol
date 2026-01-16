@@ -2,32 +2,36 @@ import { Link } from "react-router-dom"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
 import { Code, Shield, Network, Zap, ArrowRight, Github } from "lucide-react"
-import { DynamicArkitektLogo } from "./logos/ArkitektLogo"
+import OrganicLogo from "./components/OrganicLogo"
 
 export default function Landing() {
     return (
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col relative">
+            {/* Animated Background - fixed position */}
+            <div className="fixed top-0 right-0 h-screen w-[80vw] lg:block hidden pointer-events-none z-0">
+                <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10" />
+                <OrganicLogo 
+                    count={8} 
+                    color="#6f5cde"
+                    connectionDistance={3.5}
+                    wanderSpeed={0.4}
+                />
+            </div>
+            
             {/* Hero Section */}
-            <section className="relative flex flex-col items-center justify-center px-8 py-24 md:py-32 text-center overflow-hidden">
-                {/* Gradient Background */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-                <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
+            <section className="relative flex flex-col items-start justify-start px-8 py-24 md:py-32 overflow-hidden z-20">
                 
-                <div className="max-w-4xl mx-auto space-y-8">
-                    <div className="h-32 w-32 flex items-center justify-center mx-auto">
-                     <DynamicArkitektLogo width={"100%"} height={"100%"}/>
-                     </div>
-                    
+                <div className="max-w-4xl space-y-8">
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
                         Connect your Lab
                         <span className="block text-primary  text-5xl font-light">Instantly</span>
                     </h1>
                     
-                    <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+                    <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl">
                         Connect your devices, deploy services, and manage your lab infrastructure with built-in authentication and peer-to-peer networking.
                     </p>
                     
-                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                    <div className="flex flex-col sm:flex-row gap-4 items-start">
                         <Button size="lg" className="text-lg px-8 py-6" asChild>
                             <Link to="/account/signup">
                                 Get Started
@@ -50,15 +54,15 @@ export default function Landing() {
             </section>
 
             {/* Features Section */}
-            <section className="px-8 py-16 ">
-                <div className="max-w-6xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            <section className="relative px-8 py-16 z-20">
+                <div className="max-w-6xl">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-12">
                         Everything You Need, Out of the Box
                     </h2>
                     
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {/* Feature Card 1 */}
-                        <Card className="border-2 hover:border-primary/50 transition-colors">
+                        <Card className="border-2 hover:border-primary/50 transition-colors bg-muted/50">
                             <CardHeader>
                                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                     <Code className="h-6 w-6 text-primary" />
@@ -73,7 +77,7 @@ export default function Landing() {
                         </Card>
 
                         {/* Feature Card 2 */}
-                        <Card className="border-2 hover:border-primary/50 transition-colors">
+                        <Card className="border-2 hover:border-primary/50 transition-colors bg-muted/50">
                             <CardHeader>
                                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                     <Network className="h-6 w-6 text-primary" />
@@ -88,7 +92,7 @@ export default function Landing() {
                         </Card>
 
                         {/* Feature Card 3 */}
-                        <Card className="border-2 hover:border-primary/50 transition-colors">
+                        <Card className="border-2 hover:border-primary/50 transition-colors bg-muted/50">
                             <CardHeader>
                                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                     <Shield className="h-6 w-6 text-primary" />
@@ -103,7 +107,7 @@ export default function Landing() {
                         </Card>
 
                         {/* Feature Card 4 */}
-                        <Card className="border-2 hover:border-primary/50 transition-colors">
+                        <Card className="border-2 hover:border-primary/50 transition-colors bg-muted/50">
                             <CardHeader>
                                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                     <Zap className="h-6 w-6 text-primary" />
@@ -121,9 +125,9 @@ export default function Landing() {
             </section>
 
             {/* Video Demo Section */}
-            <section className="px-8 py-16">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-12">
+            <section className="relative px-8 py-16 z-20">
+                <div className="max-w-6xl">
+                    <div className="mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4">
                             See It In Action
                         </h2>
@@ -195,7 +199,7 @@ export default function Landing() {
                     </div>
 
                     {/* Additional Info */}
-                    <div className="mt-12 text-center">
+                    <div className="mt-12">
                         <p className="text-muted-foreground mb-6">
                             Ready to start managing your lab infrastructure?
                         </p>
@@ -210,15 +214,15 @@ export default function Landing() {
             </section>
 
             {/* Footer CTA */}
-            <section className="px-8 py-16 bg-primary/5">
-                <div className="max-w-4xl mx-auto text-center space-y-6">
+            <section className="relative px-8 py-16 bg-primary/5 z-20">
+                <div className="max-w-4xl space-y-6">
                     <h2 className="text-3xl md:text-4xl font-bold">
                         Join the Community
                     </h2>
                     <p className="text-xl text-muted-foreground">
                         Kontrol is built by scientists, for scientists. Open source, forever free.
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                    <div className="flex flex-col sm:flex-row gap-4 items-start">
                         <Button variant="outline" size="lg" asChild>
                             <a href="https://github.com/arkitektio/kontrol" target="_blank" rel="noopener noreferrer">
                                 <Github className="mr-2 h-5 w-5" />

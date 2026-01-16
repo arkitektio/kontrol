@@ -1,5 +1,7 @@
 import {
-  LayoutDashboard
+  LayoutDashboard,
+  Book,
+  UserPlus
 } from "lucide-react"
 
 import { Separator } from "@/components/ui/separator"
@@ -11,7 +13,8 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem
+  SidebarMenuItem,
+  SidebarFooter
 } from "@/components/ui/sidebar"
 import { DynamicArkitektLogo } from "@/logos/ArkitektLogo"
 import { Link, useLocation } from "react-router-dom"
@@ -55,10 +58,10 @@ export function AnonymousSidebar() {
                       asChild
                       className="px-2.5 md:px-2"
                     >
-                    <Link to="/">
-                        <LayoutDashboard />
-                        <span>Documentaiton</span>
-                    </Link>
+                    <a href="https://github.com/arkitektio/kontrol#readme" target="_blank" rel="noopener noreferrer">
+                        <Book />
+                        <span>Documentation</span>
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 
@@ -68,6 +71,25 @@ export function AnonymousSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={{
+                  children: "Sign up",
+                  hidden: false,
+                }}
+                asChild
+                className="px-2.5 md:px-2"
+              >
+                <Link to="/account/signup">
+                  <UserPlus />
+                  <span>Sign up</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
   )
 }
