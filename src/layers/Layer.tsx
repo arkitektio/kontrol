@@ -1,11 +1,13 @@
 import { Link, useParams, useNavigate } from "react-router-dom"
-import { useDetailLayerQuery, useDeleteIonscaleLayerMutation, useUpdateIonscaleLayerMutation } from "../api/graphql"
+import { useDetailLayerQuery, useDeleteIonscaleLayerMutation, useUpdateIonscaleLayerMutation, useCreateIonscaleAuthKeyMutation } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
-import { Layers as LayersIcon, Trash2, Pencil } from "lucide-react"
+import { Layers as LayersIcon, Trash2, Pencil, Key, Plus } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import { Checkbox } from "../components/ui/checkbox"
+import { Badge } from "../components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -50,6 +52,14 @@ export default function Layer() {
     refetchQueries: ['DetailLayer']
   })
 
+  const [createAuthKey, { loading: creatingKey }] = useCreateIonscaleAuthKeyMutation({
+    refetchQueries: ['DetailLayer']
+  })
+
+  const [createKeyDialogOpen, setCreateKeyDialogOpen] = useState(false)
+  const [newKeyEphemeral, setNewKeyEphemeral] = useState(false)
+  const [newKeyTags, setNewKeyTags] = useState("")
+
   useEffect(() => {
     if (data?.layer) {
       setName(data.layer.name || "")
@@ -77,6 +87,25 @@ export default function Layer() {
       setUpdateDialogOpen(false)
     } catch (e) {
       console.error("Error updating layer:", e)
+    }
+  }
+
+  const handleCreateKey = async () => {
+    try {
+        await createAuthKey({
+            variables: {
+                input: {
+                    layerId: layer.id,
+                    ephemeral: newKeyEphemeral,
+                    tags: newKeyTags.split(",").map(t => t.trim()).filter(t => t.length > 0)
+                }
+            }
+        })
+        setCreateKeyDialogOpen(false)
+        setNewKeyEphemeral(false)
+        setNewKeyTags("")
+    } catch (e) {
+        console.error("Error creating auth key:", e)
     }
   }
 
@@ -214,6 +243,89 @@ export default function Layer() {
                     ))}
                     {(!layer.machines || layer.machines.length === 0) && (
                         <div className="text-muted-foreground">No machines in this layer</div>
+                    )}
+                 </div>
+             </div>
+
+             <div className="mt-6 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Auth Keys</h3>
+                    <Dialog open={createKeyDialogOpen} onOpenChange={setCreateKeyDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="sm">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create Auth Key
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Create Auth Key</DialogTitle>
+                                <DialogDescription>
+                                    Create a new auth key for this layer.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="tags" className="text-right">
+                                        Tags
+                                    </Label>
+                                    <Input
+                                        id="tags"
+                                        placeholder="tag:value, tag2"
+                                        value={newKeyTags}
+                                        onChange={(e) => setNewKeyTags(e.target.value)}
+                                        className="col-span-3"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="ephemeral" className="text-right">
+                                        Ephemeral
+                                    </Label>
+                                    <div className="col-span-3 flex items-center space-x-2">
+                                        <Checkbox 
+                                            id="ephemeral" 
+                                            checked={newKeyEphemeral}
+                                            onCheckedChange={(checked) => setNewKeyEphemeral(checked === true)}
+                                        />
+                                        <label
+                                            htmlFor="ephemeral"
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            Ephemeral keys are automatically removed when offline.
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="secondary" onClick={() => setCreateKeyDialogOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleCreateKey} disabled={creatingKey}>
+                                    {creatingKey ? "Creating..." : "Create"}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {layer.authKeys?.map((key: any) => (
+                        <Link key={key.id} to={`/organization/${orgId}/layers/${layer.id}/authkeys/${key.id}`}>
+                            <Card className="p-4 hover:bg-muted/50 transition-colors">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Key className="h-4 w-4 text-muted-foreground" />
+                                    <div className="font-medium truncate">{key.key}</div>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                    {key.ephemeral && <Badge variant="outline" className="text-xs">Ephemeral</Badge>}
+                                    {key.tags?.map((tag: string) => (
+                                        <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                                    ))}
+                                </div>
+                            </Card>
+                        </Link>
+                    ))}
+                    {(!layer.authKeys || layer.authKeys.length === 0) && (
+                        <div className="text-muted-foreground">No auth keys in this layer</div>
                     )}
                  </div>
              </div>

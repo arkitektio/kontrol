@@ -11,6 +11,9 @@ fragment Layer on ManagementLayer {
   machines {
     ...Machine
   }
+  authKeys {
+    ...ListIonscaleAuthKey
+  }
 }
 
 fragment ListLayer on ManagementLayer {

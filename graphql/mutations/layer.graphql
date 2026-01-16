@@ -10,8 +10,12 @@ mutation UpdateIonscaleLayer($input: UpdateIonscaleLayerInput!) {
   }
 }
 
-
-
 mutation DeleteIonscaleLayer($input: DeleteIonscaleLayerInput!) {
   deleteIonscaleLayer(input: $input) 
+}
+
+mutation CreateIonscaleAuthKey($input: CreateIonscaleAuthKeyInput!) {
+  createIonscaleAuthKey(input: $input) {
+    ...IonscaleAuthKey
+  }
 }

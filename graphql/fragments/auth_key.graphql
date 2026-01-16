@@ -1,0 +1,23 @@
+fragment IonscaleAuthKey on ManagementIonscaleAuthKey {
+    id
+    key
+    createdAt
+    ephemeral
+    tags
+    creator {
+      id  
+      email
+    }
+}
+
+fragment ListIonscaleAuthKey on ManagementIonscaleAuthKey {
+    id
+    key
+    createdAt
+    ephemeral
+    tags
+    creator {
+      id  
+      email
+    }
+}

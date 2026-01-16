@@ -1,0 +1,11 @@
+query IonscaleAuthKey($filters: ManagementIonscaleAuthKeyFilter, $pagination: OffsetPaginationInput, $order: ManagementIonscaleAuthKeyOrder) {
+  ionscaleAuthKeys(filters: $filters, pagination: $pagination, order: $order) {
+    ...IonscaleAuthKey
+  }
+}
+
+query GetAuthKey($id: ID!) {
+  ionscaleAuthKey(id: $id) {
+    ...IonscaleAuthKey
+  }
+}

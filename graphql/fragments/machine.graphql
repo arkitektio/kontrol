@@ -1,5 +1,6 @@
 fragment Machine on ManagementMachine {
     id
+    localId
     name
     ipv4
     ipv6
@@ -8,3 +9,4 @@ fragment Machine on ManagementMachine {
     lastSeen
     tags
 }
+
