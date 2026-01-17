@@ -1,0 +1,28 @@
+# Kontrol
+
+> Control plane for lab infrastructure. connect devices, deploy services, and manage your lab.
+
+## Documentation
+
+- [Open Source](/opensource): Learn about our open source philosophy
+- [Networking](/networking): Understand how our peer-to-peer networking works
+- [Authentication](/auth): Read about our built-in authentication system
+- [Deployment](/deploy): See how service deployment and lifecycle management works
+
+## Summary
+
+Kontrol is a platform designed to manage analytical laboratory infrastructure. It acts as a central control plane that connects devices, manages identities, and creates a peer-to-peer mesh network.
+
+### Key Features
+
+#### Open Source
+Kontrol is fully open source (MIT licensed). It is designed to be auditable, extendable, and free from vendor lock-in. You can self-host the entire stack on your own hardware, ensuring data sovereignty.
+
+#### Networking
+Kontrol leverages overlay networking (Tailscale/Headscale integration) to create a secure, peer-to-peer mesh network. This allows devices to communicate directly regardless of their physical location or firewall restrictions, without requiring complex VPN setups.
+
+#### Authentication
+It serves as a Centralized Identity Provider (IdP) supporting OAuth2 and OIDC. It manages Organizations, Memberships, and Roles, offering fine-grained permissions and scopes to control access to devices and services.
+
+#### Deployment
+Kontrol manages the **connectivity** and **discovery** of services rather than their deployment. Services, running on any device, can request to join the organization's network. Administrators approve these connections. Kontrol then resolves dependencies, matching App requirements with available, approved Services.

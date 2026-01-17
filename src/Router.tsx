@@ -95,6 +95,10 @@ import Scopes from './scopes/Scopes'
 import Callback from './Callback'
 import Authorize from './oauth/Authorize'
 import { AnonymousLayout } from './components/layouts/AnonymousLayout'
+import OpenSource from './public/OpenSource'
+import Networking from './public/Networking'
+import Auth from './public/Auth'
+import Deploy from './public/Deploy'
 
 
 function RouterErrorBoundary() {
@@ -117,6 +121,22 @@ function createRouter () {
             {
               path: '/',
               element: <Landing />
+            },
+            {
+              path: '/opensource',
+              element: <OpenSource />
+            },
+            {
+              path: '/networking',
+              element: <Networking />
+            },
+            {
+              path: '/auth',
+              element: <Auth />
+            },
+            {
+              path: '/deploy',
+              element: <Deploy />
             },
           ]
         },

@@ -2,7 +2,9 @@ import {
   Building2,
   LayoutDashboard,
   Plus,
-  User
+  User,
+  Book,
+  UserPlus
 } from "lucide-react"
 import * as React from "react"
 import { ArkitektLogo, DynamicArkitektLogo } from '../../logos/ArkitektLogo'
@@ -81,42 +83,150 @@ export function RailSidebar() {
           <SidebarGroup>
             <SidebarGroupContent className="px-1.5 md:px-0">
               <SidebarMenu>
-                <SidebarMenuItem>
+                { user && (
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                          tooltip={{
+                            children: "Management",
+                            hidden: false,
+                          }}
+                          asChild
+                          isActive={isManagement}
+                          className="px-2.5 md:px-2"
+                        >
+                        <Link to="/">
+                            <LayoutDashboard />
+                            <span>Management</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                          tooltip={{
+                            children: "Profile",
+                            hidden: false,
+                          }}
+                          asChild
+                          isActive={isProfile}
+                          className="px-2.5 md:px-2"
+                        >
+                        <Link to="/profile">
+                            <User />
+                            <span>Profile</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <Separator className="my-2" />
+                  </>
+                )}
+                
+                { !user && (
+                    <>
+                  <SidebarMenuItem>
+                      <SidebarMenuButton
+                          tooltip={{
+                            children: "Overview",
+                            hidden: false,
+                          }}
+                          asChild
+                          isActive={location.pathname === '/'}
+                          className="px-2.5 md:px-2"
+                        >
+                        <Link to="/">
+                            <LayoutDashboard />
+                            <span>Overview</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <Separator className="my-2" />
+                  <SidebarMenuItem>
+                      <SidebarMenuButton
+                          tooltip={{
+                            children: "Open Source",
+                            hidden: false,
+                          }}
+                          asChild
+                          isActive={location.pathname === '/opensource'}
+                          className="px-2.5 md:px-2"
+                        >
+                        <Link to="/opensource">
+                            <Code />
+                            <span>Open Source</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  <SidebarMenuItem>
+                      <SidebarMenuButton
+                          tooltip={{
+                            children: "Networking",
+                            hidden: false,
+                          }}
+                          asChild
+                          isActive={location.pathname === '/networking'}
+                          className="px-2.5 md:px-2"
+                        >
+                        <Link to="/networking">
+                            <Network />
+                            <span>Networking</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  <SidebarMenuItem>
+                      <SidebarMenuButton
+                          tooltip={{
+                            children: "Authentication",
+                            hidden: false,
+                          }}
+                          asChild
+                          isActive={location.pathname === '/auth'}
+                          className="px-2.5 md:px-2"
+                        >
+                        <Link to="/auth">
+                            <Shield />
+                            <span>Authentication</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  <SidebarMenuItem>
+                      <SidebarMenuButton
+                          tooltip={{
+                            children: "Services",
+                            hidden: false,
+                          }}
+                          asChild
+                          isActive={location.pathname === '/deploy'}
+                          className="px-2.5 md:px-2"
+                        >
+                        <Link to="/deploy">
+                            <Zap />
+                            <span>Services</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <Separator className="my-2" />
+
+                  <SidebarMenuItem>
                   <SidebarMenuButton
                       tooltip={{
-                        children: "Management",
+                        children: "Documentation",
                         hidden: false,
                       }}
                       asChild
-                      isActive={isManagement}
                       className="px-2.5 md:px-2"
                     >
-                    <Link to="/">
-                        <LayoutDashboard />
-                        <span>Management</span>
-                    </Link>
+                    <a href="https://github.com/arkitektio/kontrol#readme" target="_blank" rel="noopener noreferrer">
+                        <Book />
+                        <span>Documentation</span>
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                      tooltip={{
-                        children: "Profile",
-                        hidden: false,
-                      }}
-                      asChild
-                      isActive={isProfile}
-                      className="px-2.5 md:px-2"
-                    >
-                    <Link to="/profile">
-                        <User />
-                        <span>Profile</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-              <Separator className="my-2" />
-              <SidebarMenu>
-                {organizations.map((org) => (
+                </>
+                )}
+                </SidebarMenu>
+                
+                <SidebarMenu>
+                {user && organizations.map((org) => (
                   <SidebarMenuItem key={org.id}>
                     <SidebarMenuButton
                       tooltip={{
@@ -134,26 +244,46 @@ export function RailSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                      tooltip={{
-                        children: "Create Organization",
-                        hidden: false,
-                      }}
-                      onClick={() => setCreateOrgOpen(true)}
-                      className="px-2.5 md:px-2"
-                    >
-                    <Plus />
-                    <span>Create Organization</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {user && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                        tooltip={{
+                          children: "Create Organization",
+                          hidden: false,
+                        }}
+                        onClick={() => setCreateOrgOpen(true)}
+                        className="px-2.5 md:px-2"
+                      >
+                      <Plus />
+                      <span>Create Organization</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
           <CreateOrganizationDialog open={createOrgOpen} onOpenChange={setCreateOrgOpen} />
         </SidebarContent>
         <SidebarFooter>
-          <NavUser user={userData} />
+          {user ? <NavUser user={userData} /> : (
+            <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={{
+                  children: "Sign up",
+                  hidden: false,
+                }}
+                asChild
+                className="px-2.5 md:px-2"
+              >
+                <Link to="/account/signup">
+                  <UserPlus />
+                  <span>Sign up</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          )}
         </SidebarFooter>
       </Sidebar>
   )
