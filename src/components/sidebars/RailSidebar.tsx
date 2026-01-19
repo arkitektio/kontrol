@@ -4,7 +4,11 @@ import {
   Plus,
   User,
   Book,
-  UserPlus
+  UserPlus,
+  Zap,
+  Shield,
+  Network,
+  Code
 } from "lucide-react"
 import * as React from "react"
 import { ArkitektLogo, DynamicArkitektLogo } from '../../logos/ArkitektLogo'
