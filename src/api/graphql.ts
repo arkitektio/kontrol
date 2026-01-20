@@ -38,13 +38,14 @@ export type AcceptAuthorizeCodeInput = {
 };
 
 export type AcceptCompositionDeviceCodeInput = {
+  allowIonscale?: Scalars['Boolean']['input'];
   deviceCode: Scalars['ID']['input'];
   organization: Scalars['ID']['input'];
 };
 
 export type AcceptDeviceCodeInput = {
+  composition: Scalars['ID']['input'];
   deviceCode: Scalars['ID']['input'];
-  organization: Scalars['ID']['input'];
 };
 
 export type AcceptInviteInput = {
@@ -377,7 +378,7 @@ export type ManagementCompositionDeviceCode = {
   user?: Maybe<ManagementUser>;
 };
 
-/** Composition(id, name, organization, description, creator, token) */
+/** Composition(id, name, organization, description, creator, token, auth_key) */
 export type ManagementCompositionFilter = {
   AND?: InputMaybe<ManagementCompositionFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -675,7 +676,7 @@ export type ManagementInviteRolesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** IonscaleAuthKey(id, layer, key, created_at, creator, ephemeral, tags) */
+/** IonscaleAuthKey(id, composition, layer, key, created_at, creator, ephemeral, tags) */
 export type ManagementIonscaleAuthKey = {
   __typename?: 'ManagementIonscaleAuthKey';
   createdAt: Scalars['DateTime']['output'];
@@ -687,7 +688,7 @@ export type ManagementIonscaleAuthKey = {
   tags: Array<Scalars['String']['output']>;
 };
 
-/** IonscaleAuthKey(id, layer, key, created_at, creator, ephemeral, tags) */
+/** IonscaleAuthKey(id, composition, layer, key, created_at, creator, ephemeral, tags) */
 export type ManagementIonscaleAuthKeyFilter = {
   AND?: InputMaybe<ManagementIonscaleAuthKeyFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -702,6 +703,39 @@ export type ManagementIonscaleAuthKeyFilter = {
 export type ManagementIonscaleAuthKeyOrder = {
   createdAt?: InputMaybe<Ordering>;
   ephemeral?: InputMaybe<Ordering>;
+};
+
+/** A Service is a Webservice that a Client might want to access. It is not the configured instance of the service, but the service itself. */
+export type ManagementKommunityPartner = {
+  __typename?: 'ManagementKommunityPartner';
+  /** The authentication URL of the partner. */
+  authUrl: Scalars['String']['output'];
+  /** The description of the partner. */
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  /** The unique identifier of the partner. */
+  identifier: Scalars['String']['output'];
+  /** The logo URL of the partner. */
+  logoUrl?: Maybe<Scalars['String']['output']>;
+  /** The name of the partner. */
+  name: Scalars['String']['output'];
+};
+
+/** KommunityPartner(id, name, description, logo_url, website_url, identifier, auth_url, oauth_client) */
+export type ManagementKommunityPartnerFilter = {
+  AND?: InputMaybe<ManagementKommunityPartnerFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ManagementKommunityPartnerFilter>;
+  OR?: InputMaybe<ManagementKommunityPartnerFilter>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  organization?: InputMaybe<Scalars['ID']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ManagementKommunityPartnerOrder = {
+  createdAt?: InputMaybe<Ordering>;
+  lastReportedAt?: InputMaybe<Ordering>;
+  name?: InputMaybe<Ordering>;
 };
 
 /** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
@@ -1302,7 +1336,7 @@ export type ManagementServiceInstanceScopesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** ServiceInstance(id, composition, release, logo, instance_id, steward, organization, device, template, public_key, token) */
+/** ServiceInstance(id, composition, release, logo, instance_id, private_key, steward, organization, device, template, public_key, token) */
 export type ManagementServiceInstanceFilter = {
   AND?: InputMaybe<ManagementServiceInstanceFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1851,6 +1885,8 @@ export type Query = {
   inviteByCode: ManagementInvite;
   ionscaleAuthKey: ManagementIonscaleAuthKey;
   ionscaleAuthKeys: Array<ManagementIonscaleAuthKey>;
+  kommunityPartner: ManagementKommunityPartner;
+  kommunityPartners: Array<ManagementKommunityPartner>;
   layer: ManagementLayer;
   layers: Array<ManagementLayer>;
   machine: ManagementMachine;
@@ -2001,6 +2037,18 @@ export type QueryIonscaleAuthKeyArgs = {
 export type QueryIonscaleAuthKeysArgs = {
   filters?: InputMaybe<ManagementIonscaleAuthKeyFilter>;
   order?: InputMaybe<ManagementIonscaleAuthKeyOrder>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryKommunityPartnerArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryKommunityPartnersArgs = {
+  filters?: InputMaybe<ManagementKommunityPartnerFilter>;
+  order?: InputMaybe<ManagementKommunityPartnerOrder>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2163,8 +2211,8 @@ export type QueryUsedAliasesArgs = {
 
 
 export type QueryValidateDeviceCodeArgs = {
+  composition: Scalars['ID']['input'];
   deviceCode: Scalars['ID']['input'];
-  organization: Scalars['ID']['input'];
 };
 
 export type RequestMediaUploadInput = {
@@ -2182,7 +2230,7 @@ export type ServiceFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** ServiceInstance(id, composition, release, logo, instance_id, steward, organization, device, template, public_key, token) */
+/** ServiceInstance(id, composition, release, logo, instance_id, private_key, steward, organization, device, template, public_key, token) */
 export type ServiceInstanceFilter = {
   AND?: InputMaybe<ServiceInstanceFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -2398,6 +2446,10 @@ export type ListOrganizationFragment = { __typename?: 'ManagementOrganization', 
 export type SidebarOrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, latestClients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, latestServices: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> };
 
 export type OrganizationProfileFragment = { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
+
+export type KommunityPartnerFragment = { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl: string };
+
+export type ListKommunityPartnerFragment = { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl: string };
 
 export type PresignedPostCredentialsFragment = { __typename?: 'PresignedPostCredentials', xAmzAlgorithm: string, xAmzCredential: string, xAmzDate: string, xAmzSignature: string, key: string, bucket: string, datalayer: string, policy: string, store: string };
 
@@ -2871,7 +2923,7 @@ export type DeviceCodeByCodeQuery = { __typename?: 'Query', deviceCodeByCode: { 
 
 export type ValidateDeviceCodeQueryVariables = Exact<{
   deviceCode: Scalars['ID']['input'];
-  organization: Scalars['ID']['input'];
+  composition: Scalars['ID']['input'];
 }>;
 
 
@@ -2922,6 +2974,22 @@ export type GetInviteQueryVariables = Exact<{
 
 
 export type GetInviteQuery = { __typename?: 'Query', invite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> } };
+
+export type ListKommunityPartnerQueryVariables = Exact<{
+  pagination?: InputMaybe<OffsetPaginationInput>;
+  filters?: InputMaybe<ManagementKommunityPartnerFilter>;
+  order?: InputMaybe<ManagementKommunityPartnerOrder>;
+}>;
+
+
+export type ListKommunityPartnerQuery = { __typename?: 'Query', kommunityPartners: Array<{ __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl: string }> };
+
+export type GetKommunityPartnerQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetKommunityPartnerQuery = { __typename?: 'Query', kommunityPartner: { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl: string } };
 
 export type LayersQueryVariables = Exact<{
   filters?: InputMaybe<ManagementLayerFilter>;
@@ -3825,6 +3893,26 @@ export const Oauth2ClientFragmentDoc = gql`
   name
   clientId
   redirectUris
+}
+    `;
+export const KommunityPartnerFragmentDoc = gql`
+    fragment KommunityPartner on ManagementKommunityPartner {
+  id
+  identifier
+  name
+  description
+  logoUrl
+  authUrl
+}
+    `;
+export const ListKommunityPartnerFragmentDoc = gql`
+    fragment ListKommunityPartner on ManagementKommunityPartner {
+  id
+  identifier
+  name
+  description
+  logoUrl
+  authUrl
 }
     `;
 export const PresignedPostCredentialsFragmentDoc = gql`
@@ -6044,8 +6132,8 @@ export type DeviceCodeByCodeLazyQueryHookResult = ReturnType<typeof useDeviceCod
 export type DeviceCodeByCodeSuspenseQueryHookResult = ReturnType<typeof useDeviceCodeByCodeSuspenseQuery>;
 export type DeviceCodeByCodeQueryResult = Apollo.QueryResult<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>;
 export const ValidateDeviceCodeDocument = gql`
-    query ValidateDeviceCode($deviceCode: ID!, $organization: ID!) {
-  validateDeviceCode(deviceCode: $deviceCode, organization: $organization) {
+    query ValidateDeviceCode($deviceCode: ID!, $composition: ID!) {
+  validateDeviceCode(deviceCode: $deviceCode, composition: $composition) {
     valid
     reason
     mappings {
@@ -6072,7 +6160,7 @@ export const ValidateDeviceCodeDocument = gql`
  * const { data, loading, error } = useValidateDeviceCodeQuery({
  *   variables: {
  *      deviceCode: // value for 'deviceCode'
- *      organization: // value for 'organization'
+ *      composition: // value for 'composition'
  *   },
  * });
  */
@@ -6357,6 +6445,94 @@ export type GetInviteQueryHookResult = ReturnType<typeof useGetInviteQuery>;
 export type GetInviteLazyQueryHookResult = ReturnType<typeof useGetInviteLazyQuery>;
 export type GetInviteSuspenseQueryHookResult = ReturnType<typeof useGetInviteSuspenseQuery>;
 export type GetInviteQueryResult = Apollo.QueryResult<GetInviteQuery, GetInviteQueryVariables>;
+export const ListKommunityPartnerDocument = gql`
+    query ListKommunityPartner($pagination: OffsetPaginationInput, $filters: ManagementKommunityPartnerFilter, $order: ManagementKommunityPartnerOrder) {
+  kommunityPartners(pagination: $pagination, filters: $filters, order: $order) {
+    ...ListKommunityPartner
+  }
+}
+    ${ListKommunityPartnerFragmentDoc}`;
+
+/**
+ * __useListKommunityPartnerQuery__
+ *
+ * To run a query within a React component, call `useListKommunityPartnerQuery` and pass it any options that fit your needs.
+ * When your component renders, `useListKommunityPartnerQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useListKommunityPartnerQuery({
+ *   variables: {
+ *      pagination: // value for 'pagination'
+ *      filters: // value for 'filters'
+ *      order: // value for 'order'
+ *   },
+ * });
+ */
+export function useListKommunityPartnerQuery(baseOptions?: Apollo.QueryHookOptions<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>(ListKommunityPartnerDocument, options);
+      }
+export function useListKommunityPartnerLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>(ListKommunityPartnerDocument, options);
+        }
+// @ts-ignore
+export function useListKommunityPartnerSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>): Apollo.UseSuspenseQueryResult<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>;
+export function useListKommunityPartnerSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>): Apollo.UseSuspenseQueryResult<ListKommunityPartnerQuery | undefined, ListKommunityPartnerQueryVariables>;
+export function useListKommunityPartnerSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>(ListKommunityPartnerDocument, options);
+        }
+export type ListKommunityPartnerQueryHookResult = ReturnType<typeof useListKommunityPartnerQuery>;
+export type ListKommunityPartnerLazyQueryHookResult = ReturnType<typeof useListKommunityPartnerLazyQuery>;
+export type ListKommunityPartnerSuspenseQueryHookResult = ReturnType<typeof useListKommunityPartnerSuspenseQuery>;
+export type ListKommunityPartnerQueryResult = Apollo.QueryResult<ListKommunityPartnerQuery, ListKommunityPartnerQueryVariables>;
+export const GetKommunityPartnerDocument = gql`
+    query GetKommunityPartner($id: ID!) {
+  kommunityPartner(id: $id) {
+    ...KommunityPartner
+  }
+}
+    ${KommunityPartnerFragmentDoc}`;
+
+/**
+ * __useGetKommunityPartnerQuery__
+ *
+ * To run a query within a React component, call `useGetKommunityPartnerQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetKommunityPartnerQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetKommunityPartnerQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetKommunityPartnerQuery(baseOptions: Apollo.QueryHookOptions<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables> & ({ variables: GetKommunityPartnerQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>(GetKommunityPartnerDocument, options);
+      }
+export function useGetKommunityPartnerLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>(GetKommunityPartnerDocument, options);
+        }
+// @ts-ignore
+export function useGetKommunityPartnerSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>): Apollo.UseSuspenseQueryResult<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>;
+export function useGetKommunityPartnerSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>): Apollo.UseSuspenseQueryResult<GetKommunityPartnerQuery | undefined, GetKommunityPartnerQueryVariables>;
+export function useGetKommunityPartnerSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>(GetKommunityPartnerDocument, options);
+        }
+export type GetKommunityPartnerQueryHookResult = ReturnType<typeof useGetKommunityPartnerQuery>;
+export type GetKommunityPartnerLazyQueryHookResult = ReturnType<typeof useGetKommunityPartnerLazyQuery>;
+export type GetKommunityPartnerSuspenseQueryHookResult = ReturnType<typeof useGetKommunityPartnerSuspenseQuery>;
+export type GetKommunityPartnerQueryResult = Apollo.QueryResult<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>;
 export const LayersDocument = gql`
     query Layers($filters: ManagementLayerFilter, $pagination: OffsetPaginationInput, $order: ManagementLayerOrder) {
   layers(filters: $filters, pagination: $pagination, order: $order) {

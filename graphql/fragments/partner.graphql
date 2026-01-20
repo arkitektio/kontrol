@@ -1,0 +1,17 @@
+fragment KommunityPartner on ManagementKommunityPartner {
+  id
+  identifier
+  name
+  description
+  logoUrl
+  authUrl
+}
+
+fragment ListKommunityPartner on ManagementKommunityPartner {
+  id
+  identifier
+  name
+  description
+  logoUrl
+  authUrl
+}

@@ -1,5 +1,5 @@
 import { Link, useParams, useNavigate } from "react-router-dom"
-import { useGetCompositionQuery, useDeleteCompositionMutation, useUpdateCompositionMutation } from "../api/graphql"
+import { useGetCompositionQuery, useDeleteCompositionMutation, useUpdateCompositionMutation, CompositionsDocument } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
@@ -41,7 +41,7 @@ export default function Composition() {
   })
 
   const [deleteComposition] = useDeleteCompositionMutation({
-    refetchQueries: ['Compositions']
+    refetchQueries:  [{ query: CompositionsDocument, variables: { filters: { organization: orgId || undefined } } }],
   })
   const [updateComposition] = useUpdateCompositionMutation()
 

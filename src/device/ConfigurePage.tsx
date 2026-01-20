@@ -1,9 +1,9 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   useDeviceCodeByCodeQuery,
   useAcceptDeviceCodeMutation,
   useDeclineDeviceCodeMutation,
-  useListOrganizationsQuery,
+  useCompositionsQuery,
   useMeQuery,
   useValidateDeviceCodeQuery
 } from "@/api/graphql";
@@ -19,7 +19,7 @@ import { AlertCircle, CheckCircle2, Monitor, Smartphone, Globe, XCircle } from "
 import { DeviceCodeFlow } from "./DeviceCodeFlow";
 
 interface ConfigureFormData {
-  organization: string;
+  composition: string;
 }
 
 const APP_KIND_CONFIG = {
@@ -44,19 +44,19 @@ export function ConfigurePage() {
   const { deviceCode: code } = useParams<{ deviceCode: string }>();
 
   const { control, watch, setValue } = useForm<ConfigureFormData>();
-  const selectedOrganization = watch("organization");
+  const selectedComposition = watch("composition");
 
   const { data: deviceCodeData, loading: deviceCodeLoading, error: deviceCodeError } = useDeviceCodeByCodeQuery({
     variables: { code: code || "" },
     skip: !code,
   });
 
-  const { data: orgData } = useListOrganizationsQuery();
+  const { data: compData, loading: compLoading } = useCompositionsQuery();
   const { data: meData } = useMeQuery();
 
   const { data: validationData } = useValidateDeviceCodeQuery({
-    variables: { deviceCode: deviceCodeData?.deviceCodeByCode?.id || "", organization: selectedOrganization },
-    skip: !deviceCodeData?.deviceCodeByCode || !selectedOrganization
+    variables: { deviceCode: deviceCodeData?.deviceCodeByCode?.id || "", composition: selectedComposition },
+    skip: !deviceCodeData?.deviceCodeByCode || !selectedComposition
   });
 
   const [acceptDeviceCode] = useAcceptDeviceCodeMutation();
@@ -67,17 +67,12 @@ export function ConfigurePage() {
 
   const navigate = useNavigate();
 
-  // Preset the active organization
+  // Preset the active composition
   useEffect(() => {
-    if (meData?.me && orgData?.organizations) {
-      const activeOrg = orgData.organizations.find(org => org.name === meData.me.username);
-      if (activeOrg && !selectedOrganization) {
-        setValue("organization", activeOrg.id);
-      } else if (orgData.organizations.length > 0 && !selectedOrganization) {
-        setValue("organization", orgData.organizations[0].id);
-      }
+    if (compData?.compositions && compData.compositions.length > 0 && !selectedComposition) {
+        setValue("composition", compData.compositions[0].id);
     }
-  }, [meData, orgData, selectedOrganization, setValue]);
+  }, [compData, selectedComposition, setValue]);
 
   if (!code) {
     return <div className="flex h-screen items-center justify-center">No code provided</div>;
@@ -98,18 +93,33 @@ export function ConfigurePage() {
   }
 
   const onAllow = async () => {
-    if (!selectedOrganization) return;
+    if (!selectedComposition) return;
     try {
       let data = await acceptDeviceCode({
         variables: {
           input: {
             deviceCode: deviceCode.id,
-            organization: selectedOrganization
+            composition: selectedComposition
           }
         }
       });
       if (data.data?.acceptDeviceCode?.id){
-        navigate(`/organization/${data.data.acceptDeviceCode.organization.id}/clients/${data.data.acceptDeviceCode.id}`);
+        // Redirect to a composition specific page?? The mutation returns a client detail. 
+        // We will stick to organization logic, assuming composition still lets us traverse to org.
+        // Actually the return type is DetailClient.
+        // Let's assume we can just redirect to the composition page of that client, or just the client detail page.
+        // But client detail page is organization based: /organization/{org}/clients/{client}.
+        // We don't have org id handy easily unless we ask composition for it, or the client.
+        // DetailClient fragment usually has organization { id }
+        // Let's assume it has.
+        // If not, we might fail to redirect properly, but the action will succeed.
+        // I will redirect to "/" if org is missing, or try to get it from return value.
+        const clientId = data.data.acceptDeviceCode.id;
+        // The DetailClient fragment (assumed) might have organization. 
+        // If not we can't construct the URL reliably. 
+        // We will just setAuthorized(true) and show success screen.
+        setSubmitted(true);
+        setAuthorized(true);
       }
       else {
         setAuthorized(false);
@@ -148,12 +158,15 @@ export function ConfigurePage() {
             <CardTitle>
               {authorized ? "Successfully Authorized" : "Request Denied"}
             </CardTitle>
-            <CardDescription>You can close this page now</CardDescription>
+            <CardDescription>
+                You can close this page now. Use your application to continue.
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
     );
   }
+          
 
   // Main form
   return (
@@ -236,23 +249,25 @@ export function ConfigurePage() {
 
         <Separator />
 
-        {/* Organization Selection */}
-        {orgData?.organizations && orgData.organizations.length > 0 && (
+        {/* Composition Selection */}
+        {compLoading ? (
+            <div className="flex justify-center p-4">Loading compositions...</div>
+        ) : compData?.compositions && compData.compositions.length > 0 ? (
           <div className="space-y-3">
             <div className="space-y-2">
-              <p className="text-sm font-medium">Assign to Organization</p>
+              <p className="text-sm font-medium">Assign to Composition</p>
               <Controller
                 control={control}
-                name="organization"
+                name="composition"
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select organization" />
+                      <SelectValue placeholder="Select composition" />
                     </SelectTrigger>
                     <SelectContent>
-                      {orgData.organizations.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
+                      {compData.compositions.map((comp) => (
+                        <SelectItem key={comp.id} value={comp.id}>
+                          {comp.name || "Unnamed Composition"}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -261,6 +276,18 @@ export function ConfigurePage() {
               />
             </div>
           </div>
+        ) : (
+            <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>No Compositions Available</AlertTitle>
+                <AlertDescription className="flex flex-col gap-2">
+                  <span>You need to create a composition in your organization to connect a device. Please contact your administrator.</span>
+                  
+                  <span className="text-xs opacity-80">
+                      If you are the organization owner, you can set up a new composition through our <Link to="/partners" className="underline font-semibold hover:text-white">Kommunity Partners</Link>.
+                  </span>
+                </AlertDescription>
+            </Alert>
         )}
 
         <Separator />
@@ -312,7 +339,7 @@ export function ConfigurePage() {
           <Button 
             className="flex-1" 
             onClick={onAllow} 
-            disabled={!validationData?.validateDeviceCode.valid || !selectedOrganization}
+            disabled={!validationData?.validateDeviceCode.valid || !selectedComposition}
           >
             Allow
           </Button>

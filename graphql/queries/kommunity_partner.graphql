@@ -1,0 +1,15 @@
+query ListKommunityPartner(
+  $pagination: OffsetPaginationInput
+  $filters: ManagementKommunityPartnerFilter
+  $order: ManagementKommunityPartnerOrder
+) {
+  kommunityPartners(pagination: $pagination, filters: $filters, order: $order) {
+    ...ListKommunityPartner
+  }
+}
+
+query GetKommunityPartner($id: ID!) {
+  kommunityPartner(id: $id) {
+    ...KommunityPartner
+  }
+}

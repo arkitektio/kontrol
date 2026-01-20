@@ -89,6 +89,8 @@ import Roles from './roles/Roles'
 import Layer from './layers/Layer'
 import Layers from './layers/Layers'
 import Machine from './layers/Machine'
+import KommunityPartner from './partners/KommunityPartner'
+import KommunityPartners from './partners/KommunityPartners'
 import AuthKey from './layers/AuthKey'
 import Scope from './scopes/Scope'
 import Scopes from './scopes/Scopes'
@@ -216,6 +218,14 @@ function createRouter () {
             {
               path: '/apps/:id',
               element: <AuthenticatedRoute><App /></AuthenticatedRoute>
+            },
+            {
+              path: '/partners',
+              element: <AuthenticatedRoute><KommunityPartners /></AuthenticatedRoute>
+            },
+            {
+              path: '/partners/:id',
+              element: <AuthenticatedRoute><KommunityPartner /></AuthenticatedRoute>
             },
             {
               path: '/devices',
