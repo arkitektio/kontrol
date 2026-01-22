@@ -13,6 +13,7 @@ fragment InstanceAlias on ManagementInstanceAlias {
   instance {
     id
   }
+  scope
 }
 
 fragment ListInstanceAlias on ManagementInstanceAlias {
@@ -39,4 +40,5 @@ fragment ListInstanceAlias on ManagementInstanceAlias {
       
     }
   }
+  scope
 }

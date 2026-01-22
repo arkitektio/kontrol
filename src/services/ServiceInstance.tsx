@@ -202,6 +202,7 @@ export default function ServiceInstance() {
                                                 </code>
                                           </div>
                                           <Badge variant="outline" className="text-xs">{alias.kind}</Badge>
+                                          <Badge variant="secondary" className="text-xs">{alias.scope || 'No Scope'}</Badge>
                                     </div>
                                 </Link>
                             ))}

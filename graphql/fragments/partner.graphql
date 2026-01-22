@@ -5,6 +5,11 @@ fragment KommunityPartner on ManagementKommunityPartner {
   description
   logoUrl
   authUrl
+  websiteUrl
+  partnerKind
+  kommunityKind
+  autoConfigure
+  preconfiguredComposition
 }
 
 fragment ListKommunityPartner on ManagementKommunityPartner {
@@ -14,4 +19,8 @@ fragment ListKommunityPartner on ManagementKommunityPartner {
   description
   logoUrl
   authUrl
+  websiteUrl
+  partnerKind
+  kommunityKind
+  autoConfigure
 }
