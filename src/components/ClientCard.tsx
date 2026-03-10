@@ -1,15 +1,17 @@
- // assuming your hook path
+import { Suspense, lazy } from 'react';
 import { useTheme } from '@/providers/ThemeProvider';
-import AutoLogo from './AutoLogo';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { ListClientFragment } from '@/api/graphql';
 import { Card } from './ui/card';
 import { ArrowRight, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from './ui/badge';
 
+const AutoLogo = lazy(() => import('./AutoLogo'));
 
 export const ClientCard = ({ client }: { client: ListClientFragment }) => {
   const { theme } = useTheme(); // returns 'light' or 'dark'
+  const isMobile = useIsMobile();
 
   return (
     <Link to={`/organization/${client.organization.id}/clients/${client.id}`}>
@@ -39,12 +41,16 @@ export const ClientCard = ({ client }: { client: ListClientFragment }) => {
         </div>
         {/* Logo Section */}
         <div className="col-span-1 relative right-0 top-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 right-0">
-            <AutoLogo 
-              manifest={client.manifest} 
-              theme={theme} 
-            />
-          </div>
+          {!isMobile ? (
+            <div className="absolute inset-0 right-0">
+              <Suspense fallback={null}>
+                <AutoLogo 
+                  manifest={client.manifest} 
+                  theme={theme} 
+                />
+              </Suspense>
+            </div>
+          ) : null}
           <div className="absolute w-full h-full bg-gradient-to-r from-card via-card/80 to-transparent" />
         </div>
       </Card>

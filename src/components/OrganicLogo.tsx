@@ -11,6 +11,7 @@ import {
 import { EffectComposer, Bloom, Noise } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { type PolyType } from '@/lib/logoUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PolyNode {
   position: THREE.Vector3;
@@ -213,6 +214,7 @@ const OrganicLogo: React.FC<OrganicLogoProps> = ({
   wanderSpeed = 0.5,
   theme = 'light' 
 }) => {
+  const isMobile = useIsMobile();
   const isDark = theme === 'dark';
   
   // Generate color palette if multiple colors provided
@@ -288,6 +290,8 @@ const OrganicLogo: React.FC<OrganicLogoProps> = ({
         ...style 
       }}
     >
+      {isMobile ? null : (
+        <>
       <Canvas gl={{ antialias: true, alpha: true }}>
         <PerspectiveCamera makeDefault position={[0, 0, size]} />
         <ambientLight intensity={0.3} />
@@ -323,6 +327,8 @@ const OrganicLogo: React.FC<OrganicLogoProps> = ({
           />
         </EffectComposer>
       </Canvas>
+        </>
+      )}
     </div>
   );
 };

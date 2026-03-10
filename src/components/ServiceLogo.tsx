@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import { stringToPaletteColor, getPolyType } from '@/lib/logoUtils';
-import GeneralLogo from './GeneralLogo';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ServiceRequirement {
   key: string;
@@ -15,6 +15,8 @@ interface ServiceLogoProps {
   size?: number;
 }
 
+const GeneralLogo = lazy(() => import('./GeneralLogo'));
+
 const ServiceLogo: React.FC<ServiceLogoProps> = ({ 
   service, 
   className, 
@@ -22,6 +24,7 @@ const ServiceLogo: React.FC<ServiceLogoProps> = ({
   size = 9 ,
   theme = 'light' 
 }) => {
+  const isMobile = useIsMobile();
   const serviceKey = typeof service === 'string' ? service : service.key;
 
   // Use the palette utility to generate color and type from service key
@@ -30,15 +33,21 @@ const ServiceLogo: React.FC<ServiceLogoProps> = ({
     type: getPolyType(serviceKey)
   }), [serviceKey]);
 
+  if (isMobile) {
+    return null;
+  }
+
   return (
-    <GeneralLogo 
-      color={color}
-      polyType={type}
-      className={className}
-      style={style}
-      size={size}
-      theme={theme}
-    />
+    <Suspense fallback={null}>
+      <GeneralLogo 
+        color={color}
+        polyType={type}
+        className={className}
+        style={style}
+        size={size}
+        theme={theme}
+      />
+    </Suspense>
   );
 };
 

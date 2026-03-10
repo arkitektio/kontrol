@@ -12,6 +12,7 @@ import { EffectComposer, Bloom, ChromaticAberration, Noise } from '@react-three/
 import * as THREE from 'three';
 import { stringToPaletteColor, getPolyType, type PolyType } from '@/lib/logoUtils';
 import type { ManifestFragment } from '@/api/graphql';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // --- Types ---
 export interface Manifest {
@@ -91,6 +92,7 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
   size = 9 ,
   theme = 'light' 
 }) => {
+  const isMobile = useIsMobile();
   const isDark = theme === 'dark';
 
   const shapesData = useMemo(() => {
@@ -131,6 +133,8 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
         ...style 
       }}
     >
+      {isMobile ? null : (
+        <>
       {/* Vignette Overlay */}
       <div 
         style={{
@@ -168,6 +172,8 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
             <Noise opacity={0.02} />
         </EffectComposer>
       </Canvas>
+        </>
+      )}
     </div>
   );
 };

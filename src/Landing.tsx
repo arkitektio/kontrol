@@ -1,22 +1,31 @@
+import { Suspense, lazy } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
 import { Code, Shield, Network, Zap, ArrowRight, Github } from "lucide-react"
-import OrganicLogo from "./components/OrganicLogo"
+import { useIsMobile } from "./hooks/use-mobile"
+
+const OrganicLogo = lazy(() => import("./components/OrganicLogo"))
 
 export default function Landing() {
+    const isMobile = useIsMobile()
+
     return (
         <div className="flex flex-1 flex-col relative">
             {/* Animated Background - fixed position */}
-            <div className="fixed top-0 right-0 h-screen w-[80vw] lg:block hidden pointer-events-none z-0">
-                <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10" />
-                <OrganicLogo 
-                    count={8} 
-                    color="#6f5cde"
-                    connectionDistance={3.5}
-                    wanderSpeed={0.4}
-                />
-            </div>
+            {!isMobile ? (
+                <div className="fixed top-0 right-0 h-screen w-[80vw] lg:block hidden pointer-events-none z-0">
+                    <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10" />
+                    <Suspense fallback={null}>
+                        <OrganicLogo 
+                            count={8} 
+                            color="#6f5cde"
+                            connectionDistance={3.5}
+                            wanderSpeed={0.4}
+                        />
+                    </Suspense>
+                </div>
+            ) : null}
             
             {/* Hero Section */}
             <section className="relative flex flex-col items-start justify-start px-8 py-12 md:py-24 overflow-hidden z-20">

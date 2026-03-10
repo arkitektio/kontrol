@@ -11,6 +11,7 @@ import {
 import { EffectComposer, Bloom, Noise } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { stringToPaletteColor, getPolyType, type PolyType } from '@/lib/logoUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GeneralLogoProps {
   color?: string;
@@ -74,6 +75,7 @@ const GeneralLogo: React.FC<GeneralLogoProps> = ({
   size = 9 ,
   theme = 'light' 
 }) => {
+  const isMobile = useIsMobile();
   const isDark = theme === 'dark';
 
   // Use custom color/type if provided, otherwise generate from seed
@@ -115,6 +117,8 @@ const GeneralLogo: React.FC<GeneralLogoProps> = ({
         ...style 
       }}
     >
+      {isMobile ? null : (
+        <>
       {/* Vignette Overlay */}
       <div 
         style={{
@@ -142,6 +146,8 @@ const GeneralLogo: React.FC<GeneralLogoProps> = ({
             <Noise opacity={0.02} />
         </EffectComposer>
       </Canvas>
+        </>
+      )}
     </div>
   );
 };

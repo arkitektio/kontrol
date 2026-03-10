@@ -1,6 +1,3 @@
-// utils/logoUtils.ts
-import * as THREE from 'three';
-
 // A curated palette of "tech" colors that look great with Bloom/Glow
 const LOGO_PALETTE = [
   '#ff0055', // Neon Red/Pink
