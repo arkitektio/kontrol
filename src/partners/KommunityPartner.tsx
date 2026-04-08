@@ -28,8 +28,8 @@ export default function KommunityPartner() {
       </div>
 
       <div className="flex gap-4">
-         <Button asChild size="lg">
-            <a href={partner.authUrl} target="_blank" rel="noopener noreferrer">
+         <Button asChild size="lg" onClick={() => {alert("This will open the partner's website in a new tab.")}}>
+            <a target="_blank" rel="noopener noreferrer">
                 Connect & Create Account
             </a>
          </Button>

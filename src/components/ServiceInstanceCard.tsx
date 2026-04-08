@@ -36,10 +36,6 @@ export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanc
         {/* Logo Section */}
         <div className="col-span-1 relative right-0 top-0 w-full h-full overflow-hidden pointer-events-none">
           <div className="absolute inset-0 right-0">
-            <ServiceLogo 
-              service={instance.release.service.identifier} 
-              theme={theme} 
-            />
           </div>
           <div className="absolute w-full h-full bg-gradient-to-r from-card via-card/80 to-transparent" />
 
