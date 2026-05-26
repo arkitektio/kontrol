@@ -101,6 +101,7 @@ const OrganizationProfile = lazyDefault(() => import('./OrganizationProfile'))
 const Profile = lazyDefault(() => import('./Profile'))
 const Release = lazyDefault(() => import('./releases/Release'))
 const Releases = lazyDefault(() => import('./releases/Releases'))
+const RedeemTokens = lazyDefault(() => import('./redeem-tokens/RedeemTokens'))
 const ServiceRelease = lazyDefault(() => import('./service-releases/ServiceRelease'))
 const ServiceReleases = lazyDefault(() => import('./service-releases/ServiceReleases'))
 const ServiceConfigurePage = lazyNamed(() => import('./service/ServiceConfigurePage'), 'ServiceConfigurePage')
@@ -417,6 +418,10 @@ function createRouter() {
             {
               path: 'clients',
               element: <AuthenticatedRoute><Clients /></AuthenticatedRoute>,
+            },
+            {
+              path: 'redeem-tokens',
+              element: <AuthenticatedRoute><RedeemTokens /></AuthenticatedRoute>,
             },
             {
               path: 'clients/:id',

@@ -1,6 +1,16 @@
 fragment ListRedeemToken on ManagementRedeemToken {
   id
   token
+  createdAt
+  expiresAt
+  composition {
+    id
+    name
+    organization {
+      id
+      name
+    }
+  }
   user {
     id
     email

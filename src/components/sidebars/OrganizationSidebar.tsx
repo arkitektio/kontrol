@@ -1,7 +1,7 @@
 import { Sidebar, SidebarContent, SidebarHeader, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroupLabel, SidebarSeparator } from "@/components/ui/sidebar"
 import { Link, useParams, useLocation } from "react-router-dom"
 import { useSidebarOrganizationQuery } from "@/api/graphql"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes, Layers } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes, Layers, Ticket } from "lucide-react"
 
 export function OrganizationSidebar() {
     const { orgId } = useParams<{ orgId: string }>()
@@ -89,6 +89,14 @@ export function OrganizationSidebar() {
                             <Link to={`/organization/${org.id}/clients`}>
                               <Package className="mr-2 h-4 w-4" />
                               <span>Clients</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/redeem-tokens`)}>
+                            <Link to={`/organization/${org.id}/redeem-tokens`}>
+                              <Ticket className="mr-2 h-4 w-4" />
+                              <span>Redeem Tokens</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>

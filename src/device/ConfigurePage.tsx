@@ -67,6 +67,10 @@ export function ConfigurePage() {
 
   const navigate = useNavigate();
 
+  const selectedCompositionEntry = compData?.compositions?.find(
+    (composition) => composition.id === selectedComposition,
+  );
+
   // Preset the active composition
   useEffect(() => {
     if (compData?.compositions && compData.compositions.length > 0 && !selectedComposition) {
@@ -268,12 +272,21 @@ export function ConfigurePage() {
                       {compData.compositions.map((comp) => (
                         <SelectItem key={comp.id} value={comp.id}>
                           {comp.name || "Unnamed Composition"}
+                          {comp.organization?.name ? ` (${comp.organization.name})` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               />
+              {selectedCompositionEntry ? (
+                <p className="text-sm text-muted-foreground">
+                  Assigning this device to organization{" "}
+                  <span className="font-medium text-foreground">
+                    {selectedCompositionEntry.organization?.name || selectedCompositionEntry.organization.id}
+                  </span>
+                </p>
+              ) : null}
             </div>
           </div>
         ) : (

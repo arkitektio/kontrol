@@ -1,0 +1,5 @@
+query RedeemTokens($pagination: OffsetPaginationInput) {
+  redeemTokens(pagination: $pagination) {
+    ...ListRedeemToken
+  }
+}
