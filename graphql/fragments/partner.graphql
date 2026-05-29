@@ -3,9 +3,12 @@ fragment KommunityPartner on ManagementKommunityPartner {
   identifier
   name
   description
+  shortDescription
   logoUrl
+  imageUrl
   authUrl
   websiteUrl
+  licenseAgreement
   partnerKind
   kommunityKind
   autoConfigure
@@ -17,7 +20,9 @@ fragment ListKommunityPartner on ManagementKommunityPartner {
   identifier
   name
   description
+  shortDescription
   logoUrl
+  imageUrl
   authUrl
   websiteUrl
   partnerKind

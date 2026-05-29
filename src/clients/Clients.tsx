@@ -8,17 +8,14 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 export default function Clients() {
   const { orgId } = useParams<{ orgId: string }>()
   
-  const { data: recentData, loading: recentLoading } = useClientsQuery({
-    variables: {
+
+  const { data, loading, error } = useClientsQuery({variables: {
       order: { lastReportedAt: Ordering.Desc },
       filters: {
         organization: orgId || undefined
       },
       pagination: { limit: 5 }
-    }
-  })
-
-  const { data, loading, error } = useClientsQuery({})
+    }})
 
   if (loading) return <div className="p-4">Loading...</div>
   if (error) return <div className="p-4">Error: {error.message}</div>

@@ -729,10 +729,14 @@ export type ManagementKommunityPartner = {
   /** Filter conditions that determine which users/organizations this partner applies to. Conditions include: email_domain_equals, email_domain_ends_with, username_equals, username_contains. */
   filterConfig?: Maybe<Scalars['JSON']['output']>;
   id: Scalars['ID']['output'];
+  /** A larger marketing image URL for the partner. */
+  imageUrl?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the partner. */
   identifier: Scalars['String']['output'];
   /** The kind of kommunity (e.g., 'open', 'restricted', 'private'). */
   kommunityKind: Scalars['String']['output'];
+  /** Optional license agreement text that must be signed before connecting this partner. */
+  licenseAgreement?: Maybe<Scalars['String']['output']>;
   /** The logo URL of the partner. */
   logoUrl?: Maybe<Scalars['String']['output']>;
   /** The name of the partner. */
@@ -743,6 +747,8 @@ export type ManagementKommunityPartner = {
   partnerKind: Scalars['String']['output'];
   /** The preconfigured composition manifest for this partner, if any. */
   preconfiguredComposition?: Maybe<Scalars['JSON']['output']>;
+  /** A short description of the partner for cards and previews. */
+  shortDescription?: Maybe<Scalars['String']['output']>;
   /** The website URL of the partner. */
   websiteUrl?: Maybe<Scalars['String']['output']>;
 };
@@ -2480,9 +2486,9 @@ export type SidebarOrganizationFragment = { __typename?: 'ManagementOrganization
 
 export type OrganizationProfileFragment = { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
 
-export type KommunityPartnerFragment = { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean, preconfiguredComposition?: any | null };
+export type KommunityPartnerFragment = { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, shortDescription?: string | null, logoUrl?: string | null, imageUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, licenseAgreement?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean, preconfiguredComposition?: any | null };
 
-export type ListKommunityPartnerFragment = { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean };
+export type ListKommunityPartnerFragment = { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, shortDescription?: string | null, logoUrl?: string | null, imageUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean };
 
 export type PresignedPostCredentialsFragment = { __typename?: 'PresignedPostCredentials', xAmzAlgorithm: string, xAmzCredential: string, xAmzDate: string, xAmzSignature: string, key: string, bucket: string, datalayer: string, policy: string, store: string };
 
@@ -3015,14 +3021,14 @@ export type ListKommunityPartnerQueryVariables = Exact<{
 }>;
 
 
-export type ListKommunityPartnerQuery = { __typename?: 'Query', kommunityPartners: Array<{ __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean }> };
+export type ListKommunityPartnerQuery = { __typename?: 'Query', kommunityPartners: Array<{ __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, shortDescription?: string | null, logoUrl?: string | null, imageUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean }> };
 
 export type GetKommunityPartnerQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetKommunityPartnerQuery = { __typename?: 'Query', kommunityPartner: { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, logoUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean, preconfiguredComposition?: any | null } };
+export type GetKommunityPartnerQuery = { __typename?: 'Query', kommunityPartner: { __typename?: 'ManagementKommunityPartner', id: string, identifier: string, name: string, description?: string | null, shortDescription?: string | null, logoUrl?: string | null, imageUrl?: string | null, authUrl?: string | null, websiteUrl?: string | null, licenseAgreement?: string | null, partnerKind: string, kommunityKind: string, autoConfigure: boolean, preconfiguredComposition?: any | null } };
 
 export type LayersQueryVariables = Exact<{
   filters?: InputMaybe<ManagementLayerFilter>;
@@ -3935,9 +3941,12 @@ export const KommunityPartnerFragmentDoc = gql`
   identifier
   name
   description
+  shortDescription
   logoUrl
+  imageUrl
   authUrl
   websiteUrl
+  licenseAgreement
   partnerKind
   kommunityKind
   autoConfigure
@@ -3950,7 +3959,9 @@ export const ListKommunityPartnerFragmentDoc = gql`
   identifier
   name
   description
+  shortDescription
   logoUrl
+  imageUrl
   authUrl
   websiteUrl
   partnerKind

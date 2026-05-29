@@ -267,14 +267,6 @@ function createRouter() {
               element: <AuthenticatedRoute><App /></AuthenticatedRoute>,
             },
             {
-              path: '/partners',
-              element: <AuthenticatedRoute><KommunityPartners /></AuthenticatedRoute>,
-            },
-            {
-              path: '/partners/:id',
-              element: <AuthenticatedRoute><KommunityPartner /></AuthenticatedRoute>,
-            },
-            {
               path: '/devices',
               element: <AuthenticatedRoute><Devices /></AuthenticatedRoute>,
             },
@@ -418,6 +410,14 @@ function createRouter() {
             {
               path: 'clients',
               element: <AuthenticatedRoute><Clients /></AuthenticatedRoute>,
+            },
+            {
+              path: 'partners',
+              element: <AuthenticatedRoute><KommunityPartners /></AuthenticatedRoute>,
+            },
+            {
+              path: 'partners/:id',
+              element: <AuthenticatedRoute><KommunityPartner /></AuthenticatedRoute>,
             },
             {
               path: 'redeem-tokens',

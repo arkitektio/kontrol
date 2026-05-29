@@ -297,7 +297,15 @@ export function ConfigurePage() {
                   <span>You need to create a composition in your organization to connect a device. Please contact your administrator.</span>
                   
                   <span className="text-xs opacity-80">
-                      If you are the organization owner, you can set up a new composition through our <Link to="/partners" className="underline font-semibold hover:text-white">Kommunity Partners</Link>.
+                      {selectedCompositionEntry?.organization?.id ? (
+                        <>
+                          If you are the organization owner, you can set up a new composition through our <Link to={`/organization/${selectedCompositionEntry.organization.id}/partners`} className="underline font-semibold hover:text-white">Kommunity Partners</Link>.
+                        </>
+                      ) : (
+                        <>
+                          If you are the organization owner, open your organization dashboard to browse Kommunity Partners.
+                        </>
+                      )}
                   </span>
                 </AlertDescription>
             </Alert>

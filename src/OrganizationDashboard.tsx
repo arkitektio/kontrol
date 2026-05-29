@@ -49,6 +49,9 @@ export default function OrganizationDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-6 text-left">
                         {partnersData?.kommunityPartners?.map(partner => (
                              <Card key={partner.id} className="flex flex-col bg-background overflow-hidden hover:shadow-md transition-shadow">
+                                {partner.imageUrl ? (
+                                    <img src={partner.imageUrl} alt={partner.name} className="h-28 w-full object-cover" />
+                                ) : null}
                                 <CardHeader className="flex-row gap-4 items-center space-y-0">
                                      <div className="w-12 h-12 flex-shrink-0 bg-muted/50 rounded-lg p-2 flex items-center justify-center border">
                                         {partner.logoUrl ? (
@@ -59,16 +62,16 @@ export default function OrganizationDashboard() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <CardTitle className="text-base truncate" title={partner.name}>{partner.name}</CardTitle>
-                                         <p className="text-xs text-muted-foreground line-clamp-2 mt-1" title={partner.description || ""}>
-                                            {partner.description}
+                                         <p className="text-xs text-muted-foreground line-clamp-2 mt-1" title={partner.shortDescription || partner.description || ""}>
+                                            {partner.shortDescription || partner.description}
                                         </p>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="pt-0 mt-auto">
                                     <Button asChild size="sm" className="w-full gap-2">
-                                        <a href={partner.authUrl} target="_blank" rel="noopener noreferrer">
+                                        <Link to={`/organization/${orgId}/partners/${partner.id}`}>
                                             Connect <ArrowRight className="w-3 h-3" />
-                                        </a>
+                                        </Link>
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -76,7 +79,7 @@ export default function OrganizationDashboard() {
                     </div>
 
                     <Button asChild variant="outline" className="mt-4">
-                        <Link to="/partners">
+                        <Link to={`/organization/${orgId}/partners`}>
                             View All Partners <ArrowRight className="ml-2 w-4 h-4" />
                         </Link>
                     </Button>
@@ -148,19 +151,25 @@ export default function OrganizationDashboard() {
                 <h2 className="text-xl font-semibold flex items-center justify-between">
                     <span>Kommunity Partners</span>
                     <Button variant="link" asChild className="p-0 h-auto font-normal text-muted-foreground hover:text-foreground">
-                        <Link to="/partners">View all</Link>
+                        <Link to={`/organization/${orgId}/partners`}>View all</Link>
                     </Button>
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {partnersData?.kommunityPartners?.map(partner => (
                          <Card key={partner.id} className="flex flex-col">
+                            {partner.imageUrl ? (
+                                <img src={partner.imageUrl} alt={partner.name} className="h-24 w-full rounded-t-lg object-cover" />
+                            ) : null}
                             <CardHeader className="flex-row gap-4 items-center space-y-0 pb-2">
                                 {partner.logoUrl && <img src={partner.logoUrl} alt={partner.name} className="w-10 h-10 object-contain" />}
-                                <CardTitle className="text-base">{partner.name}</CardTitle>
+                                <div className="min-w-0">
+                                    <CardTitle className="text-base truncate">{partner.name}</CardTitle>
+                                    <p className="text-xs text-muted-foreground line-clamp-2">{partner.shortDescription || partner.description}</p>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-2 flex-1 flex flex-col justify-end pt-0">
                                 <Button asChild size="sm" variant="secondary" className="w-full mt-2">
-                                    <Link to={`/partners/${partner.id}`}>Connect</Link>
+                                    <Link to={`/organization/${orgId}/partners/${partner.id}`}>Connect</Link>
                                 </Button>
                             </CardContent>
                         </Card>
