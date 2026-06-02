@@ -8,6 +8,7 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { AlertCircle, ArrowUpRight, BadgeCheck, FileSignature } from "lucide-react";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 
 const ConnectKommunityPartnerDocument = gql`
   mutation ConnectKommunityPartner($input: ConnectKommunityPartnerInput!) {
