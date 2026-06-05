@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom"
 import { useCompositionsQuery, useListKommunityPartnerQuery } from "../api/graphql"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { Layers, ArrowRight, Server } from "lucide-react"
@@ -9,16 +9,12 @@ export default function Compositions() {
   const { orgId } = useParams<{ orgId: string }>()
 
   const { data, loading, error } = useCompositionsQuery({
-    variables: {
-      filters: {
-        organization: orgId || undefined
-      }
-    },
+    variables: { filters: { organization: orgId || undefined } },
     skip: !orgId
   })
 
   const { data: partnersData } = useListKommunityPartnerQuery({
-    variables: { pagination: { limit: 4 } }
+    variables: { pagination: { limit: 6 } }
   })
 
   if (loading) return <div className="p-4">Loading...</div>
@@ -29,83 +25,78 @@ export default function Compositions() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Compositions</h2>
       </div>
 
       {compositions.length === 0 ? (
-        <div className="space-y-6">
-          <div className="rounded-lg border bg-card shadow-sm p-8 flex flex-col items-center text-center space-y-4 bg-gradient-to-br from-primary/5 to-secondary/5">
-            <Layers className="w-12 h-12 text-primary opacity-80" />
-            <h3 className="text-2xl font-bold tracking-tight">No compositions yet</h3>
-            <p className="text-muted-foreground max-w-[560px]">
-              A composition bundles a set of services into a deployable unit for your organization.
-              Connect a Kommunity Partner to get a pre-configured one instantly, or self-host your own.
+        <div className="space-y-0">
+          {/* Hero */}
+          <div className="rounded-t-xl border border-b-0 bg-gradient-to-b from-primary/8 to-background px-8 pt-16 pb-10 flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+              <Layers className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold tracking-tight mb-2">No compositions yet</h3>
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
+              Connect a Kommunity Partner to deploy a pre-configured stack in minutes,
+              or self-host your own Arkitekt instance.
             </p>
+          </div>
 
-            {partners.length > 0 && (
-              <div className="w-full mt-4 space-y-3">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Available Kommunity Partners
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
-                  {partners.map(partner => (
-                    <Card key={partner.id} className="flex flex-col bg-background overflow-hidden hover:shadow-md transition-shadow">
-                      {partner.imageUrl && (
-                        <img src={partner.imageUrl} alt={partner.name} className="h-24 w-full object-cover" />
-                      )}
-                      <CardHeader className="flex-row gap-3 items-center space-y-0 pb-2">
-                        <div className="w-10 h-10 flex-shrink-0 bg-muted/50 rounded-lg p-1.5 flex items-center justify-center border">
-                          {partner.logoUrl ? (
-                            <img src={partner.logoUrl} alt={partner.name} className="w-full h-full object-contain" />
-                          ) : (
-                            <span className="text-base font-bold">{partner.name.charAt(0)}</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm truncate">{partner.name}</CardTitle>
-                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                            {partner.shortDescription || partner.description}
-                          </p>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0 mt-auto">
-                        <Button asChild size="sm" className="w-full gap-1.5">
-                          <Link to={`/organization/${orgId}/partners/${partner.id}`}>
-                            Connect <ArrowRight className="w-3 h-3" />
-                          </Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                <Button asChild variant="outline" size="sm">
-                  <Link to={`/organization/${orgId}/partners`}>
-                    View all partners <ArrowRight className="ml-1.5 w-3 h-3" />
+          {/* Partner cards */}
+          <div className="border border-b-0 bg-muted/30 px-8 py-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Kommunity Partners
+              </p>
+              <Button variant="ghost" size="sm" asChild className="text-xs h-7 px-2">
+                <Link to={`/organization/${orgId}/partners`}>
+                  View all <ArrowRight className="ml-1 w-3 h-3" />
+                </Link>
+              </Button>
+            </div>
+
+            {partners.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {partners.map(partner => (
+                  <Link
+                    key={partner.id}
+                    to={`/organization/${orgId}/partners/${partner.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/40 hover:shadow-sm transition-all group"
+                  >
+                    <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center overflow-hidden border">
+                      {partner.logoUrl
+                        ? <img src={partner.logoUrl} alt={partner.name} className="w-full h-full object-contain p-1" />
+                        : <span className="text-sm font-bold text-muted-foreground">{partner.name.charAt(0)}</span>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{partner.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {partner.shortDescription || partner.description}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                   </Link>
-                </Button>
+                ))}
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No partners available yet.</p>
             )}
           </div>
 
-          <Card className="border-dashed bg-muted/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="w-5 h-5" />
-                Prefer to self-host?
-              </CardTitle>
-              <CardDescription>
-                Deploy your own Arkitekt instance and connect it to this organization for full control over your infrastructure.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" asChild>
-                <a href="https://arkitekt.live/docs/hosting" target="_blank" rel="noopener noreferrer">
-                  Read the self-hosting guide <ArrowRight className="ml-1.5 w-3 h-3" />
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Self-host footer */}
+          <div className="rounded-b-xl border px-8 py-4 flex items-center justify-between bg-muted/10">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Server className="w-4 h-4 flex-shrink-0" />
+              <span>Prefer to run your own infrastructure?</span>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="text-xs h-7 px-3 flex-shrink-0">
+              <a href="https://arkitekt.live/docs/hosting" target="_blank" rel="noopener noreferrer">
+                Self-hosting guide <ArrowRight className="ml-1 w-3 h-3" />
+              </a>
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
