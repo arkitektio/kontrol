@@ -3,12 +3,19 @@ fragment DeviceCode on ManagementDeviceCode {
   code 
   stagingKind
   stagingManifest {
-    identifier 
+    identifier
     version
     logo
     description
     url
-    scopes 
+    repoUrl
+    scopes
+    requirements {
+      key
+      service
+      optional
+      description
+    }
     publicSources {
       kind
       url

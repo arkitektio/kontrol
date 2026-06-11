@@ -1,371 +1,371 @@
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   useDeviceCodeByCodeQuery,
   useAcceptDeviceCodeMutation,
   useDeclineDeviceCodeMutation,
   useCompositionsQuery,
   useMeQuery,
-  useValidateDeviceCodeQuery
+  useValidateDeviceCodeQuery,
 } from "@/api/graphql";
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, Monitor, Smartphone, Globe, XCircle } from "lucide-react";
-import { DeviceCodeFlow } from "./DeviceCodeFlow";
+import {
+  Monitor, Smartphone, Globe, CheckCircle2, XCircle, Circle,
+  Loader2, AlertTriangle, ExternalLink, Github,
+} from "lucide-react";
 
 interface ConfigureFormData {
   composition: string;
 }
 
-const APP_KIND_CONFIG = {
-  development: {
-    icon: Smartphone,
-    title: "Development App",
-    description: "Device or application requesting access to organizational data.",
-  },
-  desktop: {
-    icon: Monitor,
-    title: "Desktop App",
-    description: "Desktop application for platform authentication.",
-  },
-  website: {
-    icon: Globe,
-    title: "Website",
-    description: "Web application for platform authentication.",
-  },
-};
+const KIND_ICON = { development: Smartphone, desktop: Monitor, website: Globe } as const;
 
 export function ConfigurePage() {
   const { deviceCode: code } = useParams<{ deviceCode: string }>();
-
   const { control, watch, setValue } = useForm<ConfigureFormData>();
   const selectedComposition = watch("composition");
 
-  const { data: deviceCodeData, loading: deviceCodeLoading, error: deviceCodeError } = useDeviceCodeByCodeQuery({
+  const { data: deviceCodeData, loading, error } = useDeviceCodeByCodeQuery({
     variables: { code: code || "" },
     skip: !code,
   });
-
-  const { data: compData, loading: compLoading } = useCompositionsQuery();
+  const { data: compData } = useCompositionsQuery();
   const { data: meData } = useMeQuery();
-
-  const { data: validationData } = useValidateDeviceCodeQuery({
-    variables: { deviceCode: deviceCodeData?.deviceCodeByCode?.id || "", composition: selectedComposition },
-    skip: !deviceCodeData?.deviceCodeByCode || !selectedComposition
+  const { data: validationData, loading: validating } = useValidateDeviceCodeQuery({
+    variables: {
+      deviceCode: deviceCodeData?.deviceCodeByCode?.id || "",
+      composition: selectedComposition,
+    },
+    skip: !deviceCodeData?.deviceCodeByCode?.id || !selectedComposition,
   });
 
   const [acceptDeviceCode] = useAcceptDeviceCodeMutation();
   const [declineDeviceCode] = useDeclineDeviceCodeMutation();
-
+  const [declinedRequirements, setDeclinedRequirements] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
 
-  const navigate = useNavigate();
-
-  const selectedCompositionEntry = compData?.compositions?.find(
-    (composition) => composition.id === selectedComposition,
-  );
-
-  // Preset the active composition
   useEffect(() => {
-    if (compData?.compositions && compData.compositions.length > 0 && !selectedComposition) {
-        setValue("composition", compData.compositions[0].id);
+    if (compData?.compositions?.length && !selectedComposition) {
+      setValue("composition", compData.compositions[0].id);
     }
   }, [compData, selectedComposition, setValue]);
 
-  if (!code) {
-    return <div className="flex h-screen items-center justify-center">No code provided</div>;
+  if (!code) return null;
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
-  if (deviceCodeLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  if (error || !deviceCodeData?.deviceCodeByCode) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-sm text-muted-foreground">This authorization link is invalid or has expired.</p>
+      </div>
+    );
   }
 
-  if (deviceCodeError) {
-    return <div className="flex h-screen items-center justify-center">Error: {deviceCodeError.message}</div>;
-  }
+  const deviceCode = deviceCodeData.deviceCodeByCode;
+  const manifest = deviceCode.stagingManifest;
+  const requirements = manifest?.requirements ?? [];
+  const requiredReqs = requirements.filter((r) => !r.optional);
+  const optionalReqs = requirements.filter((r) => r.optional);
 
-  const deviceCode = deviceCodeData?.deviceCodeByCode;
+  const mappingByKey = Object.fromEntries(
+    (validationData?.validateDeviceCode?.mappings ?? []).map((m) => [m.key, m.serviceInstance ?? null])
+  );
+  const hasValidation = !!validationData && !!selectedComposition && !validating;
+  const canAllow = hasValidation && validationData!.validateDeviceCode.valid;
 
-  if (!deviceCode) {
-    return <div className="flex h-screen items-center justify-center">Invalid code</div>;
-  }
+  const selectedComp = compData?.compositions?.find((c) => c.id === selectedComposition);
+
+  const toggleRequirement = (key: string) =>
+    setDeclinedRequirements((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
 
   const onAllow = async () => {
     if (!selectedComposition) return;
     try {
-      let data = await acceptDeviceCode({
+      const result = await acceptDeviceCode({
         variables: {
           input: {
             deviceCode: deviceCode.id,
-            composition: selectedComposition
-          }
-        }
+            composition: selectedComposition,
+            declinedRequirements: Array.from(declinedRequirements),
+          },
+        },
       });
-      if (data.data?.acceptDeviceCode?.id){
-        // Redirect to a composition specific page?? The mutation returns a client detail. 
-        // We will stick to organization logic, assuming composition still lets us traverse to org.
-        // Actually the return type is DetailClient.
-        // Let's assume we can just redirect to the composition page of that client, or just the client detail page.
-        // But client detail page is organization based: /organization/{org}/clients/{client}.
-        // We don't have org id handy easily unless we ask composition for it, or the client.
-        // DetailClient fragment usually has organization { id }
-        // Let's assume it has.
-        // If not, we might fail to redirect properly, but the action will succeed.
-        // I will redirect to "/" if org is missing, or try to get it from return value.
-        const clientId = data.data.acceptDeviceCode.id;
-        // The DetailClient fragment (assumed) might have organization. 
-        // If not we can't construct the URL reliably. 
-        // We will just setAuthorized(true) and show success screen.
-        setSubmitted(true);
-        setAuthorized(true);
-      }
-      else {
-        setAuthorized(false);
-      }
+      setAuthorized(!!result.data?.acceptDeviceCode?.id);
     } catch (e) {
       console.error(e);
+    } finally {
+      setSubmitted(true);
     }
   };
 
-  const onCancel = async () => {
+  const onDeny = async () => {
     try {
-      await declineDeviceCode({
-        variables: {
-          input: {
-            deviceCode: deviceCode.id
-          }
-        }
-      });
+      await declineDeviceCode({ variables: { input: { deviceCode: deviceCode.id } } });
+    } finally {
       setAuthorized(false);
       setSubmitted(true);
-    } catch (e) {
-      console.error(e);
     }
   };
 
-  const appKind = deviceCode.stagingKind as keyof typeof APP_KIND_CONFIG;
-  const appConfig = APP_KIND_CONFIG[appKind] || APP_KIND_CONFIG.development;
-  const Icon = appConfig.icon;
-
-  // Success state
   if (submitted) {
     return (
-      <div className="container flex h-screen items-center justify-center">
-        <Card className="max-w-md">
+      <div className="flex h-screen items-center justify-center p-6">
+        <Card className="w-full max-w-xl text-center">
           <CardHeader>
-            <CardTitle>
-              {authorized ? "Successfully Authorized" : "Request Denied"}
-            </CardTitle>
-            <CardDescription>
-                You can close this page now. Use your application to continue.
-            </CardDescription>
+            <p className="text-2xl">{authorized ? "✓" : "✕"}</p>
+            <p className="font-semibold">{authorized ? "Access granted" : "Access denied"}</p>
           </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">You can close this tab and return to the application.</p>
+          </CardContent>
         </Card>
       </div>
     );
   }
-          
 
-  // Main form
+  const Icon = KIND_ICON[deviceCode.stagingKind as keyof typeof KIND_ICON] ?? Smartphone;
+  const githubSource = manifest?.publicSources?.find((s) => s.kind === "github");
+  const websiteSource = manifest?.publicSources?.find((s) => s.kind === "website");
+
   return (
-    <div className="flex flex-row-reverse relative h-full w-full">
-      {/* Background Flow */}
-      <div className="flex-initial right-0 h-full w-[40vw] z-0 pointer-events-none">
-        <DeviceCodeFlow 
-          deviceCode={deviceCode} 
-          validation={validationData?.validateDeviceCode} 
-          className="h-full w-full"
-        />
-      </div>
+    <div className="flex min-h-screenp-6 ">
+      <Card className="w-full max-w-xl shadow-lg border-0">
 
-      <div className="flex-grow space-y-6 w-[40vw]">
-        {/* Header */}
-        <div className="flex items-start gap-4">
-          {deviceCode?.stagingManifest?.logo ? (
-            <img src={deviceCode.stagingManifest.logo} alt="App Logo" className="h-16 w-16 rounded-lg" />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-              <Icon className="h-8 w-8" />
-            </div>
-          )}
-          <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-semibold">{appConfig.title}</h1>
-            <p className="text-sm text-muted-foreground">{appConfig.description}</p>
-            {meData?.me && (
-              <p className="text-sm text-muted-foreground">
-                Acting as <span className="font-medium">{meData.me.username}</span>
+        {/* App header */}
+        <CardHeader className="pb-4">
+          <div className="flex items-start gap-4">
+            {manifest?.logo ? (
+              <img src={manifest.logo} alt="" className="h-14 w-14 rounded-xl object-cover shrink-0" />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted shrink-0">
+                <Icon className="h-7 w-7 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0 space-y-1">
+              <p className="font-semibold text-lg leading-tight truncate">
+                {manifest?.identifier ?? deviceCode.client?.release.app.identifier}
               </p>
+              <p className="text-sm text-muted-foreground">
+                Version {manifest?.version ?? deviceCode.client?.release.version}
+              </p>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {githubSource && (
+                  <a href={githubSource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-foreground">
+                    <Github className="h-3 w-3" /> Source
+                  </a>
+                )}
+                {websiteSource && (
+                  <a href={websiteSource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-foreground">
+                    <ExternalLink className="h-3 w-3" /> Website
+                  </a>
+                )}
+                {manifest?.repoUrl && !githubSource && (
+                  <a href={manifest.repoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-foreground">
+                    <ExternalLink className="h-3 w-3" /> Repo
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {manifest?.description && (
+            <p className="text-sm text-muted-foreground mt-3">{manifest.description}</p>
+          )}
+
+          {/* Unverified warning */}
+          <div className="flex items-center gap-2 mt-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            This app is not verified. Only authorize if you trust its source.
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+
+          {/* Authorizing as */}
+          <div className="text-sm">
+            Authorizing as{" "}
+            <span className="font-medium">{meData?.me?.username ?? "…"}</span>
+            {selectedComp && (
+              <> in <span className="font-medium">{selectedComp.organization?.name ?? selectedComp.name ?? "your workspace"}</span></>
             )}
           </div>
-        </div>
 
-        <Separator />
+          <Separator />
 
-        {/* App Identity */}
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {deviceCode.client ? "Claims to be registered app" : "Will establish new app"}
-            </p>
-            <p className="text-2xl font-semibold">
-              {deviceCode.client?.release.app.identifier || deviceCode.stagingManifest.identifier}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {deviceCode.client?.release ? "Claims version" : "Will establish version"}
-            </p>
-            <p className="text-xl font-medium">
-              {deviceCode.client?.release.version || deviceCode.stagingManifest.version}
-            </p>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Client & Permissions */}
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium">Client Status</p>
-            <p className="text-sm text-muted-foreground">
-              {deviceCode.client ? "Previously authorized" : "New client"}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium mb-2">
-              {deviceCode.client ? "Inherited Permissions" : "Requested Permissions"}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {deviceCode.stagingManifest?.scopes.map((scope) => (
-                <Badge key={scope} variant="secondary">
-                  {scope}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Composition Selection */}
-        {compLoading ? (
-            <div className="flex justify-center p-4">Loading compositions...</div>
-        ) : compData?.compositions && compData.compositions.length > 0 ? (
-          <div className="space-y-3">
+          {/* Scopes */}
+          {(manifest?.scopes?.length ?? 0) > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium">Assign to Composition</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Requested permissions
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {manifest!.scopes.map((scope) => (
+                  <Badge key={scope} variant="secondary" className="text-xs font-mono">
+                    {scope}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Required services */}
+          {requiredReqs.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Required services
+              </p>
+              <div className="space-y-2">
+                {requiredReqs.map((req) => {
+                  const available = hasValidation ? mappingByKey[req.key] != null : undefined;
+                  return (
+                    <div key={req.key} className="flex items-start gap-3">
+                      <div className="mt-0.5 shrink-0">
+                        {validating ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/50" />
+                        ) : available === undefined ? (
+                          <Circle className="h-4 w-4 text-muted-foreground/30" />
+                        ) : available ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-destructive" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-snug">{req.key}</p>
+                        <p className="text-xs text-muted-foreground">{req.description ?? req.service}</p>
+                        {available === false && (
+                          <p className="text-xs text-destructive mt-0.5">Not available in this composition</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Optional services */}
+          {optionalReqs.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Optional services
+              </p>
+              <p className="text-xs text-muted-foreground -mt-1">
+                The app works without these. Disable any you'd prefer not to share.
+              </p>
+              <div className="space-y-3 mt-1">
+                {optionalReqs.map((req) => {
+                  const available = hasValidation ? mappingByKey[req.key] != null : undefined;
+                  const declined = declinedRequirements.has(req.key);
+                  const canToggle = available === true;
+
+                  return (
+                    <div key={req.key} className="flex items-start gap-3">
+                      <div className="mt-0.5 shrink-0">
+                        {validating ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/50" />
+                        ) : available === undefined ? (
+                          <Circle className="h-4 w-4 text-muted-foreground/30" />
+                        ) : available ? (
+                          <CheckCircle2 className={`h-4 w-4 ${declined ? "text-muted-foreground/40" : "text-green-500"}`} />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-muted-foreground/40" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium leading-snug ${!canToggle && hasValidation ? "text-muted-foreground" : ""}`}>
+                          {req.key}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {req.description ?? req.service}
+                        </p>
+                        {available === false && hasValidation && (
+                          <p className="text-xs text-muted-foreground/60 mt-0.5">Not available in this composition</p>
+                        )}
+                      </div>
+                      {canToggle && (
+                        <Switch
+                          checked={!declined}
+                          onCheckedChange={() => toggleRequirement(req.key)}
+                          className="mt-0.5 shrink-0"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <Separator />
+
+          {/* Composition picker */}
+          {compData?.compositions?.length ? (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Workspace
+              </p>
               <Controller
                 control={control}
                 name="composition"
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select composition" />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a workspace…" />
                     </SelectTrigger>
                     <SelectContent>
-                      {compData.compositions.map((comp) => (
-                        <SelectItem key={comp.id} value={comp.id}>
-                          {comp.name || "Unnamed Composition"}
-                          {comp.organization?.name ? ` (${comp.organization.name})` : ""}
+                      {compData.compositions.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name || "Unnamed"}
+                          {c.organization?.name ? ` · ${c.organization.name}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               />
-              {selectedCompositionEntry ? (
-                <p className="text-sm text-muted-foreground">
-                  Assigning this device to organization{" "}
-                  <span className="font-medium text-foreground">
-                    {selectedCompositionEntry.organization?.name || selectedCompositionEntry.organization.id}
-                  </span>
-                </p>
-              ) : null}
             </div>
-          </div>
-        ) : (
-            <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertTitle>No Compositions Available</AlertTitle>
-                <AlertDescription className="flex flex-col gap-2">
-                  <span>You need to create a composition in your organization to connect a device. Please contact your administrator.</span>
-                  
-                  <span className="text-xs opacity-80">
-                      {selectedCompositionEntry?.organization?.id ? (
-                        <>
-                          If you are the organization owner, you can set up a new composition through our <Link to={`/organization/${selectedCompositionEntry.organization.id}/partners`} className="underline font-semibold hover:text-white">Kommunity Partners</Link>.
-                        </>
-                      ) : (
-                        <>
-                          If you are the organization owner, open your organization dashboard to browse Kommunity Partners.
-                        </>
-                      )}
-                  </span>
-                </AlertDescription>
-            </Alert>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No workspaces available.{" "}
+              <Link to="/" className="underline">Set one up first.</Link>
+            </p>
+          )}
 
-        <Separator />
+        </CardContent>
 
-        {/* Compatibility */}
-        {validationData?.validateDeviceCode && (
-          <>
-            {validationData.validateDeviceCode.valid ? (
-              <Alert className="border-green-500/50 bg-green-500/10">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <AlertTitle className="text-green-500">Compatible</AlertTitle>
-                <AlertDescription className="text-green-600 dark:text-green-400">
-                  This app is compatible with your organisations registered services
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertTitle>Not Compatible</AlertTitle>
-                <AlertDescription>
-                  <p className="text-sm text-destructive">• {validationData.validateDeviceCode.reason}</p>
-                </AlertDescription>
-              </Alert>
-            )}
-          </>
-        )}
-
-        {/* Warning */}
-        {validationData?.validateDeviceCode.valid && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Review Required</AlertTitle>
-            <AlertDescription>
-              This app will be able to claim these rights from users. Only allow if you understand
-              the implications.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-3">
+        <CardFooter className="flex gap-2 pt-0">
+          <Button variant="outline" className="flex-1" onClick={onDeny}>
+            Deny
+          </Button>
           <Button
-            variant="outline"
             className="flex-1"
-            onClick={onCancel}
+            onClick={onAllow}
+            disabled={!canAllow}
           >
-            Cancel
+            {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Allow access"}
           </Button>
-          <Button 
-            className="flex-1" 
-            onClick={onAllow} 
-            disabled={!validationData?.validateDeviceCode.valid || !selectedComposition}
-          >
-            Allow
-          </Button>
-        </div>
-      </div>
+        </CardFooter>
+
+      </Card>
     </div>
   );
 }
