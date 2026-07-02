@@ -49,6 +49,7 @@ export type AcceptDeviceCodeInput = {
   composition: Scalars['ID']['input'];
   deviceCode: Scalars['ID']['input'];
   declinedRequirements?: Array<Scalars['String']['input']>;
+  deviceName?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type AcceptInviteInput = {
@@ -2411,6 +2412,8 @@ export type UserFilter = {
 
 export type ValidationResult = {
   __typename?: 'ValidationResult';
+  /** The device that already exists for this node in the selected composition's organization. If null, accepting will create a new device. */
+  existingDevice?: Maybe<ManagementDevice>;
   mappings: Array<PotentialMapping>;
   reason?: Maybe<Scalars['String']['output']>;
   valid: Scalars['Boolean']['output'];
@@ -2967,7 +2970,7 @@ export type ValidateDeviceCodeQueryVariables = Exact<{
 }>;
 
 
-export type ValidateDeviceCodeQuery = { __typename?: 'Query', validateDeviceCode: { __typename?: 'ValidationResult', valid: boolean, reason?: string | null, mappings: Array<{ __typename?: 'PotentialMapping', key: string, serviceInstance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string } | null }> } };
+export type ValidateDeviceCodeQuery = { __typename?: 'Query', validateDeviceCode: { __typename?: 'ValidationResult', valid: boolean, reason?: string | null, existingDevice?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, mappings: Array<{ __typename?: 'PotentialMapping', key: string, serviceInstance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string } | null }> } };
 
 export type ListDeviceGroupsQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -3607,6 +3610,7 @@ export const DeviceCodeFragmentDoc = gql`
   stagingManifest {
     identifier
     version
+    nodeId
     logo
     description
     url
@@ -6199,6 +6203,10 @@ export const ValidateDeviceCodeDocument = gql`
   validateDeviceCode(deviceCode: $deviceCode, composition: $composition) {
     valid
     reason
+    existingDevice {
+      id
+      name
+    }
     mappings {
       key
       serviceInstance {

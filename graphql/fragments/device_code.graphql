@@ -5,6 +5,7 @@ fragment DeviceCode on ManagementDeviceCode {
   stagingManifest {
     identifier
     version
+    nodeId
     logo
     description
     url

@@ -8,13 +8,16 @@ query ValidateDeviceCode($deviceCode: ID!, $composition: ID!) {
   validateDeviceCode(deviceCode: $deviceCode, composition: $composition) {
     valid
     reason
+    existingDevice {
+      id
+      name
+    }
     mappings {
       key
       serviceInstance {
         id
         identifier
-        
+      }
     }
-  }
   }
 }

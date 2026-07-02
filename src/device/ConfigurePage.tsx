@@ -12,6 +12,7 @@ import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -50,6 +51,8 @@ export function ConfigurePage() {
   const [declinedRequirements, setDeclinedRequirements] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
+  const [deviceName, setDeviceName] = useState("");
+  const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (compData?.compositions?.length && !selectedComposition) {
@@ -87,6 +90,13 @@ export function ConfigurePage() {
   const hasValidation = !!validationData && !!selectedComposition && !validating;
   const canAllow = hasValidation && validationData!.validateDeviceCode.valid;
 
+  // Devices are keyed per organization. `existingDevice` is only known once validation
+  // has resolved for the selected workspace; until then we don't know whether accepting
+  // would create a new device, so we hold off on prompting for a name.
+  const existingDevice = validationData?.validateDeviceCode.existingDevice ?? null;
+  const isNodeManifest = !!manifest?.nodeId;
+  const willCreateNewDevice = isNodeManifest && hasValidation && !existingDevice;
+
   const selectedComp = compData?.compositions?.find((c) => c.id === selectedComposition);
 
   const toggleRequirement = (key: string) =>
@@ -105,10 +115,23 @@ export function ConfigurePage() {
             deviceCode: deviceCode.id,
             composition: selectedComposition,
             declinedRequirements: Array.from(declinedRequirements),
+            // Only send a name when a new device will actually be created; for an
+            // existing device the backend ignores it, so don't imply otherwise.
+            ...(willCreateNewDevice ? { deviceName: deviceName.trim() || undefined } : {}),
           },
         },
       });
       setAuthorized(!!result.data?.acceptDeviceCode?.id);
+      if (isNodeManifest) {
+        const trimmedName = deviceName.trim();
+        setDeviceNotice(
+          existingDevice
+            ? `The device "${existingDevice.name ?? "device"}" is already available in your workspace.`
+            : trimmedName
+              ? `A device named "${trimmedName}" will appear in your workspace soon.`
+              : "A device will appear in your workspace soon."
+        );
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -133,8 +156,11 @@ export function ConfigurePage() {
             <p className="text-2xl">{authorized ? "✓" : "✕"}</p>
             <p className="font-semibold">{authorized ? "Access granted" : "Access denied"}</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <p className="text-sm text-muted-foreground">You can close this tab and return to the application.</p>
+            {deviceNotice && (
+              <p className="text-sm text-muted-foreground">{deviceNotice}</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -316,6 +342,35 @@ export function ConfigurePage() {
           )}
 
           <Separator />
+
+          {willCreateNewDevice && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Device name
+              </p>
+              <p className="text-xs text-muted-foreground -mt-1">
+                A new device will be registered in this workspace. Give it a name (optional).
+              </p>
+              <Input
+                value={deviceName}
+                onChange={(event) => setDeviceName(event.target.value)}
+                placeholder="My device"
+                autoComplete="off"
+              />
+            </div>
+          )}
+
+          {isNodeManifest && existingDevice && (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Device
+              </p>
+              <p className="text-xs text-muted-foreground -mt-1">
+                This authorization will reuse your existing device
+                {existingDevice.name ? ` "${existingDevice.name}"` : ""} in this workspace.
+              </p>
+            </div>
+          )}
 
           {/* Composition picker */}
           {compData?.compositions?.length ? (
