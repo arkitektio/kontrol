@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { useListServiceInstanceMappingsQuery } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { ClientLabel } from "../components/ClientLabel"
 
 export default function ServiceInstanceMappings() {
   const { data, loading, error } = useListServiceInstanceMappingsQuery({})
@@ -23,8 +24,8 @@ export default function ServiceInstanceMappings() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-xs text-muted-foreground">
-                  Client: {mapping.client.name}
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  Client: <ClientLabel client={mapping.client} />
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Instance: {mapping.instance.identifier}

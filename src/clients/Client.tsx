@@ -1,13 +1,13 @@
+import { ClientLabel } from "@/components/ClientLabel"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { clientInitials, clientLabel } from "@/lib/clientLabel"
+import { cn } from "@/lib/utils"
 import { Suspense, lazy } from "react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { useDetailClientQuery } from "../api/graphql"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
-import { Link } from "react-router-dom"
-import { ClientUsedAliasFlow } from "./ClientUsedAliasFlow"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils"
+import { CardContent, CardHeader, CardTitle } from "../components/ui/card"
 
 const AutoLogo = lazy(() => import("@/components/AutoLogo"))
 
@@ -43,16 +43,11 @@ export default function Client() {
 
             
               <Avatar className="h-16 w-16">
-                <AvatarImage src={client.logo?.presignedUrl || undefined} alt={client.name} />
-                <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={client.logo?.presignedUrl || undefined} alt={clientLabel(client)} />
+                <AvatarFallback>{clientInitials(client)}</AvatarFallback>
               </Avatar>
               <div>
-                <CardTitle className="text-2xl flex flex-row items-center gap-2">{client.name || "Unnamed Client"}{client.functional && (
-                    
-                <div className="bg-green-300 rounded rounded-full h-4 w-4 animate animate-pulse my-auto" />
-
-                
-            )}
+                <CardTitle className="text-2xl flex flex-row items-center gap-2"><ClientLabel client={client} />{}
 </CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline">{client.organization.name}</Badge>

@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import { ClientLabel } from "../components/ClientLabel"
+import { clientInitials } from "../lib/clientLabel"
 
 export default function Clients() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -46,11 +48,11 @@ export default function Clients() {
                       <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                           <CardTitle className="text-sm font-medium truncate">
-                            {client.name}
+                            <ClientLabel client={client} />
                           </CardTitle>
                           <Avatar className="h-8 w-8">
                               <AvatarImage src={client.logo?.presignedUrl || undefined} />
-                              <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                              <AvatarFallback>{clientInitials(client)}</AvatarFallback>
                           </Avatar>
                         </CardHeader>
                         <CardContent>
@@ -82,11 +84,11 @@ export default function Clients() {
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium truncate">
-                  {client.name}
+                  <ClientLabel client={client} />
                 </CardTitle>
                 <Avatar className="h-8 w-8">
                     <AvatarImage src={client.logo?.presignedUrl || undefined} />
-                    <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{clientInitials(client)}</AvatarFallback>
                 </Avatar>
               </CardHeader>
               <CardContent>
@@ -95,16 +97,6 @@ export default function Clients() {
                         <Badge variant="outline">{client.kind}</Badge>
                         <span className="text-xs text-muted-foreground">by {client.user?.username}</span>
                     </div>
-                    {client.release && (
-                        <div className="text-xs text-muted-foreground">
-                            Running {client.release.app.identifier} {client.release.version}
-                        </div>
-                    )}
-                    {client.device && (
-                        <div className="text-xs text-muted-foreground">
-                            On {client.device.name}
-                        </div>
-                    )}
                 </div>
               </CardContent>
             </Card>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { useClientsQuery, useMeQuery, Ordering } from "./api/graphql"
+import { ClientLabel } from "@/components/ClientLabel"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./components/ui/card"
 import { Button } from "./components/ui/button"
 import { AlertCircle, CheckCircle2, User, Building, ArrowRight, Plus } from "lucide-react"
@@ -75,7 +76,7 @@ export default function Home() {
                                     <div key={client.id} className="flex items-center justify-between p-2 bg-background/50 rounded-md border">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                                            <span className="font-medium text-sm">{client.name}</span>
+                                            <ClientLabel client={client} className="font-medium text-sm" />
                                         </div>
                                         <Link to={`/organization/${client.organization.id}/clients/${client.id}`} className="text-xs text-muted-foreground hover:underline">
                                             View

@@ -1,5 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom"
 import { useGetCompositionQuery, useDeleteCompositionMutation, useUpdateCompositionMutation, CompositionsDocument } from "../api/graphql"
+import { ClientLabel } from "../components/ClientLabel"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
@@ -231,14 +232,13 @@ export default function Composition() {
                     <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{client.name}</CardTitle>
+                          <CardTitle className="text-base"><ClientLabel client={client} /></CardTitle>
                           <Badge variant="secondary" className="text-xs">
                             {client.kind}
                           </Badge>
                         </div>
                         <CardDescription className="flex items-center gap-2 text-xs">
-                          App: {client.release.app.identifier}
-                          {client.user && ` • User: ${client.user.username}`}
+                          {client.user && `User: ${client.user.username}`}
                         </CardDescription>
                       </CardHeader>
                     </Card>

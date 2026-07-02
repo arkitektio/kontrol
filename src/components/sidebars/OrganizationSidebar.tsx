@@ -1,6 +1,7 @@
 import { Sidebar, SidebarContent, SidebarHeader, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroupLabel, SidebarSeparator } from "@/components/ui/sidebar"
 import { Link, useParams, useLocation } from "react-router-dom"
 import { useSidebarOrganizationQuery } from "@/api/graphql"
+import { ClientLabel } from "@/components/ClientLabel"
 import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes, Layers, Ticket } from "lucide-react"
 
 export function OrganizationSidebar() {
@@ -168,7 +169,7 @@ export function OrganizationSidebar() {
                                 <SidebarMenuItem key={client.id}>
                                     <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/clients/${client.id}`)}>
                                         <Link to={`/organization/${org.id}/clients/${client.id}`}>
-                                            <span>{client.name}</span>
+                                            <ClientLabel client={client} showDevice={false} />
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

@@ -3,9 +3,8 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { ListClientFragment } from '@/api/graphql';
 import { Card } from './ui/card';
-import { ArrowRight, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Badge } from './ui/badge';
+import { ClientLabel } from './ClientLabel';
 
 const AutoLogo = lazy(() => import('./AutoLogo'));
 
@@ -20,21 +19,10 @@ export const ClientCard = ({ client }: { client: ListClientFragment }) => {
         <div className="col-span-2 flex flex-col p-4 justify-between gap-4 relative">
           <div className="space-y-1.5">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-lg hover:text-primary transition-colors truncate">
-                    {client.name.slice(0, 20)}
+              <div className="min-w-0">
+                <h3 className="font-semibold text-lg hover:text-primary transition-colors">
+                    <ClientLabel client={client} className="flex-wrap" />
                 </h3>
-                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                    <span className='flex flex-row gap-2'>
-                      <Package className="w-3.5 h-3.5 my-auto" />
-                      {client.release?.app?.identifier || 'Unknown'}
-                    </span>
-                    {client.release && (
-                      <Badge variant="secondary" className="font-mono text-xs w-fit">
-                        v{client.release.version}
-                      </Badge>
-                    )}
-                </div>
               </div>
             </div>
           </div>

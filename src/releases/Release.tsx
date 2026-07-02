@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom"
 import { useDetailReleaseQuery } from "../api/graphql"
+import { ClientLabel } from "../components/ClientLabel"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Link } from "react-router-dom"
@@ -36,7 +37,7 @@ export default function Release() {
                 {release.clients.map(client => (
                     <Link key={client.id} to={`/clients/${client.id}`}>
                         <div className="p-2 border rounded-md hover:bg-muted/50 transition-colors">
-                            <div className="font-medium">{client.name}</div>
+                            <ClientLabel client={client} className="font-medium" />
                             <div className="text-xs text-muted-foreground">by {client?.user?.username}</div>
                         </div>
                     </Link>

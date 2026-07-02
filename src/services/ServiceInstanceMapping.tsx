@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom"
 import { useGetServiceInstanceMappingQuery } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { ClientLabel } from "../components/ClientLabel"
 
 export default function ServiceInstanceMapping() {
   const { id } = useParams<{ id: string }>()
@@ -24,7 +25,7 @@ export default function ServiceInstanceMapping() {
         <CardContent>
             <div className="grid gap-2">
                 <div>
-                    <span className="font-semibold">Client:</span> {mapping.client.name}
+                    <span className="font-semibold">Client:</span> <ClientLabel client={mapping.client} className="align-middle" />
                 </div>
                 <div>
                     <span className="font-semibold">Instance:</span> {mapping.instance.identifier}

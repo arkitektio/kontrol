@@ -3,6 +3,7 @@ import '@xyflow/react/dist/style.css';
 import { type ListServiceInstanceMappingFragment } from '../api/graphql';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { clientLabel } from '../lib/clientLabel';
 
 interface ServiceInstanceMappingFlowProps {
     mappings: ListServiceInstanceMappingFragment[]
@@ -62,7 +63,7 @@ export const ServiceInstanceMappingFlow = ({ mappings }: ServiceInstanceMappingF
         const clientNodes: Node[] = uniqueClients.map((client, index) => ({
             id: `client-${client.id}`,
             position: { x: 0, y: index * 80 },
-            data: { label: client.name, id: client.id },
+            data: { label: clientLabel(client), id: client.id },
             type: 'client',
         }));
 
