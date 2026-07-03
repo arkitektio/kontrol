@@ -9,7 +9,7 @@ import { useTheme } from "@/providers/ThemeProvider";
 
 export const ArkitektLogo = ({
   strokeColor = "#000",
-  cubeColor = "#745cdeff",
+  cubeColor = "var(--brand-logo-mid)",
   aColor = "#000",
   width,
   height,
@@ -205,18 +205,20 @@ export const DynamicArkitektLogo = ({
   const { theme} = useTheme();
 
 
+  // The cube follows the brand hue (--brand-logo-* re-tint with --brand-hue);
+  // stroke + "a" stay neutral so the mark reads on either surface.
   if (theme === "dark") {
     strokeColor = "#FFFFFF";
-    cubeColor = "#8b78ffff";
+    cubeColor = "var(--brand-logo-light)";
     aColor = "#FFFFFF";
-  } else if (theme === "light") { 
+  } else if (theme === "light") {
     strokeColor = "#000000";
-    cubeColor = "#6f5cdeff";
+    cubeColor = "var(--brand-logo-mid)";
     aColor = "#FFFFFF";
   }
   else {
     strokeColor = "#FFFFFF";
-    cubeColor = "#6f5cdeff";
+    cubeColor = "var(--brand-logo-mid)";
     aColor = "#FFFFFF";
   }
 

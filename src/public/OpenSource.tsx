@@ -10,41 +10,40 @@ export default function OpenSource() {
                 Fully Open Source
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-                Kontrol is designed to be the transparent heart of your laboratory infrastructure. 
-                We believe that critical infrastructure should be auditable, extendable, and free from vendor lock-in.
+                Kontrol and the Lok server it talks to are MIT licensed. Every part of the Arkitekt
+                control plane — identity, app configuration, the mesh — is code you can read, fork, and run yourself.
             </p>
-            
+
             <div className="grid gap-8 md:grid-cols-2 mt-8">
                 <div className="bg-muted/30 p-6 rounded-xl border">
                     <div className="flex items-center gap-3 mb-4">
                         <GitBranch className="w-5 h-5 text-primary" />
-                        <h3 className="text-xl font-semibold">Community Driven</h3>
+                        <h3 className="text-xl font-semibold">Read and fork the source</h3>
                     </div>
                     <p className="text-muted-foreground">
-                        Our codebase is publicly available on GitHub. We welcome contributions, feature requests, and bug reports from the community.
-                        You can fork the project, inspection the code, and even build your own custom versions.
+                        The code lives on GitHub under the arkitektio organization. Open an issue, send a pull
+                        request, or fork it and run your own build — nothing is hidden behind a hosted API.
                     </p>
                 </div>
 
                 <div className="bg-muted/30 p-6 rounded-xl border">
                     <div className="flex items-center gap-3 mb-4">
                         <Heart className="w-5 h-5 text-primary" />
-                        <h3 className="text-xl font-semibold">Self-Hostable</h3>
+                        <h3 className="text-xl font-semibold">Self-hosted by design</h3>
                     </div>
                     <p className="text-muted-foreground">
-                        While we offer managed versions, Kontrol is built to be self-hosted. 
-                        You can run the entire stack on your own hardware, keeping your data and metadata completely within your control.
-                        Perfect for air-gapped or high-security environments.
+                        Run the whole stack on your own hardware. Users, tokens, and service metadata stay on
+                        your machines, so Kontrol works in air-gapped and locked-down networks too.
                     </p>
                 </div>
             </div>
 
             <div className="prose dark:prose-invert max-w-none mt-10">
-                <h3 className="text-2xl font-semibold mb-4">Why Open Source?</h3>
+                <h3 className="text-2xl font-semibold mb-4">Why it matters</h3>
                 <p>
-                    In scientific and research environments, reproducibility and transparency are paramount. 
-                    Proprietary "black boxes" can hide issues or disappear when a company changes direction. 
-                    By choosing open source, you ensure that your lab's operating system is as verifiable as your research data.
+                    Kontrol issues signed JWTs, so any service can verify a token on its own — no call back to a
+                    central server, no shared session store to trust. Because the whole chain is open, you can audit
+                    exactly how a user or app was authorized, and you're never stuck if a vendor changes direction.
                 </p>
             </div>
         </div>

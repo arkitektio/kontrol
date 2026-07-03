@@ -7,20 +7,21 @@ export default function Networking() {
                 <Network className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-                Networking Simplified
+                A private mesh, not a VPN to babysit
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-                Forget complex VPNs and port forwarding. Kontrol creates a secure, peer-to-peer mesh network between your devices, working seamlessly behind firewalls and NATs.
+                Kontrol runs ionscale, a Tailscale-compatible control server bundled with Lok. Your Devices join a
+                WireGuard mesh and reach each other directly — no port forwarding, no public IPs, no static VPN config.
             </p>
 
             <div className="grid gap-6 mt-8">
                 <div className="flex gap-4 items-start bg-muted/30 p-6 rounded-xl border">
                     <Server className="w-8 h-8 text-primary mt-1 shrink-0" />
                     <div>
-                        <h3 className="text-xl font-semibold mb-2">Device-Centric Architecture</h3>
+                        <h3 className="text-xl font-semibold mb-2">Devices are the nodes</h3>
                         <p className="text-muted-foreground">
-                            In Kontrol, "Devices" are first-class citizens. Whether it's a powerful server, a lab workstation, or an acquisition machine, 
-                            each device connects to the network as a node. Services run directly on these devices, close to your data.
+                            A server, a workstation, or a microscope acquisition machine each register as a Device and
+                            get a stable address on the mesh. Services run on those Devices, next to the data they use.
                         </p>
                     </div>
                 </div>
@@ -28,10 +29,10 @@ export default function Networking() {
                 <div className="flex gap-4 items-start bg-muted/30 p-6 rounded-xl border">
                     <Globe className="w-8 h-8 text-primary mt-1 shrink-0" />
                     <div>
-                        <h3 className="text-xl font-semibold mb-2">Overlay Mesh Network</h3>
+                        <h3 className="text-xl font-semibold mb-2">Direct WireGuard connections</h3>
                         <p className="text-muted-foreground">
-                            We leverage advanced overlay networking technologies (compatible with Tailscale/Headscale) to create a virtual private network. 
-                            Devices can communicate directly with each other (Peer-to-Peer) regardless of their physical location—be it in the cloud, on campus, or at home.
+                            ionscale hands out keys and routes; the Devices then talk peer-to-peer over WireGuard. It
+                            punches through NAT and firewalls, so a machine in the cloud, on campus, and at home all sit on the same network.
                         </p>
                     </div>
                 </div>
@@ -39,10 +40,10 @@ export default function Networking() {
                 <div className="flex gap-4 items-start bg-muted/30 p-6 rounded-xl border">
                     <ShieldCheck className="w-8 h-8 text-primary mt-1 shrink-0" />
                     <div>
-                        <h3 className="text-xl font-semibold mb-2">Secure by Default</h3>
+                        <h3 className="text-xl font-semibold mb-2">Encrypted and off the public internet</h3>
                         <p className="text-muted-foreground">
-                            All traffic between nodes is end-to-end encrypted. Because it's a private mesh, your services aren't exposed to the public internet, 
-                            reducing the attack surface significantly while remaining accessible to authorized members of your Organization.
+                            Traffic between nodes is end-to-end encrypted by WireGuard. Services on the mesh are never
+                            exposed to the open internet — only members of your Organization with a joined Device can reach them.
                         </p>
                     </div>
                 </div>

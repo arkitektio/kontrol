@@ -1,72 +1,36 @@
-# Landing Page Setup
+# Landing page
 
-The new landing page has been created at [src/Landing.tsx](src/Landing.tsx) with the following features:
+The public, unauthenticated surface of Kontrol. It's shown at `/` and to anyone
+who hasn't signed in, and it's meant to explain what Lok/Kontrol does before you
+have an account.
 
-## Features Implemented
+## Where the copy lives
 
-1. **Hero Section** - Eye-catching hero with call-to-action buttons
-2. **Feature Cards:**
-   - 🔓 Fully Open Source - MIT licensed, no vendor lock-in
-   - 🌐 Firewall-friendly - Peer-to-peer connection with Tailscale integration
-   - 🔐 Auth Built In - OAuth2, social logins, MFA support
-   - ⚡ Deploy Quickly - Fast lab service deployment
+| File | What it is |
+|---|---|
+| [`src/Landing.tsx`](src/Landing.tsx) | The hero (headline, subhead, CTAs) and the four feature cards. |
+| [`src/public/OpenSource.tsx`](src/public/OpenSource.tsx) | "Open source" concept page (`/opensource`). |
+| [`src/public/Networking.tsx`](src/public/Networking.tsx) | The private mesh / ionscale page (`/networking`). |
+| [`src/public/Auth.tsx`](src/public/Auth.tsx) | Identity, OAuth2/OIDC, Roles & Scopes (`/auth`). |
+| [`src/public/Deploy.tsx`](src/public/Deploy.tsx) | How services connect via Fakts and approval (`/deploy`). |
+| [`src/components/sidebars/LandingSidebar.tsx`](src/components/sidebars/LandingSidebar.tsx) | The nav linking the four pages together. |
 
-3. **Video Demo Section** - Showcases login flow and deployment process
-4. **Community CTA** - Encourages GitHub engagement
+Each feature card on `Landing.tsx` links to one of the `src/public/*` pages, and
+the sidebar mirrors those links. If you add or rename a page, update all three:
+the card, the sidebar entry, and the route in [`src/Router.tsx`](src/Router.tsx).
 
-## Adding Demo Videos
+## Editing
 
-To add demo videos to the landing page, place your video files in the `public/` folder:
+These pages are plain copy in TSX — no data fetching, no routing logic. Edit the
+text directly. Keep the voice concrete: name the real components (Lok, Fakts,
+ionscale, Clients, Roles, Scopes, Compositions) rather than describing them with
+adjectives.
 
-### Required Files:
+## Running
 
-1. **Login Demo Video:**
-   - File: `public/demo-login.mp4`
-   - Poster image (optional): `public/demo-login-poster.jpg`
-   - Content: Should show the authentication/login flow
-
-2. **Deployment Demo Video:**
-   - File: `public/demo-deploy.mp4`
-   - Poster image (optional): `public/demo-deploy-poster.jpg`
-   - Content: Should show quick service deployment
-
-### Video Recommendations:
-
-- **Format:** MP4 (H.264 codec for best browser compatibility)
-- **Resolution:** 1280x720 or 1920x1080
-- **Duration:** 30-90 seconds (keep it short and engaging)
-- **Size:** Optimize for web (aim for under 10MB per video)
-- **Audio:** Optional (videos are set to muted by default but users can unmute)
-
-### Creating Videos:
-
-You can record demo videos using tools like:
-- **Screen recording:** OBS Studio, QuickTime (Mac), SimpleScreenRecorder (Linux)
-- **Video editing:** DaVinci Resolve, FFmpeg, HandBrake (for compression)
-
-Example FFmpeg command to optimize a video:
 ```bash
-ffmpeg -i input.mp4 -c:v libx264 -crf 28 -preset slow -c:a aac -b:a 128k public/demo-login.mp4
+npm run dev        # then visit http://localhost:5173/
 ```
 
-## Routes Updated
-
-- `/` - Now shows the landing page (public, no authentication required)
-- `/home` - Dashboard for authenticated users (redirects here after login)
-- `/account/login` - Login page
-- `/account/signup` - Signup page
-
-## Testing
-
-1. Start the dev server: `npm run dev`
-2. Visit `http://localhost:5173/` to see the landing page
-3. Sign up or log in - you'll be redirected to `/home` with the dashboard
-4. Log out to return to the landing page
-
-## Customization
-
-You can customize the landing page by editing [src/Landing.tsx](src/Landing.tsx):
-- Update hero text and CTAs
-- Modify feature card content
-- Add more sections as needed
-- Update GitHub links to your own repository
+Sign in and you're redirected to `/home` (the authenticated dashboard); sign out
+to return here.

@@ -14,6 +14,7 @@ import { ManagementLayout } from './components/layouts/ManagementLayout'
 import { OrganizationLayout } from './components/layouts/OrganizationLayout'
 import { ProfileLayout } from './components/layouts/ProfileLayout'
 import RootLayout, { ErrorLayout } from './components/RootLayout'
+import { LoadingScreen } from './components/LoadingScreen'
 
 function lazyDefault(load: () => Promise<{ default: ComponentType<any> }>) {
   return lazy(load)
@@ -143,11 +144,7 @@ const mfaOverviewLoader = lazyLoader(mfaOverviewModule)
 const recoveryCodesLoader = lazyLoader(recoveryCodesModule)
 
 function RouteFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center p-6 text-sm text-muted-foreground">
-      Loading...
-    </div>
-  )
+  return <LoadingScreen />
 }
 
 function RouterErrorBoundary() {

@@ -1,4 +1,4 @@
-import { Zap, Box, Layers, RefreshCw, Plug } from "lucide-react"
+import { Box, Layers, RefreshCw, Plug } from "lucide-react"
 
 export default function Deploy() {
     return (
@@ -7,11 +7,11 @@ export default function Deploy() {
                 <Plug className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-                Service Connectivity
+                How services connect
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-                Kontrol resolves dependencies between Applications and Services. 
-                Any service can choose to connect to your organizational network, subject to approval.
+                A service configures itself through Fakts, asks to join your Organization, and waits for an admin to
+                approve it. Once it's in, Apps resolve their dependencies against the pool of approved services.
             </p>
 
             <div className="grid gap-6 mt-8">
@@ -20,24 +20,10 @@ export default function Deploy() {
                         <Box className="w-8 h-8 text-primary" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold mb-2">Bring Your Own Service</h3>
+                        <h3 className="text-xl font-bold mb-2">1. Configure through Fakts</h3>
                         <p className="text-muted-foreground mb-4">
-                            Services are autonomous. You can run any compatible service on any machine, anywhere. 
-                            These services initiate a connection to Kontrol, requesting to join your organization's network.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row gap-6 items-start p-6 rounded-xl border bg-card">
-                    <div className="bg-primary/10 p-4 rounded-lg shrink-0">
-                        <Layers className="w-8 h-8 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold mb-2">Dependency Resolution</h3>
-                        <p className="text-muted-foreground mb-4">
-                            Applications define their requirements (dependencies). Kontrol acts as a matchmaker, 
-                            resolving these requirements against the pool of available, approved Services. 
-                            This dynamic resolution ensures Apps always have the resources they need.
+                            You run a service anywhere — on a Device in the mesh or your own machine. On startup it calls
+                            Lok over the <strong>Fakts</strong> protocol to fetch its configuration and endpoints, instead of you wiring them in by hand.
                         </p>
                     </div>
                 </div>
@@ -47,11 +33,23 @@ export default function Deploy() {
                         <RefreshCw className="w-8 h-8 text-primary" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold mb-2">Approval Workflow</h3>
+                        <h3 className="text-xl font-bold mb-2">2. Request to join, get approved</h3>
                         <p className="text-muted-foreground mb-4">
-                            Security is paramount. When a service attempts to connect, it enters a pending state. 
-                            Organization administrators must explicitly approve the service before it becomes discoverable 
-                            or accessible within the network.
+                            The service registers as a pending <strong>Release</strong> and can't be reached yet. An
+                            admin reviews it in Kontrol and approves it — only then does it become a usable Service Instance in the Organization.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-6 items-start p-6 rounded-xl border bg-card">
+                    <div className="bg-primary/10 p-4 rounded-lg shrink-0">
+                        <Layers className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold mb-2">3. Apps resolve their dependencies</h3>
+                        <p className="text-muted-foreground mb-4">
+                            An App declares which services it needs. Lok binds those requirements to approved Service
+                            Instances — grouped into a <strong>Composition</strong> — so the App connects to real endpoints without hard-coding a single URL.
                         </p>
                     </div>
                 </div>

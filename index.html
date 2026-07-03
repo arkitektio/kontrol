@@ -5,6 +5,26 @@
     <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kontrol</title>
+    <script>
+      // Apply the brand hue before first paint. Use the saved hue if there is
+      // one; otherwise pick a random hue for this (first) visit AND persist it,
+      // so the choice is stable on every later load. Runs here (not in React)
+      // to avoid flashing the default violet before the app mounts.
+      (function () {
+        try {
+          var k = "arkitekt-brand-hue";
+          var s = localStorage.getItem(k);
+          var h;
+          if (s != null) {
+            h = parseFloat(s);
+          } else {
+            h = Math.floor(Math.random() * 360);
+            localStorage.setItem(k, String(h));
+          }
+          document.documentElement.style.setProperty("--brand-hue", String(h));
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

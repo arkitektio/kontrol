@@ -1,11 +1,9 @@
-import { Suspense, lazy } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
 import { Code, Shield, Network, Zap, ArrowRight, Github } from "lucide-react"
 import { useIsMobile } from "./hooks/use-mobile"
-
-const OrganicLogo = lazy(() => import("./components/OrganicLogo"))
+import LavaBackground from "./components/LavaBackground"
 
 export default function Landing() {
     const isMobile = useIsMobile()
@@ -16,14 +14,7 @@ export default function Landing() {
             {!isMobile ? (
                 <div className="fixed top-0 right-0 h-screen w-[80vw] lg:block hidden pointer-events-none z-0">
                     <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10" />
-                    <Suspense fallback={null}>
-                        <OrganicLogo 
-                            count={8} 
-                            color="#6f5cde"
-                            connectionDistance={3.5}
-                            wanderSpeed={0.4}
-                        />
-                    </Suspense>
+                    <LavaBackground />
                 </div>
             ) : null}
             
@@ -32,32 +23,29 @@ export default function Landing() {
                 
                 <div className="max-w-4xl space-y-8">
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-                        Connect your Lab
-                        <span className="block text-primary  text-5xl font-light">Instantly</span>
+                        Koordination
+                        <span className="block text-primary text-5xl font-light">for Arkitekt</span>
                     </h1>
-                    
+
                     <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl">
-                        Connect your devices, deploy services, and manage your lab infrastructure with built-in authentication and peer-to-peer networking.
+                        Lok is  the identity and configuration server behind Arkitekt.
+                        Apps configure themselves through Fakts, users and services sign in over OAuth2/OIDC,
+                        and devices join a private WireGuard mesh — all self-hostable and MIT licensed.
                     </p>
-                    
+
                     <div className="flex flex-col sm:flex-row gap-4 items-start">
                         <Button size="lg" className="text-lg px-8 py-6" asChild>
                             <Link to="/account/signup">
-                                Get Started
+                                Create an account
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
                         </Button>
                         <Button size="lg" variant="outline" className="text-lg px-8 py-6" asChild>
-                            <a href="https://github.com/arkitektio/kontrol" target="_blank" rel="noopener noreferrer">
+                            <a href="https://arkitekt.live" target="_blank" rel="noopener noreferrer">
                                 <Github className="mr-2 h-5 w-5" />
                                 View on GitHub
                             </a>
                         </Button>
-                    </div>
-
-                    <div className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-4 py-2 text-sm backdrop-blur-sm">
-                        <Github className="h-4 w-4" />
-                        <span className="font-medium">100% Open Source</span>
                     </div>
                 </div>
             </section>
@@ -66,7 +54,7 @@ export default function Landing() {
             <section className="relative px-8 py-4 z-20">
                 <div className="max-w-6xl">
                     <h2 className="text-3xl md:text-4xl font-bold mb-12">
-                        Everything You Need, Out of the Box
+                        What Kontrol manages
                     </h2>
                     
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -77,11 +65,11 @@ export default function Landing() {
                                     <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                         <Code className="h-6 w-6 text-primary" />
                                     </div>
-                                    <CardTitle>Fully Open Source</CardTitle>
+                                    <CardTitle>Open source, self-hostable</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <CardDescription className="text-base">
-                                        No vendor lock-in. Inspect, modify, and deploy on your own infrastructure. MIT licensed.
+                                        Run the whole stack on your own hardware. MIT licensed, no vendor lock-in, and the JWTs it issues verify offline.
                                     </CardDescription>
                                 </CardContent>
                             </Card>
@@ -94,11 +82,11 @@ export default function Landing() {
                                     <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                         <Network className="h-6 w-6 text-primary" />
                                     </div>
-                                    <CardTitle>Firewall? No Problem</CardTitle>
+                                    <CardTitle>Private mesh, no port forwarding</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <CardDescription className="text-base">
-                                        Connect peer-to-peer with Tailscale integration. Works behind NAT and firewalls seamlessly.
+                                        Devices join a WireGuard mesh through ionscale, a Tailscale-compatible control server. Peers connect directly through NAT and firewalls.
                                     </CardDescription>
                                 </CardContent>
                             </Card>
@@ -111,11 +99,11 @@ export default function Landing() {
                                     <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                         <Shield className="h-6 w-6 text-primary" />
                                     </div>
-                                    <CardTitle>Auth Built In</CardTitle>
+                                    <CardTitle>One identity provider</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <CardDescription className="text-base">
-                                        OAuth2, social logins, MFA, and fine-grained permissions. Secure by default, easy to use.
+                                        Lok is your OAuth2/OIDC provider. Organizations, Roles, and Scopes decide who reaches which services — with social login, MFA, and passkeys.
                                     </CardDescription>
                                 </CardContent>
                             </Card>
@@ -128,11 +116,11 @@ export default function Landing() {
                                     <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                                         <Zap className="h-6 w-6 text-primary" />
                                     </div>
-                                    <CardTitle>Connect Services</CardTitle>
+                                    <CardTitle>Services join on approval</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <CardDescription className="text-base">
-                                        Register your services and let Kontrol handle discovery, dependency resolution, and access control.
+                                        A service fetches its config through Fakts and requests to join. Once an admin approves it, Apps resolve their dependencies against it.
                                     </CardDescription>
                                 </CardContent>
                             </Card>
