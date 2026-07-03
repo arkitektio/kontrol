@@ -278,7 +278,7 @@ export function ConfigurePage() {
                         <p className="text-sm font-medium leading-snug">{req.key}</p>
                         <p className="text-xs text-muted-foreground">{req.description ?? req.service}</p>
                         {available === false && (
-                          <p className="text-xs text-destructive mt-0.5">Not available in this composition</p>
+                          <p className="text-xs text-destructive mt-0.5">Not available in this hub</p>
                         )}
                       </div>
                     </div>
@@ -324,7 +324,7 @@ export function ConfigurePage() {
                           {req.description ?? req.service}
                         </p>
                         {available === false && hasValidation && (
-                          <p className="text-xs text-muted-foreground/60 mt-0.5">Not available in this composition</p>
+                          <p className="text-xs text-muted-foreground/60 mt-0.5">Not available in this hub</p>
                         )}
                       </div>
                       {canToggle && (

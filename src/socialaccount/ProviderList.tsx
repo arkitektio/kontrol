@@ -5,7 +5,7 @@ import { Client, redirectToProvider, settings, type AuthProcessType } from '../l
 
 export default function ProviderList ({callbackURL = "/", process}: { callbackURL?: string, process: AuthProcessType }) {
   const config = useConfig()
-  const providers = config?.data.socialaccount.providers
+  const providers = config?.data?.socialaccount?.providers
   if (!providers?.length) {
     return null
   }

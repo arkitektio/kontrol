@@ -191,7 +191,7 @@ export default function KommunityPartner() {
                   <AlertTitle>Partner Approval Failed</AlertTitle>
                   <AlertDescription>
                     <p>{connectError}</p>
-                    <p>If the partner hook rejected this request, the created composition has already been removed automatically.</p>
+                    <p>If the partner hook rejected this request, the created hub has already been removed automatically.</p>
                   </AlertDescription>
                 </Alert>
               )}
@@ -242,7 +242,7 @@ export default function KommunityPartner() {
         )}
                 <p className="text-sm text-muted-foreground">
                   {isPreauthorized
-                    ? "This partner will provision a composition in the selected organization and may require an external approval hook before it becomes active."
+                    ? "This partner will provision a hub in the selected organization and may require an external approval hook before it becomes active."
                     : "This partner manages signup on its own site and will redirect you to complete the account flow."}
                 </p>
               </div>

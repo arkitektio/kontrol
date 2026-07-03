@@ -1,8 +1,8 @@
-import { Sidebar, SidebarContent, SidebarHeader, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroupLabel, SidebarSeparator } from "@/components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarHeader, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroupLabel } from "@/components/ui/sidebar"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Link, useParams, useLocation } from "react-router-dom"
-import { useSidebarOrganizationQuery } from "@/api/graphql"
-import { ClientLabel } from "@/components/ClientLabel"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes, Layers, Ticket } from "lucide-react"
+import { useSidebarOrganizationQuery, useCompositionsQuery } from "@/api/graphql"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes, Layers, Network, ChevronRight, Ticket } from "lucide-react"
 
 export function OrganizationSidebar() {
     const { orgId } = useParams<{ orgId: string }>()
@@ -11,6 +11,12 @@ export function OrganizationSidebar() {
         variables: { id: orgId! },
         skip: !orgId
     })
+
+    const { data: compData } = useCompositionsQuery({
+        variables: { filters: { organization: orgId || undefined } },
+        skip: !orgId
+    })
+    const hubs = compData?.compositions ?? []
 
     const org = data?.organization
 
@@ -86,42 +92,18 @@ export function OrganizationSidebar() {
                 <SidebarGroupContent>
                     <SidebarMenu>
                         <SidebarMenuItem>
-                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/clients`)}>
-                            <Link to={`/organization/${org.id}/clients`}>
-                              <Package className="mr-2 h-4 w-4" />
-                              <span>Clients</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/redeem-tokens`)}>
-                            <Link to={`/organization/${org.id}/redeem-tokens`}>
-                              <Ticket className="mr-2 h-4 w-4" />
-                              <span>Redeem Tokens</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/service-instances`)}>
-                            <Link to={`/organization/${org.id}/service-instances`}>
-                              <Zap className="mr-2 h-4 w-4" />
-                              <span>Service Instances</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
                           <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/compositions`)}>
                             <Link to={`/organization/${org.id}/compositions`}>
                               <Layers className="mr-2 h-4 w-4" />
-                              <span>Compositions</span>
+                              <span>Hubs</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/layers`)}>
-                            <Link to={`/organization/${org.id}/layers`}>
-                              <Layers className="mr-2 h-4 w-4" />
-                              <span>Layers</span>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/mesh`)}>
+                            <Link to={`/organization/${org.id}/mesh`}>
+                              <Network className="mr-2 h-4 w-4" />
+                              <span>Mesh</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -160,43 +142,45 @@ export function OrganizationSidebar() {
                     </SidebarMenu>
                 </SidebarGroupContent>
             </SidebarGroup>
-            {(org.latestClients && org.latestClients.length > 0) && (
-                <SidebarGroup className="px-0">
-                    <SidebarGroupLabel className="px-2 text-xs font-semibold text-muted-foreground mb-2 mt-4">Latest Clients</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {org.latestClients.map(client => (
-                                <SidebarMenuItem key={client.id}>
-                                    <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/clients/${client.id}`)}>
-                                        <Link to={`/organization/${org.id}/clients/${client.id}`}>
-                                            <ClientLabel client={client} showDevice={false} />
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            )}
-             {(org.latestServices && org.latestServices.length > 0) && (
-                <SidebarGroup className="px-0">
-                    <SidebarGroupLabel className="px-2 text-xs font-semibold text-muted-foreground mb-2 mt-4">Latest Instances</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {org.latestServices.map(instance => (
-                                <SidebarMenuItem key={instance.id}>
-                                    <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/service-instances/${instance.id}`)} >
-                                        <Link to={`/organization/${org.id}/service-instances/${instance.id}`}>
-                                            <div>{instance.release.service.identifier}</div>
-                                            <div className="text-muted-foreground">{instance.release.version}</div>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            )}
+            {hubs.map((hub, index) => {
+              const hubPath = `/organization/${org.id}/compositions/${hub.id}`
+              const hubIsActive = location.pathname === hubPath
+              const hubLinks = [
+                { label: "Overview", hash: "", icon: LayoutDashboard },
+                { label: "Services", hash: "#services", icon: Zap },
+                { label: "Clients", hash: "#clients", icon: Package },
+                { label: "Redeem Tokens", hash: "#redeem-tokens", icon: Ticket },
+              ]
+              return (
+                <Collapsible key={hub.id} defaultOpen={index === 0 || hubIsActive} className="group/collapsible">
+                    <SidebarGroup className="px-0">
+                        <SidebarGroupLabel asChild className="px-2 mt-4 cursor-pointer">
+                            <CollapsibleTrigger>
+                                <Layers className="mr-2 h-4 w-4" />
+                                <span className="truncate">{hub.name}</span>
+                                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                            </CollapsibleTrigger>
+                        </SidebarGroupLabel>
+                        <CollapsibleContent>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {hubLinks.map(link => (
+                                        <SidebarMenuItem key={link.label}>
+                                            <SidebarMenuButton asChild isActive={hubIsActive && (location.hash || "") === link.hash}>
+                                                <Link to={`${hubPath}${link.hash}`}>
+                                                    <link.icon className="mr-2 h-4 w-4" />
+                                                    <span>{link.label}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </CollapsibleContent>
+                    </SidebarGroup>
+                </Collapsible>
+              )
+            })}
         </SidebarContent>
       </Sidebar>
     )

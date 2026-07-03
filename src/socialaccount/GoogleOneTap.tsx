@@ -28,7 +28,7 @@ export default function GoogleOneTap (props: {process: string}) {
   const [enabled, setEnabled] = useState(() => window.sessionStorage.getItem('googleOneTapEnabled') === 'yes')
   
   function onGoogleOneTapInstalled () {
-    const provider = config?.data.socialaccount.providers.find(p => p.id === 'google')
+    const provider = config?.data?.socialaccount?.providers?.find(p => p.id === 'google')
     if (provider && window.google) {
       function handleCredentialResponse (token: {credential: string}) {
         if (!provider) {

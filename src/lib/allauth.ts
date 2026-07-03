@@ -134,9 +134,13 @@ export type Data = {
   }
 } 
 
+// allauth-headless error shape: an array of these is returned under `errors`.
+// `param` names the offending input field (e.g. "email", "password"), absent
+// for non-field / global errors.
 export type Error = {
-  field?: string,
-  message: string
+  message: string,
+  code?: string,
+  param?: string
 }
 
 export interface APIResponse {

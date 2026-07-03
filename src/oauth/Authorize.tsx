@@ -7,8 +7,9 @@ import { useAcceptAuthorizeCodeMutation, useGetOauth2ClientByClientIdQuery, useL
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Lock, Shield, LayoutGrid } from "lucide-react";
+import { Lock, Shield, LayoutGrid, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface AuthorizeFormData {
   organization: string;
@@ -23,9 +24,11 @@ export default function Authorize() {
   const nonce = searchParams.get("nonce");
   const { data: orgData, loading: orgLoading } = useListOrganizationsQuery();
 
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
   const { control, handleSubmit, setValue, watch, formState: { isSubmitting } } = useForm<AuthorizeFormData>({
     defaultValues: {
-      organization: orgData?.organizations.at(0)?.id,
+      organization: "",
     },
   });
 
@@ -39,21 +42,15 @@ export default function Authorize() {
 
   const [acceptAuthorize] = useAcceptAuthorizeCodeMutation();
 
-  // Preset the active organization
+  // Preset the organization once the list loads. `defaultValues` can't do this
+  // because orgData is still loading at mount — without this the form submits an
+  // empty organization and the (required) mutation input is rejected.
   useEffect(() => {
-    if (meData?.me && orgData?.organizations) {
-      // Logic: If there is an organization that matches the username, we might prefer it? 
-      // Or we just stick to 'personal' as default which is set in defaultValues.
-      // However, the user asked to "use the current organization as preset".
-      // Since we don't have a global "current organization" context hook easily visible here besides what we might infer,
-      // We will perform a similar logic to ServiceConfigurePage for consistency:
-      // If we find an org matching the username, maybe select it.
-      // But for Authorize, "personal" is explicit.
-      
-      // Let's assume for now we keep 'personal' as the default unless we want to force something else.
-      // A common pattern is if the user has NO 'personal' option in org list but the system treats "personal" string as special.
+    const firstOrg = orgData?.organizations.at(0)?.id;
+    if (firstOrg && !selectedOrganization) {
+      setValue("organization", firstOrg);
     }
-  }, [meData, orgData, setValue]);
+  }, [orgData, selectedOrganization, setValue]);
 
   if (!clientId || !redirectUri) {
     return (
@@ -73,6 +70,11 @@ export default function Authorize() {
   const isLoading = meLoading || orgLoading || clientLoading;
 
   const onAuthorize = async (data: AuthorizeFormData) => {
+    setGlobalError(null);
+    if (!data.organization) {
+        setGlobalError("Please select a context to authorize with.");
+        return;
+    }
     try {
         const result = await acceptAuthorize({
             variables: {
@@ -87,11 +89,15 @@ export default function Authorize() {
             }
         });
 
-        if (result.data?.acceptAuthorizeCode) {
-            window.location.href = result.data.acceptAuthorizeCode;
+        const redirect = result.data?.acceptAuthorizeCode;
+        if (redirect) {
+            window.location.href = redirect;
+        } else {
+            setGlobalError("Authorization did not return a redirect. Please try again.");
         }
     } catch (e) {
         console.error(e);
+        setGlobalError(e instanceof Error ? e.message : "Failed to authorize the request.");
     }
   };
 
@@ -118,6 +124,14 @@ export default function Authorize() {
         </div>
 
         <Separator />
+
+        {globalError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authorization failed</AlertTitle>
+            <AlertDescription>{globalError}</AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit(onAuthorize)}>
           <Card>
@@ -171,7 +185,7 @@ export default function Authorize() {
             </CardContent>
             <CardFooter className="flex justify-between border-t bg-muted/50 px-6 py-4">
                 <Button variant="ghost" type="button" onClick={() => window.history.back()}>Cancel</Button>
-                <Button type="submit" disabled={isLoading || isSubmitting}>
+                <Button type="submit" disabled={isLoading || isSubmitting || !selectedOrganization}>
                     {isSubmitting ? "Authorizing..." : "Authorize Access"}
                 </Button>
             </CardFooter>

@@ -81,6 +81,9 @@ interface CreateRedeemTokenDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   organizationId: string
+  // When provided, the token is created for this hub and the picker is hidden.
+  compositionId?: string
+  compositionName?: string
   onCreated?: () => void
 }
 
@@ -88,6 +91,8 @@ export function CreateRedeemTokenDialog({
   open,
   onOpenChange,
   organizationId,
+  compositionId,
+  compositionName,
   onCreated,
 }: CreateRedeemTokenDialogProps) {
   const [selectedCompositionId, setSelectedCompositionId] = useState("")
@@ -95,6 +100,9 @@ export function CreateRedeemTokenDialog({
   const [createdToken, setCreatedToken] = useState<CreatedRedeemToken | null>(null)
   const [createError, setCreateError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+
+  // A pre-scoped hub wins; otherwise the user picks from the org's hubs.
+  const effectiveCompositionId = compositionId || selectedCompositionId
 
   const { data, loading: loadingCompositions, error: compositionsError } = useCompositionsQuery({
     variables: {
@@ -105,7 +113,7 @@ export function CreateRedeemTokenDialog({
         limit: 10,
       },
     },
-    skip: !open || !organizationId,
+    skip: !open || !organizationId || !!compositionId,
   })
 
   const [createRedeemToken, { loading: creating }] = useMutation<CreateRedeemTokenData, CreateRedeemTokenVars>(
@@ -136,8 +144,8 @@ export function CreateRedeemTokenDialog({
   }
 
   const handleCreate = async () => {
-    if (!selectedCompositionId) {
-      setCreateError("Please select a composition")
+    if (!effectiveCompositionId) {
+      setCreateError("Please select a hub")
       return
     }
 
@@ -148,7 +156,7 @@ export function CreateRedeemTokenDialog({
       const result = await createRedeemToken({
         variables: {
           input: {
-            composition: selectedCompositionId,
+            composition: effectiveCompositionId,
             expiresInDays: expiresValue,
           },
         },
@@ -185,7 +193,9 @@ export function CreateRedeemTokenDialog({
           <DialogDescription>
             {createdToken
               ? "Copy this token and use it when redeeming a client."
-              : "Create a redeem token for one of this organization's compositions."}
+              : compositionId
+                ? "Create a redeem token for this hub."
+                : "Create a redeem token for one of this organization's hubs."}
           </DialogDescription>
         </DialogHeader>
 
@@ -201,7 +211,7 @@ export function CreateRedeemTokenDialog({
               </div>
             </div>
             <div className="rounded-md border p-3 text-sm text-muted-foreground">
-              <div>Composition: {createdToken.composition.name}</div>
+              <div>Hub: {createdToken.composition.name}</div>
               <div>
                 Expires: {createdToken.expiresAt ? new Date(createdToken.expiresAt).toLocaleString() : "Never"}
               </div>
@@ -214,35 +224,44 @@ export function CreateRedeemTokenDialog({
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="composition">Composition</Label>
-              <select
-                id="composition"
-                className="border-input bg-background ring-offset-background focus-visible:ring-ring/50 flex h-9 w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                value={selectedCompositionId}
-                disabled={loadingCompositions || compositions.length === 0}
-                onChange={(event) => setSelectedCompositionId(event.target.value)}
-              >
-                <option value="" disabled>
-                  {loadingCompositions
-                    ? "Loading compositions..."
-                    : compositions.length === 0
-                      ? "No compositions available"
-                      : "Select a composition"}
-                </option>
-                  {compositions.map((composition) => (
-                    <option key={composition.id} value={composition.id}>
-                      {composition.name}
-                    </option>
-                  ))}
-              </select>
-              {compositionsError ? (
-                <p className="text-sm text-destructive">Failed to load compositions: {compositionsError.message}</p>
-              ) : null}
-              {!loadingCompositions && !compositionsError && compositions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No compositions were found for this organization.</p>
-              ) : null}
-            </div>
+            {compositionId ? (
+              <div className="grid gap-2">
+                <Label>Hub</Label>
+                <div className="rounded-md border px-3 py-2 text-sm">
+                  {compositionName || "This hub"}
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label htmlFor="composition">Hub</Label>
+                <select
+                  id="composition"
+                  className="border-input bg-background ring-offset-background focus-visible:ring-ring/50 flex h-9 w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                  value={selectedCompositionId}
+                  disabled={loadingCompositions || compositions.length === 0}
+                  onChange={(event) => setSelectedCompositionId(event.target.value)}
+                >
+                  <option value="" disabled>
+                    {loadingCompositions
+                      ? "Loading hubs..."
+                      : compositions.length === 0
+                        ? "No hubs available"
+                        : "Select a hub"}
+                  </option>
+                    {compositions.map((composition) => (
+                      <option key={composition.id} value={composition.id}>
+                        {composition.name}
+                      </option>
+                    ))}
+                </select>
+                {compositionsError ? (
+                  <p className="text-sm text-destructive">Failed to load hubs: {compositionsError.message}</p>
+                ) : null}
+                {!loadingCompositions && !compositionsError && compositions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No hubs were found for this organization.</p>
+                ) : null}
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="expires-in-days">Expires in days</Label>

@@ -53,7 +53,7 @@ export const flowToActionButton = (flow: AuthFlow): React.ReactNode => {
 export const LoginForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
-  const hasProviders = config.data.socialaccount?.providers?.length > 0
+  const hasProviders = (config?.data?.socialaccount?.providers?.length ?? 0) > 0
   const next = useSearchParams()[0].get("next") || "/home"
 
   const [pendingFlows, setPendingFlows] = useState<AuthFlow[]>([])
@@ -159,7 +159,7 @@ export const LoginForm = () => {
           </div>
         )}
 
-        {config?.data.account.login_by_code_enabled && (
+        {config?.data?.account?.login_by_code_enabled && (
           <div>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

@@ -101,7 +101,6 @@ const OrganizationProfile = lazyDefault(() => import('./OrganizationProfile'))
 const Profile = lazyDefault(() => import('./Profile'))
 const Release = lazyDefault(() => import('./releases/Release'))
 const Releases = lazyDefault(() => import('./releases/Releases'))
-const RedeemTokens = lazyDefault(() => import('./redeem-tokens/RedeemTokens'))
 const ServiceRelease = lazyDefault(() => import('./service-releases/ServiceRelease'))
 const ServiceReleases = lazyDefault(() => import('./service-releases/ServiceReleases'))
 const ServiceConfigurePage = lazyNamed(() => import('./service/ServiceConfigurePage'), 'ServiceConfigurePage')
@@ -121,12 +120,11 @@ const SocialAccount = lazyDefault(() => import('./socialaccount/SocialAccount'))
 const Sessions = lazyDefault(() => import('./usersessions/Sessions'))
 const Role = lazyDefault(() => import('./roles/Role'))
 const Roles = lazyDefault(() => import('./roles/Roles'))
-const Layer = lazyDefault(() => import('./layers/Layer'))
-const Layers = lazyDefault(() => import('./layers/Layers'))
-const Machine = lazyDefault(() => import('./layers/Machine'))
+const Mesh = lazyDefault(() => import('./mesh/Mesh'))
+const Machine = lazyDefault(() => import('./mesh/Machine'))
 const KommunityPartner = lazyDefault(() => import('./partners/KommunityPartner'))
 const KommunityPartners = lazyDefault(() => import('./partners/KommunityPartners'))
-const AuthKey = lazyDefault(() => import('./layers/AuthKey'))
+const AuthKey = lazyDefault(() => import('./mesh/AuthKey'))
 const Scope = lazyDefault(() => import('./scopes/Scope'))
 const Scopes = lazyDefault(() => import('./scopes/Scopes'))
 const Callback = lazyDefault(() => import('./Callback'))
@@ -420,10 +418,6 @@ function createRouter() {
               element: <AuthenticatedRoute><KommunityPartner /></AuthenticatedRoute>,
             },
             {
-              path: 'redeem-tokens',
-              element: <AuthenticatedRoute><RedeemTokens /></AuthenticatedRoute>,
-            },
-            {
               path: 'clients/:id',
               element: <AuthenticatedRoute><Client /></AuthenticatedRoute>,
             },
@@ -484,19 +478,15 @@ function createRouter() {
               element: <AuthenticatedRoute><Role /></AuthenticatedRoute>,
             },
             {
-              path: 'layers',
-              element: <AuthenticatedRoute><Layers /></AuthenticatedRoute>,
+              path: 'mesh',
+              element: <AuthenticatedRoute><Mesh /></AuthenticatedRoute>,
             },
             {
-              path: 'layers/:id',
-              element: <AuthenticatedRoute><Layer /></AuthenticatedRoute>,
-            },
-            {
-              path: 'layers/:layerId/machines/:id',
+              path: 'mesh/machines/:id',
               element: <AuthenticatedRoute><Machine /></AuthenticatedRoute>,
             },
             {
-              path: 'layers/:layerId/authkeys/:id',
+              path: 'mesh/authkeys/:id',
               element: <AuthenticatedRoute><AuthKey /></AuthenticatedRoute>,
             },
           ],

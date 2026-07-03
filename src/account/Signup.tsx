@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { signUp } from '../lib/allauth'
 import { Link, useNavigate } from 'react-router-dom'
-import { useConfig } from '../auth'
+import { useConfig, credentialKey, useCredentialKey } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { useForm } from "react-hook-form"
+import type { Error as ApiError } from '../lib/allauth'
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
@@ -29,13 +30,36 @@ const signupSchema = z.object({
   path: ["passwordConfirm"],
 });
 
+type SignupValues = z.infer<typeof signupSchema>
+
+// Map an allauth error `param` onto the form field that renders it. The single
+// identifier input is always named `username`, whatever the server calls it
+// (`email` under email login, `username` otherwise). Returns null for
+// non-field errors, which are surfaced globally.
+function paramToField(param: string | undefined): keyof SignupValues | null {
+  switch (param) {
+    case 'email':
+    case 'username':
+      return 'username'
+    case 'password':
+    case 'password1':
+    case 'password2':
+      return 'password'
+    default:
+      return null
+  }
+}
+
 const SignupForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
-  const hasProviders = config.data.socialaccount?.providers?.length > 0
+  const hasProviders = (config?.data?.socialaccount?.providers?.length ?? 0) > 0
   const navigate = useNavigate()
+  // Label the single identifier field for the configured login method.
+  const isEmailLogin = useCredentialKey() === 'email'
+  const identifierLabel = isEmailLogin ? 'Email' : 'Username'
 
-  const form = useForm<z.infer<typeof signupSchema>>({
+  const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       username: "",
@@ -44,25 +68,36 @@ const SignupForm = () => {
     },
   })
 
-  function onSubmit(values: z.infer<typeof signupSchema>) {
+  function onSubmit(values: SignupValues) {
     setGlobalError(null)
-    signUp({ username: values.username, password: values.password }).then((content) => {
-      if (content.status === 200) {
-        // Redirect to login page after successful signup
-        navigate('/account/login')
-      } else {
-        if (content.errors) {
-            Object.entries(content.errors).forEach(([key, value]) => {
-                if (key === 'email' || key === 'password') {
-                     form.setError(key as any, { message: Array.isArray(value) ? value.join(" ") : String(value) })
-                } else {
-                    setGlobalError(Array.isArray(value) ? value.join(" ") : String(value))
-                }
-            })
-        } else {
-            setGlobalError("An error occurred.")
+    // Send the identifier under the key the server's signup expects
+    // ('email' when email login is configured, otherwise 'username').
+    signUp({ [credentialKey(config)]: values.username, password: values.password }).then((content) => {
+      const errors: ApiError[] = content.errors ?? []
+      if (errors.length > 0) {
+        // `errors` is an array of { message, code, param } — route each to its
+        // field, collecting non-field errors into the global alert.
+        const globalMessages: string[] = []
+        for (const error of errors) {
+          const field = paramToField(error.param)
+          if (field) {
+            form.setError(field, { message: error.message })
+          } else {
+            globalMessages.push(error.message)
+          }
         }
+        if (globalMessages.length > 0) {
+          setGlobalError(globalMessages.join(" "))
+        }
+        return
       }
+      // Accepted: 200 (authenticated) or 401 (a pending verify_email flow —
+      // signup succeeded, verification required, not a failure). Continue to login.
+      if (content.status === 200 || content.status === 401) {
+        navigate('/account/login')
+        return
+      }
+      setGlobalError("An error occurred.")
     }).catch((e) => {
       console.error(e)
       setGlobalError("An unexpected error occurred.")
@@ -94,9 +129,13 @@ const SignupForm = () => {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>{identifierLabel}</FormLabel>
                   <FormControl>
-                    <Input placeholder="username" {...field} autoComplete="email" />
+                    <Input
+                      placeholder={isEmailLogin ? 'name@example.com' : 'username'}
+                      {...field}
+                      autoComplete={isEmailLogin ? 'email' : 'username'}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

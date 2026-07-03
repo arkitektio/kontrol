@@ -1,4 +1,5 @@
 import type { AuthFlow } from "@/auth/types";
+import { useCredentialKey } from "@/auth";
 import { activateTOTPAuthenticator, deactivateTOTPAuthenticator, login, mfaAuthenticate, mfaReauthenticate, mfaTrust, type APIResponse } from "@/lib/allauth";
 import { handleFormErrors } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,6 +73,9 @@ export const useLoginForm = () => {
 
 
     const [globalError, setGlobalError] = useState<string | null>(null);
+    // Send the identifier under the key the server's login method expects
+    // ('email' when email login is configured, otherwise 'username').
+    const credKey = useCredentialKey();
 
     const form = useForm<z.infer<typeof loginFormSchema>>({
         resolver: zodResolver(loginFormSchema),
@@ -87,7 +91,7 @@ export const useLoginForm = () => {
 
     function onSubmit (data: {username: string, password: string}) {
         setGlobalError(null)
-        login({ username: data.username, password: data.password }).then((content) => {
+        login({ [credKey]: data.username, password: data.password }).then((content) => {
             next.next(content);
         }).catch((e) => {
             console.error(e)

@@ -118,7 +118,7 @@ export function CompositionConfigurePage() {
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle>
-              {authorized ? "Composition Successfully Authorized" : "Request Denied"}
+              {authorized ? "Hub Successfully Authorized" : "Request Denied"}
             </CardTitle>
             <CardDescription>You can close this page now</CardDescription>
           </CardHeader>
@@ -141,8 +141,8 @@ export function CompositionConfigurePage() {
             <Layers className="h-8 w-8" />
           </div>
           <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-semibold">Composition Authorization</h1>
-            <p className="text-sm text-muted-foreground">This composition wants to be deployed to your organization</p>
+            <h1 className="text-2xl font-semibold">Hub Authorization</h1>
+            <p className="text-sm text-muted-foreground">This hub wants to be deployed to your organization</p>
             {meData?.me && (
               <p className="text-sm text-muted-foreground">
                 Acting as <span className="font-medium">{meData.me.username}</span>
@@ -155,7 +155,7 @@ export function CompositionConfigurePage() {
 
         {/* Composition Flow Map */}
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">Composition Map</h3>
+          <h3 className="text-sm font-medium">Hub Map</h3>
           <CompositionDeviceCodeFlow compositionDeviceCode={compositionDeviceCode} />
         </div>
 
@@ -164,7 +164,7 @@ export function CompositionConfigurePage() {
         {/* Composition Identity */}
         <div className="space-y-3">
           <div>
-            <p className="text-sm text-muted-foreground">Composition</p>
+            <p className="text-sm text-muted-foreground">Hub</p>
             <p className="text-2xl font-semibold">
               {manifest?.identifier || "Unknown"}
             </p>

@@ -47,8 +47,9 @@ export type AcceptCompositionDeviceCodeInput = {
 
 export type AcceptDeviceCodeInput = {
   composition: Scalars['ID']['input'];
-  deviceCode: Scalars['ID']['input'];
   declinedRequirements?: Array<Scalars['String']['input']>;
+  deviceCode: Scalars['ID']['input'];
+  /** Name to give a newly created device (ignored if the device already exists). */
   deviceName?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -80,12 +81,24 @@ export type CancelInviteInput = {
   id: Scalars['ID']['input'];
 };
 
+export enum ClientRole {
+  Agent = 'AGENT',
+  Interface = 'INTERFACE'
+}
+
+export type ConnectKommunityPartnerInput = {
+  licenseSignature?: InputMaybe<Scalars['String']['input']>;
+  organizationId: Scalars['ID']['input'];
+  partnerId: Scalars['ID']['input'];
+};
+
 export type CreateAliasInput = {
   host: Scalars['String']['input'];
+  instance: Scalars['ID']['input'];
   kind: Scalars['String']['input'];
   path?: InputMaybe<Scalars['String']['input']>;
   port: Scalars['Int']['input'];
-  serviceInstance: Scalars['ID']['input'];
+  public?: Scalars['Boolean']['input'];
 };
 
 export type CreateDeviceGroupInput = {
@@ -115,16 +128,15 @@ export type CreateIonscaleAuthKeyInput = {
 };
 
 export type CreateIonscaleLayerInput = {
-  /** The name of the tailnet layer. */
+  /** Deprecated — the mesh is a per-organization singleton; ignored. */
   name?: InputMaybe<Scalars['String']['input']>;
-  /** The ID of the organization to create the tailnet layer for. */
+  /** The ID of the organization to enable the mesh for. */
   organizationId: Scalars['ID']['input'];
 };
 
 export type CreateOrganizationInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
-  setupKommunityPartners?: Scalars['Boolean']['input'];
 };
 
 export type CreateOrganizationProfileInput = {
@@ -135,6 +147,11 @@ export type CreateOrganizationProfileInput = {
 export type CreateProfileInput = {
   name: Scalars['String']['input'];
   user: Scalars['ID']['input'];
+};
+
+export type CreateRedeemTokenInput = {
+  composition: Scalars['ID']['input'];
+  expiresInDays?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type DeclineAuthorizeCodeInput = {
@@ -262,6 +279,8 @@ export type ManagementClient = {
   publicSources: Array<ManagementPublicSource>;
   /** The release that this client belongs to. */
   release: ManagementRelease;
+  /** The operational role of the client: INTERFACE (a human interface operated by a user) vs AGENT (an autonomous client authorized once that then runs unattended, receiving tasks). */
+  role: Scalars['String']['output'];
   /** The scopes that are granted to this client. */
   scopes: Array<ManagementScope>;
   /** The configuration of the client. This is the configuration that will be sent to the client. It should never contain sensitive information. */
@@ -305,11 +324,10 @@ export type ManagementClientScopesArgs = {
  *  but also a DEVELOPMENT client that is used by a developer to test the app. The client model thinly wraps the oauth2 client model, which is used to authenticate users.
  */
 export type ManagementClientUsedAliasesArgs = {
-  filters?: InputMaybe<ManagementDeviceFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Client(id, composition, functional, name, release, oauth2_client, kind, user, organization, membership, redirect_uris, public, token, node, public_sources, tenant, created_at, requirements_hash, logo, last_reported_at, manifest) */
+/** Client(id, composition, functional, name, release, oauth2_client, kind, role, user, organization, membership, redirect_uris, public, token, node, public_sources, tenant, created_at, requirements_hash, statuses, logo, last_reported_at, manifest) */
 export type ManagementClientFilter = {
   AND?: InputMaybe<ManagementClientFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -318,14 +336,15 @@ export type ManagementClientFilter = {
   functional?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   organization?: InputMaybe<Scalars['ID']['input']>;
+  /** Operational role: human INTERFACE vs autonomous task-receiving AGENT. */
+  role?: InputMaybe<ClientRole>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementClientOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  lastReportedAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-};
+export type ManagementClientOrder =
+  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
 
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementComChannel = {
@@ -384,7 +403,7 @@ export type ManagementCompositionDeviceCode = {
   user?: Maybe<ManagementUser>;
 };
 
-/** Composition(id, name, organization, description, creator, token, auth_key) */
+/** Composition(id, name, organization, identifier, description, creator, token, auth_key) */
 export type ManagementCompositionFilter = {
   AND?: InputMaybe<ManagementCompositionFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -398,17 +417,17 @@ export type ManagementCompositionFilter = {
 export type ManagementCompositionManifest = {
   __typename?: 'ManagementCompositionManifest';
   clients: Array<ManagementStagingClientRequest>;
+  /** A unique identifier for the composition WITHIN the organization. */
   identifier: Scalars['String']['output'];
   instances: Array<ManagementStagingInstanceRequest>;
 };
 
-export type ManagementCompositionOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  lastReportedAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-};
+export type ManagementCompositionOrder =
+  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
 
-/** ComputeNode(id, node_id, name, organization) */
+/** Device(id, node_id, name, organization) */
 export type ManagementDevice = {
   __typename?: 'ManagementDevice';
   clients: Array<ManagementClient>;
@@ -424,7 +443,7 @@ export type ManagementDevice = {
 };
 
 
-/** ComputeNode(id, node_id, name, organization) */
+/** Device(id, node_id, name, organization) */
 export type ManagementDeviceClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
   order?: InputMaybe<ManagementClientOrder>;
@@ -432,7 +451,7 @@ export type ManagementDeviceClientsArgs = {
 };
 
 
-/** ComputeNode(id, node_id, name, organization) */
+/** Device(id, node_id, name, organization) */
 export type ManagementDeviceDeviceGroupsArgs = {
   filters?: InputMaybe<ManagementDeviceGroupFilter>;
   order?: InputMaybe<ManagementDeviceGroupOrder>;
@@ -440,7 +459,7 @@ export type ManagementDeviceDeviceGroupsArgs = {
 };
 
 
-/** ComputeNode(id, node_id, name, organization) */
+/** Device(id, node_id, name, organization) */
 export type ManagementDeviceServiceInstancesArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
   order?: InputMaybe<ManagementServiceInstanceOrder>;
@@ -465,7 +484,7 @@ export type ManagementDeviceCode = {
   user?: Maybe<ManagementUser>;
 };
 
-/** ComputeNode(id, node_id, name, organization) */
+/** Device(id, node_id, name, organization) */
 export type ManagementDeviceFilter = {
   AND?: InputMaybe<ManagementDeviceFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -499,17 +518,15 @@ export type ManagementDeviceGroupFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementDeviceGroupOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  lastReportedAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-};
+export type ManagementDeviceGroupOrder =
+  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
 
-export type ManagementDeviceOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  lastReportedAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-};
+export type ManagementDeviceOrder =
+  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
 
 /**
  *
@@ -618,6 +635,8 @@ export type ManagementInstanceAlias = {
   path?: Maybe<Scalars['String']['output']>;
   /** The port of the alias, if its a ABSOLUTE alias (e.g. 'example.com:8080'). If not set, the alias is relative to the layer's port. */
   port?: Maybe<Scalars['Int']['output']>;
+  /** Is this alias publicly reachable? If true, the coordination server can also check the alias's health directly, enabling health checks from the kontrol interface. */
+  public: Scalars['Boolean']['output'];
   /** The scope of the alias. E.g 'local' means that the alias can only be used within the local network. */
   scope: Scalars['String']['output'];
   /** Is this alias using SSL? If true, the alias will be accessed via https:// instead of http://. */
@@ -629,7 +648,6 @@ export type ManagementInstanceAlias = {
 
 /** An alias for a service instance. This is used to provide a more user-friendly name for the instance. */
 export type ManagementInstanceAliasUsagesArgs = {
-  filters?: InputMaybe<ManagementDeviceFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -639,16 +657,12 @@ export type ManagementInstanceAliasFilter = {
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
   NOT?: InputMaybe<ManagementInstanceAliasFilter>;
   OR?: InputMaybe<ManagementInstanceAliasFilter>;
-  functional?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementInstanceAliasOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-  updatedAt?: InputMaybe<Ordering>;
-};
+export type ManagementInstanceAliasOrder =
+  { name: Ordering; };
 
 /** A single-use magic invite link that allows one person to join an organization. */
 export type ManagementInvite = {
@@ -712,10 +726,9 @@ export type ManagementIonscaleAuthKeyFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementIonscaleAuthKeyOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  ephemeral?: InputMaybe<Ordering>;
-};
+export type ManagementIonscaleAuthKeyOrder =
+  { createdAt: Ordering; ephemeral?: never; }
+  |  { createdAt?: never; ephemeral: Ordering; };
 
 /** A KommunityPartner represents a pre-configured partner that can provide compositions and services to organizations. Partners can be auto-configured to automatically create compositions for new organizations. */
 export type ManagementKommunityPartner = {
@@ -731,10 +744,10 @@ export type ManagementKommunityPartner = {
   /** Filter conditions that determine which users/organizations this partner applies to. Conditions include: email_domain_equals, email_domain_ends_with, username_equals, username_contains. */
   filterConfig?: Maybe<Scalars['JSON']['output']>;
   id: Scalars['ID']['output'];
-  /** A larger marketing image URL for the partner. */
-  imageUrl?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the partner. */
   identifier: Scalars['String']['output'];
+  /** A larger marketing image URL for the partner. */
+  imageUrl?: Maybe<Scalars['String']['output']>;
   /** The kind of kommunity (e.g., 'open', 'restricted', 'private'). */
   kommunityKind: Scalars['String']['output'];
   /** Optional license agreement text that must be signed before connecting this partner. */
@@ -755,7 +768,7 @@ export type ManagementKommunityPartner = {
   websiteUrl?: Maybe<Scalars['String']['output']>;
 };
 
-/** KommunityPartner(id, name, description, logo_url, website_url, identifier, auth_url, oauth_client, partner_kind, kommunity_kind, auto_configure, preconfigured_composition, filter_config) */
+/** KommunityPartner(id, name, description, short_description, logo_url, image_url, website_url, identifier, auth_url, license_agreement, pre_authorize_hook, pre_authorize_token, oauth_client, partner_kind, kommunity_kind, auto_configure, preconfigured_composition, filter_config) */
 export type ManagementKommunityPartnerFilter = {
   AND?: InputMaybe<ManagementKommunityPartnerFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -768,11 +781,10 @@ export type ManagementKommunityPartnerFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementKommunityPartnerOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  lastReportedAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-};
+export type ManagementKommunityPartnerOrder =
+  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
 
 /** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
 export type ManagementLayer = {
@@ -833,11 +845,10 @@ export type ManagementLayerFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementLayerOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  lastReportedAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-};
+export type ManagementLayerOrder =
+  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
 
 export type ManagementMachine = {
   __typename?: 'ManagementMachine';
@@ -918,11 +929,10 @@ export type ManagementMembershipFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementMembershipOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  lastReportedAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-};
+export type ManagementMembershipOrder =
+  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
 
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOAuth2Client = {
@@ -1108,6 +1118,10 @@ export type ManagementRedeemToken = {
   __typename?: 'ManagementRedeemToken';
   /** The client that this redeem token belongs to. */
   client?: Maybe<ManagementClient>;
+  /** The composition that this redeem token grants access to. */
+  composition: ManagementComposition;
+  createdAt: Scalars['DateTime']['output'];
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['ID']['output'];
   /** The token of the redeem token */
   token: Scalars['String']['output'];
@@ -1187,11 +1201,10 @@ export type ManagementRoleFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementRoleOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-  updatedAt?: InputMaybe<Ordering>;
-};
+export type ManagementRoleOrder =
+  { createdAt: Ordering; name?: never; updatedAt?: never; }
+  |  { createdAt?: never; name: Ordering; updatedAt?: never; }
+  |  { createdAt?: never; name?: never; updatedAt: Ordering; };
 
 /** A Scope represents a permission or capability that can be granted to clients and users. It is used to define what access level a user or client has in the system. */
 export type ManagementScope = {
@@ -1237,11 +1250,10 @@ export type ManagementScopeFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementScopeOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-  updatedAt?: InputMaybe<Ordering>;
-};
+export type ManagementScopeOrder =
+  { createdAt: Ordering; name?: never; updatedAt?: never; }
+  |  { createdAt?: never; name: Ordering; updatedAt?: never; }
+  |  { createdAt?: never; name?: never; updatedAt: Ordering; };
 
 /** A Service is a Webservice that a Client might want to access. It is not the configured instance of the service, but the service itself. */
 export type ManagementService = {
@@ -1401,11 +1413,10 @@ export type ManagementServiceInstanceMapping = {
   optional: Scalars['Boolean']['output'];
 };
 
-export type ManagementServiceInstanceOrder = {
-  createdAt?: InputMaybe<Ordering>;
-  name?: InputMaybe<Ordering>;
-  updatedAt?: InputMaybe<Ordering>;
-};
+export type ManagementServiceInstanceOrder =
+  { createdAt: Ordering; name?: never; updatedAt?: never; }
+  |  { createdAt?: never; name: Ordering; updatedAt?: never; }
+  |  { createdAt?: never; name?: never; updatedAt: Ordering; };
 
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceRelease = {
@@ -1462,14 +1473,19 @@ export type ManagementStagingInstanceRequest = {
 
 export type ManagementStagingManifest = {
   __typename?: 'ManagementStagingManifest';
+  authors: Array<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;
+  homepage?: Maybe<Scalars['String']['output']>;
   identifier: Scalars['String']['output'];
+  keywords: Array<Scalars['String']['output']>;
+  license?: Maybe<Scalars['String']['output']>;
   logo?: Maybe<Scalars['String']['output']>;
   nodeId: Scalars['ID']['output'];
   publicSources?: Maybe<Array<ManagementStagingPublicSource>>;
   repoUrl?: Maybe<Scalars['String']['output']>;
   requirements: Array<ManagementStagingRequirement>;
   scopes: Array<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
   url?: Maybe<Scalars['String']['output']>;
   version: Scalars['String']['output'];
 };
@@ -1501,7 +1517,10 @@ export type ManagementStagingServiceManifest = {
   version: Scalars['String']['output'];
 };
 
-/** Docstring for UsedAlias */
+/**
+ * A client's most recent self-report for one requirement key: which alias it
+ * resolved to and whether it was reachable.
+ */
 export type ManagementUsedAlias = {
   __typename?: 'ManagementUsedAlias';
   /** The alias that is used. */
@@ -1617,6 +1636,7 @@ export type Mutation = {
   addDeviceToGroup: ManagementDevice;
   cancelInvite: ManagementInvite;
   changeOrganizationOwner: ManagementOrganization;
+  connectKommunityPartner: ManagementComposition;
   createAlias: ManagementInstanceAlias;
   createDevice: ManagementDevice;
   createDeviceGroup: ManagementDeviceGroup;
@@ -1626,6 +1646,7 @@ export type Mutation = {
   createOrganization: ManagementOrganization;
   createOrganizationProfile: ManagementOrganizationProfile;
   createProfile: ManagementProfile;
+  createRedeemToken: ManagementRedeemToken;
   declineAuthorizeCode: Scalars['String']['output'];
   declineCompositionDeviceCode: ManagementCompositionDeviceCode;
   declineDeviceCode: ManagementDeviceCode;
@@ -1694,6 +1715,11 @@ export type MutationChangeOrganizationOwnerArgs = {
 };
 
 
+export type MutationConnectKommunityPartnerArgs = {
+  input: ConnectKommunityPartnerInput;
+};
+
+
 export type MutationCreateAliasArgs = {
   input: CreateAliasInput;
 };
@@ -1736,6 +1762,11 @@ export type MutationCreateOrganizationProfileArgs = {
 
 export type MutationCreateProfileArgs = {
   input: CreateProfileInput;
+};
+
+
+export type MutationCreateRedeemTokenArgs = {
+  input: CreateRedeemTokenInput;
 };
 
 
@@ -2244,7 +2275,6 @@ export type QueryUsedAliasArgs = {
 
 
 export type QueryUsedAliasesArgs = {
-  filters?: InputMaybe<ManagementDeviceFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2299,6 +2329,7 @@ export type StagingAlias = {
   name?: Maybe<Scalars['String']['output']>;
   path?: Maybe<Scalars['String']['output']>;
   port?: Maybe<Scalars['Int']['output']>;
+  public: Scalars['Boolean']['output'];
   scope: Scalars['String']['output'];
   ssl: Scalars['Boolean']['output'];
 };
@@ -2341,6 +2372,7 @@ export type UpdateAliasInput = {
   kind: Scalars['String']['input'];
   path?: InputMaybe<Scalars['String']['input']>;
   port: Scalars['Int']['input'];
+  public?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateCompositionInput = {
@@ -2375,7 +2407,6 @@ export type UpdateOrganizationInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
-  setupKommunityPartners?: Scalars['Boolean']['input'];
   slug?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2452,7 +2483,7 @@ export type DetailDeviceFragment = { __typename?: 'ManagementDevice', id: string
 
 export type ListDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string };
 
-export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
+export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
 
 export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> };
 
@@ -2498,9 +2529,9 @@ export type PresignedPostCredentialsFragment = { __typename?: 'PresignedPostCred
 
 export type ProfileFragment = { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
 
-export type ListRedeemTokenFragment = { __typename?: 'ManagementRedeemToken', id: string, token: string, user: { __typename?: 'ManagementUser', id: string, email?: string | null }, client?: { __typename?: 'ManagementClient', id: string, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
+export type ListRedeemTokenFragment = { __typename?: 'ManagementRedeemToken', id: string, token: string, createdAt: any, expiresAt?: any | null, composition: { __typename?: 'ManagementComposition', id: string, name: string, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null } }, user: { __typename?: 'ManagementUser', id: string, email?: string | null }, client?: { __typename?: 'ManagementClient', id: string, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
 
-export type DetailRedeemTokenFragment = { __typename?: 'ManagementRedeemToken', id: string, token: string, user: { __typename?: 'ManagementUser', id: string, email?: string | null }, client?: { __typename?: 'ManagementClient', id: string, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
+export type DetailRedeemTokenFragment = { __typename?: 'ManagementRedeemToken', id: string, token: string, createdAt: any, expiresAt?: any | null, composition: { __typename?: 'ManagementComposition', id: string, name: string, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null } }, user: { __typename?: 'ManagementUser', id: string, email?: string | null }, client?: { __typename?: 'ManagementClient', id: string, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
 
 export type DetailReleaseFragment = { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }> };
 
@@ -2678,7 +2709,7 @@ export type DeclineDeviceCodeMutationVariables = Exact<{
 }>;
 
 
-export type DeclineDeviceCodeMutation = { __typename?: 'Mutation', declineDeviceCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null, scopes: Array<string>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+export type DeclineDeviceCodeMutation = { __typename?: 'Mutation', declineDeviceCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
 
 export type CreateDeviceGroupMutationVariables = Exact<{
   input: CreateDeviceGroupInput;
@@ -2849,6 +2880,13 @@ export type DeleteProfileMutationVariables = Exact<{
 
 export type DeleteProfileMutation = { __typename?: 'Mutation', deleteProfile: string };
 
+export type CreateRedeemTokenMutationVariables = Exact<{
+  input: CreateRedeemTokenInput;
+}>;
+
+
+export type CreateRedeemTokenMutation = { __typename?: 'Mutation', createRedeemToken: { __typename?: 'ManagementRedeemToken', id: string, token: string, createdAt: any, expiresAt?: any | null, composition: { __typename?: 'ManagementComposition', id: string, name: string, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null } }, user: { __typename?: 'ManagementUser', id: string, email?: string | null }, client?: { __typename?: 'ManagementClient', id: string, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+
 export type AcceptServiceDeviceCodeMutationVariables = Exact<{
   input: AcceptServiceDeviceCodeInput;
 }>;
@@ -2962,7 +3000,7 @@ export type DeviceCodeByCodeQueryVariables = Exact<{
 }>;
 
 
-export type DeviceCodeByCodeQuery = { __typename?: 'Query', deviceCodeByCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+export type DeviceCodeByCodeQuery = { __typename?: 'Query', deviceCodeByCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
 
 export type ValidateDeviceCodeQueryVariables = Exact<{
   deviceCode: Scalars['ID']['input'];
@@ -3120,6 +3158,13 @@ export type OrganizationOptionsQueryVariables = Exact<{
 
 export type OrganizationOptionsQuery = { __typename?: 'Query', options: Array<{ __typename?: 'ManagementOrganization', value: string, label?: string | null }> };
 
+export type RedeemTokensQueryVariables = Exact<{
+  pagination?: InputMaybe<OffsetPaginationInput>;
+}>;
+
+
+export type RedeemTokensQuery = { __typename?: 'Query', redeemTokens: Array<{ __typename?: 'ManagementRedeemToken', id: string, token: string, createdAt: any, expiresAt?: any | null, composition: { __typename?: 'ManagementComposition', id: string, name: string, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null } }, user: { __typename?: 'ManagementUser', id: string, email?: string | null }, client?: { __typename?: 'ManagementClient', id: string, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } } } | null }> };
+
 export type ReleasesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -3243,7 +3288,6 @@ export type GetSocialAccountQuery = { __typename?: 'Query', socialAccount:
 
 export type ListUsedAliasesQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
-  filters?: InputMaybe<ManagementDeviceFilter>;
 }>;
 
 
@@ -3998,6 +4042,16 @@ export const ListRedeemTokenFragmentDoc = gql`
     fragment ListRedeemToken on ManagementRedeemToken {
   id
   token
+  createdAt
+  expiresAt
+  composition {
+    id
+    name
+    organization {
+      id
+      name
+    }
+  }
   user {
     id
     email
@@ -5573,6 +5627,39 @@ export function useDeleteProfileMutation(baseOptions?: Apollo.MutationHookOption
 export type DeleteProfileMutationHookResult = ReturnType<typeof useDeleteProfileMutation>;
 export type DeleteProfileMutationResult = Apollo.MutationResult<DeleteProfileMutation>;
 export type DeleteProfileMutationOptions = Apollo.BaseMutationOptions<DeleteProfileMutation, DeleteProfileMutationVariables>;
+export const CreateRedeemTokenDocument = gql`
+    mutation CreateRedeemToken($input: CreateRedeemTokenInput!) {
+  createRedeemToken(input: $input) {
+    ...DetailRedeemToken
+  }
+}
+    ${DetailRedeemTokenFragmentDoc}`;
+export type CreateRedeemTokenMutationFn = Apollo.MutationFunction<CreateRedeemTokenMutation, CreateRedeemTokenMutationVariables>;
+
+/**
+ * __useCreateRedeemTokenMutation__
+ *
+ * To run a mutation, you first call `useCreateRedeemTokenMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateRedeemTokenMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createRedeemTokenMutation, { data, loading, error }] = useCreateRedeemTokenMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateRedeemTokenMutation(baseOptions?: Apollo.MutationHookOptions<CreateRedeemTokenMutation, CreateRedeemTokenMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateRedeemTokenMutation, CreateRedeemTokenMutationVariables>(CreateRedeemTokenDocument, options);
+      }
+export type CreateRedeemTokenMutationHookResult = ReturnType<typeof useCreateRedeemTokenMutation>;
+export type CreateRedeemTokenMutationResult = Apollo.MutationResult<CreateRedeemTokenMutation>;
+export type CreateRedeemTokenMutationOptions = Apollo.BaseMutationOptions<CreateRedeemTokenMutation, CreateRedeemTokenMutationVariables>;
 export const AcceptServiceDeviceCodeDocument = gql`
     mutation AcceptServiceDeviceCode($input: AcceptServiceDeviceCodeInput!) {
   acceptServiceDeviceCode(input: $input) {
@@ -7083,6 +7170,49 @@ export type OrganizationOptionsQueryHookResult = ReturnType<typeof useOrganizati
 export type OrganizationOptionsLazyQueryHookResult = ReturnType<typeof useOrganizationOptionsLazyQuery>;
 export type OrganizationOptionsSuspenseQueryHookResult = ReturnType<typeof useOrganizationOptionsSuspenseQuery>;
 export type OrganizationOptionsQueryResult = Apollo.QueryResult<OrganizationOptionsQuery, OrganizationOptionsQueryVariables>;
+export const RedeemTokensDocument = gql`
+    query RedeemTokens($pagination: OffsetPaginationInput) {
+  redeemTokens(pagination: $pagination) {
+    ...ListRedeemToken
+  }
+}
+    ${ListRedeemTokenFragmentDoc}`;
+
+/**
+ * __useRedeemTokensQuery__
+ *
+ * To run a query within a React component, call `useRedeemTokensQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRedeemTokensQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRedeemTokensQuery({
+ *   variables: {
+ *      pagination: // value for 'pagination'
+ *   },
+ * });
+ */
+export function useRedeemTokensQuery(baseOptions?: Apollo.QueryHookOptions<RedeemTokensQuery, RedeemTokensQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<RedeemTokensQuery, RedeemTokensQueryVariables>(RedeemTokensDocument, options);
+      }
+export function useRedeemTokensLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RedeemTokensQuery, RedeemTokensQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<RedeemTokensQuery, RedeemTokensQueryVariables>(RedeemTokensDocument, options);
+        }
+// @ts-ignore
+export function useRedeemTokensSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<RedeemTokensQuery, RedeemTokensQueryVariables>): Apollo.UseSuspenseQueryResult<RedeemTokensQuery, RedeemTokensQueryVariables>;
+export function useRedeemTokensSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RedeemTokensQuery, RedeemTokensQueryVariables>): Apollo.UseSuspenseQueryResult<RedeemTokensQuery | undefined, RedeemTokensQueryVariables>;
+export function useRedeemTokensSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RedeemTokensQuery, RedeemTokensQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<RedeemTokensQuery, RedeemTokensQueryVariables>(RedeemTokensDocument, options);
+        }
+export type RedeemTokensQueryHookResult = ReturnType<typeof useRedeemTokensQuery>;
+export type RedeemTokensLazyQueryHookResult = ReturnType<typeof useRedeemTokensLazyQuery>;
+export type RedeemTokensSuspenseQueryHookResult = ReturnType<typeof useRedeemTokensSuspenseQuery>;
+export type RedeemTokensQueryResult = Apollo.QueryResult<RedeemTokensQuery, RedeemTokensQueryVariables>;
 export const ReleasesDocument = gql`
     query Releases {
   releases {
@@ -7778,8 +7908,8 @@ export type GetSocialAccountLazyQueryHookResult = ReturnType<typeof useGetSocial
 export type GetSocialAccountSuspenseQueryHookResult = ReturnType<typeof useGetSocialAccountSuspenseQuery>;
 export type GetSocialAccountQueryResult = Apollo.QueryResult<GetSocialAccountQuery, GetSocialAccountQueryVariables>;
 export const ListUsedAliasesDocument = gql`
-    query ListUsedAliases($pagination: OffsetPaginationInput, $filters: ManagementDeviceFilter) {
-  usedAliases(pagination: $pagination, filters: $filters) {
+    query ListUsedAliases($pagination: OffsetPaginationInput) {
+  usedAliases(pagination: $pagination) {
     ...ListUsedAlias
   }
 }
@@ -7798,7 +7928,6 @@ export const ListUsedAliasesDocument = gql`
  * const { data, loading, error } = useListUsedAliasesQuery({
  *   variables: {
  *      pagination: // value for 'pagination'
- *      filters: // value for 'filters'
  *   },
  * });
  */

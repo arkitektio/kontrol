@@ -45,7 +45,7 @@ export default function Sessions () {
             <th>Started At</th>
             <th>IP Address</th>
             <th>Browser</th>
-            {config.data.usersessions.track_activity ? <th>Last Seen At</th> : null}
+            {config?.data?.usersessions?.track_activity ? <th>Last Seen At</th> : null}
             <th>Current</th>
             <th>Actions</th>
           </tr>
@@ -57,7 +57,7 @@ export default function Sessions () {
                 <td>{new Date(session.created_at * 1000).toLocaleString()}</td>
                 <td>{session.ip}</td>
                 <td>{session.user_agent}</td>
-                {config.data.usersessions.track_activity ? <td>{session.last_seen_at}</td> : null}
+                {config?.data?.usersessions?.track_activity ? <td>{session.last_seen_at}</td> : null}
                 <td>{session.is_current ? '⭐' : ''}</td>
                 <td><Button onClick={() => logout([session])}>Logout</Button></td>
               </tr>

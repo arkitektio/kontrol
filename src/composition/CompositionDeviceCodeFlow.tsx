@@ -18,7 +18,7 @@ const CompositionNode = ({ data }: NodeProps) => {
                     <div className="flex items-center gap-2">
                         <Layers className="h-3 w-3 text-indigo-500" />
                         <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 truncate">
-                            {manifest?.identifier || "Unknown Composition"}
+                            {manifest?.identifier || "Unknown Hub"}
                         </span>
                     </div>
                 </div>

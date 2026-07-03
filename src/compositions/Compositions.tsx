@@ -26,7 +26,7 @@ export default function Compositions() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Compositions</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Hubs</h2>
       </div>
 
       {compositions.length === 0 ? (
@@ -36,7 +36,7 @@ export default function Compositions() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
               <Layers className="w-7 h-7 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold tracking-tight mb-2">No compositions yet</h3>
+            <h3 className="text-2xl font-bold tracking-tight mb-2">No hubs yet</h3>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
               Connect a Kommunity Partner to deploy a pre-configured stack in minutes,
               or self-host your own Arkitekt instance.

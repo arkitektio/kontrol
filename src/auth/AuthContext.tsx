@@ -71,7 +71,10 @@ export function AuthContextProvider (props: { children: ReactNode }) {
       document.removeEventListener('allauth.auth.change', onAuthChanged)
     }
   }, [])
-  const loading = (typeof auth === 'undefined') || config?.status !== 200
+  // Only gate the app on auth/session status. The server "capability" config
+  // (getConfig) is fetched below but is no longer render-blocking — consumers
+  // handle its absence locally so the app always renders.
+  const loading = (typeof auth === 'undefined')
   
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({ auth, config }), [auth, config])
