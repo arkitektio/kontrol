@@ -1,18 +1,13 @@
 import { ClientLabel } from "@/components/ClientLabel"
-import { useIsMobile } from "@/hooks/use-mobile"
 import { clientInitials, clientLabel } from "@/lib/clientLabel"
 import { cn } from "@/lib/utils"
-import { Suspense, lazy } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useDetailClientQuery } from "../api/graphql"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
 import { CardContent, CardHeader, CardTitle } from "../components/ui/card"
 
-const AutoLogo = lazy(() => import("@/components/AutoLogo"))
-
 export default function Client() {
-    const isMobile = useIsMobile()
   const { id } = useParams<{ id: string }>()
   const { data, loading, error } = useDetailClientQuery({
     variables: { id: id! },
@@ -27,17 +22,6 @@ export default function Client() {
 
   return (
     <div className="container mx-auto py-10 relative min-h-screen">
-        {/* Background Flow */}
-                {!isMobile ? (
-                    <div className="fixed top-0 right-0 h-screen w-[40vw] z-0 pointer-events-none opacity-100">
-                             <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 py-10" />
-                             <Suspense fallback={null}>
-                                 <AutoLogo manifest={client.manifest} theme="dark" size={9}/>
-                             </Suspense>
-                    </div>
-                ) : null}
-
-
         <div className="relative z-10 max-w-[30vw] space-y-6">
             <CardHeader className="flex flex-row items-center gap-4">
 
