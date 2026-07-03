@@ -1,32 +1,32 @@
-import { AppSidebar } from "../app-sidebar"
-import { SidebarInset, SidebarTrigger } from "../ui/sidebar"
-import { Separator } from "../ui/separator"
-import { RouteBreadcrumbs } from "../RouteBreadcrumbs"
+import { Link, Outlet } from "react-router-dom"
+import { DynamicArkitektLogo } from "@/logos/ArkitektLogo"
+import { BrandColorPicker } from "../BrandColorPicker"
+import { HeaderUserMenu } from "../HeaderUserMenu"
 import { ErrorBoundary } from "../ErrorBoundary"
-import { Outlet } from "react-router-dom"
-import * as React from "react"
 
+// Focused layout for redirect-driven task flows (device configure, OAuth
+// authorize, invite redeem). No sidebar — just a slim top bar (brand + account)
+// over centered content, so the single card is the whole focus.
 export function ConfigureLayout() {
     return (
-        <>
-            <AppSidebar />
-            <SidebarInset>
-                <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                <div className="flex items-center gap-2 px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator
-                    orientation="vertical"
-                    className="mr-2 data-[orientation=vertical]:h-4"
-                    />
-                    <RouteBreadcrumbs />
+        <div className="flex min-h-svh w-full flex-col">
+            <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+                <Link to="/" className="flex items-center gap-2 font-semibold">
+                    <span className="text-foreground flex size-7 items-center justify-center">
+                        <DynamicArkitektLogo width="100%" height="100%" strokeColor="currentColor" aColor="currentColor" />
+                    </span>
+                    Kontrol
+                </Link>
+                <div className="flex items-center gap-1">
+                    <BrandColorPicker />
+                    <HeaderUserMenu />
                 </div>
-                </header>
-                <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            </header>
+            <main className="flex flex-1 flex-col items-center justify-center p-4 md:p-6">
                 <ErrorBoundary>
                     <Outlet />
                 </ErrorBoundary>
-                </div>
-            </SidebarInset>
-        </>
+            </main>
+        </div>
     )
 }

@@ -16,7 +16,6 @@ import type { AuthFlow } from '@/auth/types'
 import { handleFormErrors } from "@/lib/utils"
 import { useLoginForm } from '@/hooks/use-next'
 import GoogleOneTap from '@/socialaccount/GoogleOneTap'
-import ServiceLogo from '@/components/ServiceLogo'
 
 const formSchema = z.object({
   username: z.string().min(1, "Username/Email is required"),
@@ -202,10 +201,8 @@ export default function Login () {
           </div>
         </div>
       </div>
-      <div className="fixed top-0 right-0 h-screen w-[40vw] lg:block hidden">
-         <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 py-10" />
-        <ServiceLogo service={"arkitekt.live"} />
-      </div>
+      {/* Right column intentionally empty — shows the page background. */}
+      <div className="hidden lg:block" />
     </div>
   )
 }

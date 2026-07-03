@@ -35,7 +35,6 @@ import { Label } from "../components/ui/label"
 import { Switch } from "../components/ui/switch"
 import { Trash2, Plus, Box, ArrowRight } from "lucide-react"
 import { useState } from "react"
-import ServiceLogo from "@/components/ServiceLogo"
 import { useTheme } from "@/providers/ThemeProvider"
 
 export default function ServiceInstance() {
@@ -73,11 +72,6 @@ export default function ServiceInstance() {
 
   return (
     <div className="container mx-auto py-10 relative min-h-screen">
-        {/* Background Flow */}
-        <div className="fixed top-0 right-0 h-screen w-[40vw] z-0 pointer-events-none opacity-100">
-             <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 py-10" />
-             <ServiceLogo service={instance.release.service.identifier} theme={theme} size={9}/>
-        </div>
 
         <div className="relative z-10 max-w-[50vw] space-y-6">
          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">

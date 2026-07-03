@@ -1,15 +1,6 @@
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Sparkles,
-  Mail,
-  Lock,
-  Users,
-  Smartphone,
-  Rocket,
   UserCircle,
   Settings,
   Sun,
@@ -41,7 +32,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useUser, useConfig } from '../auth'
+import { useUser } from '../auth'
 import { useTheme } from "@/providers/ThemeProvider"
 
 export function NavUser({
@@ -55,7 +46,6 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const currentUser = useUser()
-  const config = useConfig()
   const { setTheme, theme } = useTheme()
 
   if (!currentUser) {

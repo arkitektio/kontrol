@@ -3,12 +3,14 @@ import {
   useSidebarOrganizationQuery,
   useListKommunityPartnerQuery,
   useCompositionsQuery,
+  useClientsQuery,
   useLayersQuery,
   useDeleteIonscaleLayerMutation,
   useCreateIonscaleLayerMutation,
+  Ordering,
 } from "./api/graphql"
 import { Button } from "./components/ui/button"
-import { Card, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./components/ui/alert-dialog"
-import { ArrowRight, Server, Layers, Network } from "lucide-react"
+import { ArrowRight, Server, Layers, Network, AlertCircle, CheckCircle2 } from "lucide-react"
 import { ClientCard } from "./components/ClientCard"
 import { ServiceInstanceCard } from "./components/ServiceInstanceCard"
 
@@ -131,6 +133,16 @@ export default function OrganizationDashboard() {
     variables: { pagination: { limit: 6 } }
   })
 
+  // Action items: apps this org owns that are currently reporting problems.
+  const { data: unhealthyData } = useClientsQuery({
+    variables: {
+      filters: { organization: orgId, functional: false },
+      order: { createdAt: Ordering.Desc },
+      pagination: { limit: 8 },
+    },
+    skip: !orgId,
+  })
+
   if (loading) return <div>Loading...</div>
   if (error) return <div>Error: {error.message}</div>
   if (!data?.organization) return <div>Organization not found</div>
@@ -140,14 +152,57 @@ export default function OrganizationDashboard() {
   const latestServices = org.latestServices || []
   const compositions = compositionsData?.compositions || []
   const partners = partnersData?.kommunityPartners || []
+  const unhealthyClients = unhealthyData?.clients || []
 
   const hasCompositions = compositions.length > 0
   const hasClients = latestClients.length > 0
   const hasServices = latestServices.length > 0
+  const hasUnhealthy = unhealthyClients.length > 0
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Managing {org.name}</h1>
+
+      {hasUnhealthy ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-lg">Needs attention</CardTitle>
+                <CardDescription>
+                  {unhealthyClients.length} {unhealthyClients.length === 1 ? "app is" : "apps are"} reporting
+                  problems and may need reconfiguring.
+                </CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/organization/${orgId}/clients`}>View all clients</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {unhealthyClients.map(client => (
+                <ClientCard key={client.id} client={client} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : hasClients ? (
+        <Card className="border-green-500/20 bg-green-500/5">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-lg">All apps healthy</CardTitle>
+              <CardDescription>Every connected app is reporting in and functional.</CardDescription>
+            </div>
+          </CardHeader>
+        </Card>
+      ) : null}
 
       <MeshControl orgId={orgId!} />
 

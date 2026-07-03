@@ -39,7 +39,8 @@ const ServiceLogo: React.FC<ServiceLogoProps> = ({
 
   return (
     <Suspense fallback={null}>
-      <GeneralLogo 
+      <GeneralLogo
+        seed={serviceKey}
         color={color}
         polyType={type}
         className={className}

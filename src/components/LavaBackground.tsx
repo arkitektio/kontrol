@@ -9,8 +9,12 @@
  * theme. Purely decorative and non-interactive.
  */
 
+import { cn } from "@/lib/utils"
+
 interface LavaBackgroundProps {
   className?: string
+  /** Much fainter — for use as a global page backdrop rather than a hero. */
+  dull?: boolean
 }
 
 // Each blob picks a step of the brand ramp plus its own size, corner, and timing
@@ -23,17 +27,12 @@ const BLOBS = [
   { color: "var(--brand-logo-mid)", size: 34, top: "70%", left: "40%", anim: "lava-drift-a", duration: 37, delay: -9 },
 ]
 
-export default function LavaBackground({ className }: LavaBackgroundProps) {
+export default function LavaBackground({ className, dull }: LavaBackgroundProps) {
   return (
     <div
-      className={className}
+      className={cn("pointer-events-none relative h-full w-full overflow-hidden", className)}
       aria-hidden="true"
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-      }}
+      style={dull ? { opacity: 0.1 } : undefined}
     >
       {BLOBS.map((blob, i) => (
         <div

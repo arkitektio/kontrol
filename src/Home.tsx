@@ -1,14 +1,20 @@
-import { Link } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
 import { useClientsQuery, useMeQuery, Ordering } from "./api/graphql"
 import { ClientLabel } from "@/components/ClientLabel"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./components/ui/card"
 import { Button } from "./components/ui/button"
 import { AlertCircle, CheckCircle2, User, Building, ArrowRight, Plus } from "lucide-react"
 import { CreateOrganizationDialog } from "./components/CreateOrganizationDialog"
+import { useActiveOrganization } from "./hooks/useActiveOrganization"
+import { LoadingScreen } from "./components/LoadingScreen"
 import { useState } from "react"
 
 export default function Home() {
     const [createOrgOpen, setCreateOrgOpen] = useState(false)
+
+    // Land authenticated users in their active organization — the org view is
+    // the app's home. Only users with no memberships stay on this page.
+    const { activeOrgId, loading: orgsLoading } = useActiveOrganization()
 
     // Parallel queries
     const { data: userData, loading: userLoading, error: userError } = useMeQuery()
@@ -20,8 +26,11 @@ export default function Home() {
         }
     })
 
-    if (userLoading || clientsLoading) return <div className="p-8">Loading...</div>
+    if (userLoading || clientsLoading || orgsLoading) return <LoadingScreen />
     if (userError) return <div className="p-8">Error loading profile: {userError.message}</div>
+
+    // Have an org? Go straight to it. Otherwise fall through to the create-org prompt.
+    if (activeOrgId) return <Navigate to={`/organization/${activeOrgId}`} replace />
 
     const user = userData?.me
     const issues = clientsData?.clients || []

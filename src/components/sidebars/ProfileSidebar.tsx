@@ -1,5 +1,5 @@
 import { useMeQuery } from "@/api/graphql"
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroupLabel } from "@/components/ui/sidebar"
+import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroupLabel } from "@/components/ui/sidebar"
 import { Link, useLocation } from "react-router-dom"
 import ProviderIcon from "../ProviderIcon"
 import { useConfig } from "@/auth"
@@ -9,20 +9,13 @@ export function ProfileSidebar() {
     const { data } = useMeQuery()
     const config = useConfig()
     const location = useLocation()
-    
+
     const isActive = (path: string) => location.pathname === path
 
     return (
-      <Sidebar collapsible="none" className="hidden flex-1 md:flex">
-        <SidebarHeader className="gap-3.5 border-b p-4">
-          <div className="flex w-full items-center justify-between">
-            <div className="text-foreground text-base font-medium">
-              Profile
-            </div>
-          </div>
-        </SidebarHeader>
-        <SidebarContent className="px-2">
+      <>
             <SidebarGroup className="px-0">
+                <SidebarGroupLabel>Profile</SidebarGroupLabel>
                 <SidebarGroupContent>
                     <SidebarMenu>
                         <SidebarMenuItem>
@@ -105,7 +98,6 @@ export function ProfileSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             )}
-        </SidebarContent>
-      </Sidebar>
+      </>
     )
 }

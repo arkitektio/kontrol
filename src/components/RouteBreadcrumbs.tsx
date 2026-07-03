@@ -1,6 +1,7 @@
 import { useLocation, Link } from "react-router-dom"
 import { ChevronRight } from "lucide-react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "./ui/breadcrumb"
+import { useListOrganizationsQuery } from "@/api/graphql"
 
 interface BreadcrumbSegment {
   label: string
@@ -12,20 +13,24 @@ export const useRouteBreadcrumbs = (): BreadcrumbSegment[] => {
   const location = useLocation()
   const pathname = location.pathname
 
+  // Resolve the `/organization/:id` segment to the org's name instead of its id.
+  const { data } = useListOrganizationsQuery()
+  const orgNameById = new Map(
+    (data?.organizations ?? []).map((o) => [o.id, o.name || o.slug]),
+  )
+
   const segments: BreadcrumbSegment[] = [{ label: "Home", path: "/" }]
-  
+
   const pathParts = pathname.split('/').filter(Boolean)
   let currentPath = ''
 
-  pathParts.forEach((part) => {
+  pathParts.forEach((part, index) => {
       currentPath += `/${part}`
-      // Capitalize first letter, replace hyphens with spaces for better readability if desired, 
-      // but "without advanced parsing" might imply kept simple. 
-      // I'll do basic capitalization.
-      segments.push({
-          label: part.charAt(0).toUpperCase() + part.slice(1),
-          path: currentPath
-      })
+      const isOrgId = index > 0 && pathParts[index - 1] === 'organization'
+      const label = isOrgId
+          ? orgNameById.get(part) ?? part
+          : part.charAt(0).toUpperCase() + part.slice(1)
+      segments.push({ label, path: currentPath })
   })
 
   return segments

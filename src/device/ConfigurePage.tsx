@@ -11,14 +11,14 @@ import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Monitor, Smartphone, Globe, CheckCircle2, XCircle, Circle,
-  Loader2, AlertTriangle, ExternalLink, Github,
+  Loader2, ExternalLink, Github, ChevronDown, Check, X,
 } from "lucide-react";
 
 interface ConfigureFormData {
@@ -64,7 +64,7 @@ export function ConfigurePage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex items-center justify-center py-16">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -72,7 +72,7 @@ export function ConfigurePage() {
 
   if (error || !deviceCodeData?.deviceCodeByCode) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex items-center justify-center py-16">
         <p className="text-sm text-muted-foreground">This authorization link is invalid or has expired.</p>
       </div>
     );
@@ -96,8 +96,6 @@ export function ConfigurePage() {
   const existingDevice = validationData?.validateDeviceCode.existingDevice ?? null;
   const isNodeManifest = !!manifest?.nodeId;
   const willCreateNewDevice = isNodeManifest && hasValidation && !existingDevice;
-
-  const selectedComp = compData?.compositions?.find((c) => c.id === selectedComposition);
 
   const toggleRequirement = (key: string) =>
     setDeclinedRequirements((prev) => {
@@ -150,16 +148,26 @@ export function ConfigurePage() {
 
   if (submitted) {
     return (
-      <div className="flex h-screen items-center justify-center p-6">
-        <Card className="w-full max-w-xl text-center">
-          <CardHeader>
-            <p className="text-2xl">{authorized ? "✓" : "✕"}</p>
-            <p className="font-semibold">{authorized ? "Access granted" : "Access denied"}</p>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-muted-foreground">You can close this tab and return to the application.</p>
+      <div className="flex items-center justify-center p-6">
+        <Card className="w-full max-w-md border-0 shadow-lg">
+          <CardContent className="flex flex-col items-center gap-5 px-8 py-10 text-center">
+            <div
+              className={`flex size-16 items-center justify-center rounded-full ${
+                authorized ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"
+              }`}
+            >
+              {authorized ? <Check className="size-8" strokeWidth={2.5} /> : <X className="size-8" strokeWidth={2.5} />}
+            </div>
+            <div className="space-y-1.5">
+              <h1 className="text-xl font-semibold">{authorized ? "Access granted" : "Access denied"}</h1>
+              <p className="text-muted-foreground text-sm">
+                You can close this tab and return to the application.
+              </p>
+            </div>
             {deviceNotice && (
-              <p className="text-sm text-muted-foreground">{deviceNotice}</p>
+              <p className="bg-muted/50 text-muted-foreground w-full rounded-lg px-4 py-3 text-sm">
+                {deviceNotice}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -170,256 +178,236 @@ export function ConfigurePage() {
   const Icon = KIND_ICON[deviceCode.stagingKind as keyof typeof KIND_ICON] ?? Smartphone;
   const githubSource = manifest?.publicSources?.find((s) => s.kind === "github");
   const websiteSource = manifest?.publicSources?.find((s) => s.kind === "website");
+  const appIdentifier = manifest?.identifier ?? deviceCode.client?.release.app.identifier;
 
   return (
-    <div className="flex min-h-screenp-6 ">
-      <Card className="w-full max-w-xl shadow-lg border-0">
+    <div className="w-full max-w-3xl">
+      <Card className="w-full gap-0 overflow-hidden border p-0 shadow-lg">
+        <div className="grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)]">
 
-        {/* App header */}
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-4">
-            {manifest?.logo ? (
-              <img src={manifest.logo} alt="" className="h-14 w-14 rounded-xl object-cover shrink-0" />
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted shrink-0">
-                <Icon className="h-7 w-7 text-muted-foreground" />
+          {/* LEFT — who is asking (stacks to the top on mobile) */}
+          <div className="bg-muted/30 flex flex-col gap-4 border-b p-6 md:border-r md:border-b-0">
+            <div className="flex items-center gap-4 md:flex-col md:items-start">
+              {manifest?.logo ? (
+                <img src={manifest.logo} alt="" className="h-16 w-16 shrink-0 rounded-2xl object-cover md:h-20 md:w-20" />
+              ) : (
+                <div className="bg-background flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border md:h-20 md:w-20">
+                  <Icon className="text-muted-foreground h-8 w-8" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-lg leading-tight font-semibold break-words">{appIdentifier}</p>
+                <p className="text-muted-foreground text-sm">
+                  Version {manifest?.version ?? deviceCode.client?.release.version}
+                </p>
               </div>
-            )}
-            <div className="flex-1 min-w-0 space-y-1">
-              <p className="font-semibold text-lg leading-tight truncate">
-                {manifest?.identifier ?? deviceCode.client?.release.app.identifier}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Version {manifest?.version ?? deviceCode.client?.release.version}
-              </p>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            </div>
+
+            {(githubSource || websiteSource || manifest?.repoUrl) && (
+              <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-xs">
                 {githubSource && (
-                  <a href={githubSource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-foreground">
+                  <a href={githubSource.url} target="_blank" rel="noopener noreferrer" className="hover:text-foreground flex items-center gap-1">
                     <Github className="h-3 w-3" /> Source
                   </a>
                 )}
                 {websiteSource && (
-                  <a href={websiteSource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-foreground">
+                  <a href={websiteSource.url} target="_blank" rel="noopener noreferrer" className="hover:text-foreground flex items-center gap-1">
                     <ExternalLink className="h-3 w-3" /> Website
                   </a>
                 )}
                 {manifest?.repoUrl && !githubSource && (
-                  <a href={manifest.repoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-foreground">
+                  <a href={manifest.repoUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground flex items-center gap-1">
                     <ExternalLink className="h-3 w-3" /> Repo
                   </a>
                 )}
               </div>
-            </div>
-          </div>
-
-          {manifest?.description && (
-            <p className="text-sm text-muted-foreground mt-3">{manifest.description}</p>
-          )}
-
-          {/* Unverified warning */}
-          <div className="flex items-center gap-2 mt-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            This app is not verified. Only authorize if you trust its source.
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-5">
-
-          {/* Authorizing as */}
-          <div className="text-sm">
-            Authorizing as{" "}
-            <span className="font-medium">{meData?.me?.username ?? "…"}</span>
-            {selectedComp && (
-              <> in <span className="font-medium">{selectedComp.organization?.name ?? selectedComp.name ?? "your workspace"}</span></>
             )}
           </div>
 
-          <Separator />
+          {/* RIGHT — what it wants + where to assign + actions */}
+          <div className="space-y-5 p-6">
+            {manifest?.description && (
+              <p className="text-muted-foreground text-sm">{manifest.description}</p>
+            )}
 
-          {/* Scopes */}
-          {(manifest?.scopes?.length ?? 0) > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Requested permissions
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {manifest!.scopes.map((scope) => (
-                  <Badge key={scope} variant="secondary" className="text-xs font-mono">
-                    {scope}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Required services */}
-          {requiredReqs.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Required services
-              </p>
-              <div className="space-y-2">
-                {requiredReqs.map((req) => {
-                  const available = hasValidation ? mappingByKey[req.key] != null : undefined;
-                  return (
-                    <div key={req.key} className="flex items-start gap-3">
-                      <div className="mt-0.5 shrink-0">
-                        {validating ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/50" />
-                        ) : available === undefined ? (
-                          <Circle className="h-4 w-4 text-muted-foreground/30" />
-                        ) : available ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-destructive" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-snug">{req.key}</p>
-                        <p className="text-xs text-muted-foreground">{req.description ?? req.service}</p>
-                        {available === false && (
-                          <p className="text-xs text-destructive mt-0.5">Not available in this hub</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Optional services */}
-          {optionalReqs.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Optional services
-              </p>
-              <p className="text-xs text-muted-foreground -mt-1">
-                The app works without these. Disable any you'd prefer not to share.
-              </p>
-              <div className="space-y-3 mt-1">
-                {optionalReqs.map((req) => {
-                  const available = hasValidation ? mappingByKey[req.key] != null : undefined;
-                  const declined = declinedRequirements.has(req.key);
-                  const canToggle = available === true;
-
-                  return (
-                    <div key={req.key} className="flex items-start gap-3">
-                      <div className="mt-0.5 shrink-0">
-                        {validating ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/50" />
-                        ) : available === undefined ? (
-                          <Circle className="h-4 w-4 text-muted-foreground/30" />
-                        ) : available ? (
-                          <CheckCircle2 className={`h-4 w-4 ${declined ? "text-muted-foreground/40" : "text-green-500"}`} />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-muted-foreground/40" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium leading-snug ${!canToggle && hasValidation ? "text-muted-foreground" : ""}`}>
-                          {req.key}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {req.description ?? req.service}
-                        </p>
-                        {available === false && hasValidation && (
-                          <p className="text-xs text-muted-foreground/60 mt-0.5">Not available in this hub</p>
-                        )}
-                      </div>
-                      {canToggle && (
-                        <Switch
-                          checked={!declined}
-                          onCheckedChange={() => toggleRequirement(req.key)}
-                          className="mt-0.5 shrink-0"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {willCreateNewDevice && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Device name
-              </p>
-              <p className="text-xs text-muted-foreground -mt-1">
-                A new device will be registered in this workspace. Give it a name (optional).
-              </p>
-              <Input
-                value={deviceName}
-                onChange={(event) => setDeviceName(event.target.value)}
-                placeholder="My device"
-                autoComplete="off"
-              />
-            </div>
-          )}
-
-          {isNodeManifest && existingDevice && (
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Device
-              </p>
-              <p className="text-xs text-muted-foreground -mt-1">
-                This authorization will reuse your existing device
-                {existingDevice.name ? ` "${existingDevice.name}"` : ""} in this workspace.
-              </p>
-            </div>
-          )}
-
-          {/* Composition picker */}
-          {compData?.compositions?.length ? (
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Workspace
-              </p>
-              <Controller
-                control={control}
-                name="composition"
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a workspace…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {compData.compositions.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name || "Unnamed"}
-                          {c.organization?.name ? ` · ${c.organization.name}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No workspaces available.{" "}
-              <Link to="/" className="underline">Set one up first.</Link>
+            <p className="text-muted-foreground text-sm">
+              Authorizing as{" "}
+              <span className="text-foreground font-medium">{meData?.me?.username ?? "…"}</span>
             </p>
-          )}
 
-        </CardContent>
+            {/* Requested permissions */}
+            {(manifest?.scopes?.length ?? 0) > 0 && (
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  Requested permissions
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {manifest!.scopes.map((scope) => (
+                    <Badge key={scope} variant="secondary" className="font-mono text-xs">
+                      {scope}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        <CardFooter className="flex gap-2 pt-0">
-          <Button variant="outline" className="flex-1" onClick={onDeny}>
-            Deny
-          </Button>
-          <Button
-            className="flex-1"
-            onClick={onAllow}
-            disabled={!canAllow}
-          >
-            {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Allow access"}
-          </Button>
-        </CardFooter>
+            {/* Required services */}
+            {requiredReqs.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  Required services
+                </p>
+                <div className="space-y-2">
+                  {requiredReqs.map((req) => {
+                    const available = hasValidation ? mappingByKey[req.key] != null : undefined;
+                    return (
+                      <div key={req.key} className="flex items-start gap-3">
+                        <div className="mt-0.5 shrink-0">
+                          {validating ? (
+                            <Loader2 className="text-muted-foreground/50 h-4 w-4 animate-spin" />
+                          ) : available === undefined ? (
+                            <Circle className="text-muted-foreground/30 h-4 w-4" />
+                          ) : available ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <XCircle className="text-destructive h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm leading-snug font-medium">{req.key}</p>
+                          <p className="text-muted-foreground text-xs">{req.description ?? req.service}</p>
+                          {available === false && (
+                            <p className="text-destructive mt-0.5 text-xs">Not available in this hub</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
+            {/* Optional services — collapsed by default */}
+            {optionalReqs.length > 0 && (
+              <Collapsible className="space-y-2">
+                <CollapsibleTrigger className="group text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-xs font-semibold tracking-wide uppercase">
+                  <span>Optional services ({optionalReqs.length})</span>
+                  <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 pt-1">
+                  <p className="text-muted-foreground text-xs">
+                    The app works without these. Disable any you'd prefer not to share.
+                  </p>
+                  <div className="mt-1 space-y-3">
+                    {optionalReqs.map((req) => {
+                      const available = hasValidation ? mappingByKey[req.key] != null : undefined;
+                      const declined = declinedRequirements.has(req.key);
+                      const canToggle = available === true;
+
+                      return (
+                        <div key={req.key} className="flex items-start gap-3">
+                          <div className="mt-0.5 shrink-0">
+                            {validating ? (
+                              <Loader2 className="text-muted-foreground/50 h-4 w-4 animate-spin" />
+                            ) : available === undefined ? (
+                              <Circle className="text-muted-foreground/30 h-4 w-4" />
+                            ) : available ? (
+                              <CheckCircle2 className={`h-4 w-4 ${declined ? "text-muted-foreground/40" : "text-green-500"}`} />
+                            ) : (
+                              <XCircle className="text-muted-foreground/40 h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-sm leading-snug font-medium ${!canToggle && hasValidation ? "text-muted-foreground" : ""}`}>
+                              {req.key}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {req.description ?? req.service}
+                            </p>
+                            {available === false && hasValidation && (
+                              <p className="text-muted-foreground/60 mt-0.5 text-xs">Not available in this hub</p>
+                            )}
+                          </div>
+                          {canToggle && (
+                            <Switch
+                              checked={!declined}
+                              onCheckedChange={() => toggleRequirement(req.key)}
+                              className="mt-0.5 shrink-0"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Where to assign + actions */}
+            <div className="space-y-4 border-t pt-5">
+              {compData?.compositions?.length ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Assign to workspace</p>
+                  <Controller
+                    control={control}
+                    name="composition"
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="h-11 w-full text-base">
+                          <SelectValue placeholder="Select a workspace…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {compData.compositions.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name || "Unnamed"}
+                              {c.organization?.name ? ` · ${c.organization.name}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  No workspaces available.{" "}
+                  <Link to="/" className="underline">Set one up first.</Link>
+                </p>
+              )}
+
+              {willCreateNewDevice && (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium">Device name</p>
+                  <Input
+                    value={deviceName}
+                    onChange={(event) => setDeviceName(event.target.value)}
+                    placeholder="My device"
+                    autoComplete="off"
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    A new device will be registered in this workspace (optional).
+                  </p>
+                </div>
+              )}
+
+              {isNodeManifest && existingDevice && (
+                <p className="text-muted-foreground text-xs">
+                  Reusing your existing device
+                  {existingDevice.name ? ` "${existingDevice.name}"` : ""} in this workspace.
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1" onClick={onDeny}>
+                  Deny
+                </Button>
+                <Button className="flex-1" onClick={onAllow} disabled={!canAllow}>
+                  {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Allow access"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   );

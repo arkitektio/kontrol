@@ -4,7 +4,6 @@ import { Card } from './ui/card';
 import { ArrowRight, Box } from 'lucide-react';
 import { Button } from './ui/button';
 import { Link } from 'react-router-dom';
-import ServiceLogo from './ServiceLogo';
 import { Badge } from './ui/badge';
 
 export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanceFragment }) => {

@@ -7,13 +7,13 @@ import { BrandColorPicker } from "../BrandColorPicker"
 import { Outlet } from "react-router-dom"
 import * as React from "react"
 
-export function DetailLayout({ sidebar }: { sidebar?: React.ReactNode }) {
+export function DetailLayout({ sidebar, header }: { sidebar?: React.ReactNode; header?: React.ReactNode }) {
     return (
         <>
-            <AppSidebar>
+            <AppSidebar header={header}>
                 {sidebar}
             </AppSidebar>
-            <SidebarInset>
+            <SidebarInset className="bg-transparent">
                 <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                 <div className="flex w-full items-center gap-2 px-4">
                     <SidebarTrigger className="-ml-1" />
