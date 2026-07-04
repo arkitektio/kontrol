@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { signUp } from '../lib/allauth'
-import { Link, useNavigate } from 'react-router-dom'
-import { useConfig, credentialKey, useCredentialKey } from '../auth'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useConfig, credentialKey, useCredentialKey, URLs } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { useForm } from "react-hook-form"
 import type { Error as ApiError } from '../lib/allauth'
@@ -54,6 +54,11 @@ const SignupForm = () => {
   const config = useConfig()
   const hasProviders = (config?.data?.socialaccount?.providers?.length ?? 0) > 0
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  // Preserve `?next` through signup so a deep link (e.g. an invite) survives account
+  // creation: forward it to the login step, which honors `next` after authentication.
+  const next = searchParams.get('next')
+  const loginHref = next ? `/account/login?next=${encodeURIComponent(next)}` : '/account/login'
   // Label the single identifier field for the configured login method.
   const isEmailLogin = useCredentialKey() === 'email'
   const identifierLabel = isEmailLogin ? 'Email' : 'Username'
@@ -90,10 +95,17 @@ const SignupForm = () => {
         }
         return
       }
-      // Accepted: 200 (authenticated) or 401 (a pending verify_email flow —
-      // signup succeeded, verification required, not a failure). Continue to login.
-      if (content.status === 200 || content.status === 401) {
-        navigate('/account/login')
+      // 200 = allauth auto-authenticated the new user. Go straight to `next` (the
+      // invite) — routing via /account/login would hit AnonymousRoute and bounce an
+      // authenticated user to /home, dropping the invitation context.
+      if (content.status === 200) {
+        navigate(next || URLs.LOGIN_REDIRECT_URL)
+        return
+      }
+      // 401 = signup ok but email verification pending (not yet authenticated).
+      // Send to login, preserving `next` so they return to the invite after auth.
+      if (content.status === 401) {
+        navigate(loginHref)
         return
       }
       setGlobalError("An error occurred.")
@@ -185,7 +197,7 @@ const SignupForm = () => {
                   </div>
               </div>
               <div className="mt-4">
-                  <ProviderList />
+                  <ProviderList callbackURL={next || '/'} process='login' />
               </div>
           </div>
         )}
@@ -194,7 +206,7 @@ const SignupForm = () => {
       <div className="text-center text-sm">
         <p className="text-muted-foreground">
           Already have an account?{" "}
-          <Link to='/account/login' className="underline text-primary underline-offset-4 hover:text-primary/80">
+          <Link to={loginHref} className="underline text-primary underline-offset-4 hover:text-primary/80">
             Login here
           </Link>
         </p>

@@ -366,8 +366,10 @@ function createRouter() {
               element: <AuthenticatedRoute><CompositionConfigurePage /></AuthenticatedRoute>,
             },
             {
+              // Public/preview-capable: anonymous visitors can see a public invite
+              // (or a sign-in gate for a private one). InvitePage branches on auth.
               path: '/invite/:code',
-              element: <AuthenticatedRoute><InvitePage /></AuthenticatedRoute>,
+              element: <InvitePage />,
             },
             {
               path: '/authorize',

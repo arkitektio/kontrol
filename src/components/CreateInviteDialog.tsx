@@ -27,6 +27,7 @@ import { Copy, Check } from "lucide-react";
 const formSchema = z.object({
   expiresInDays: z.coerce.number().min(1).default(1),
   roles: z.array(z.string()).optional(),
+  public: z.boolean(),
 });
 
 interface CreateInviteDialogProps {
@@ -54,6 +55,7 @@ export const CreateInviteDialog = ({
     defaultValues: {
       expiresInDays: 1,
       roles: [],
+      public: false,
     },
   });
 
@@ -64,6 +66,7 @@ export const CreateInviteDialog = ({
           organization: organizationId,
           expiresInDays: values.expiresInDays,
           roles: values.roles,
+          public: values.public,
         },
       },
     }).then((res) => {
@@ -184,6 +187,26 @@ export const CreateInviteDialog = ({
                     />
                   ))}
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="public"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(checked) => field.onChange(checked === true)}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="font-normal">Public link</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Anyone with the link can preview the organization and inviter before signing up.
+                    </p>
+                  </div>
                 </FormItem>
               )}
             />

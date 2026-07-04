@@ -13,9 +13,40 @@ fragment ListInvite on ManagementInvite {
   expiresAt
 }
 
+fragment PublicInvite on ManagementInvite {
+  id
+  token
+  status
+  public
+  createdAt
+  expiresAt
+  createdBy {
+    id
+    username
+    profile {
+      id
+      avatar {
+        presignedUrl
+      }
+    }
+  }
+  createdFor {
+    id
+    name
+    description
+    profile {
+      id
+      avatar {
+        presignedUrl
+      }
+    }
+  }
+}
+
 fragment Invite on ManagementInvite {
   id
   token
+  public
   createdBy {
     id
     username

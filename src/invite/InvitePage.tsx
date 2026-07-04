@@ -1,4 +1,4 @@
-import { useParams, Navigate, useLocation } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import {
   useInviteByCodeQuery,
   useAcceptInviteMutation,
@@ -25,7 +25,9 @@ export function InvitePage() {
     skip: !code,
   });
 
-  const { data: meData } = useMeQuery();
+  // Only look up the current user when there's a session — an anonymous visitor
+  // previewing a public invite has no `me`, and querying it would error needlessly.
+  const { data: meData } = useMeQuery({ skip: !status.isAuthenticated });
 
   const [acceptInvite] = useAcceptInviteMutation();
   const [declineInvite] = useDeclineInviteMutation();
@@ -41,14 +43,45 @@ export function InvitePage() {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
-  if (inviteError) {
-    return <div className="flex h-screen items-center justify-center">Error: {inviteError.message}</div>;
-  }
-
   const invite = inviteData?.inviteByCode;
 
+  // Sign-up / log-in buttons that carry the current invite URL as `next`, so the
+  // person is returned here to accept after authenticating — the invitation context
+  // is never lost across signup/login.
+  const nextParam = encodeURIComponent(location.pathname + location.search);
+  const authButtons = (
+    <div className="flex gap-3">
+      <Button variant="outline" className="flex-1" asChild>
+        <a href={`/account/signup?next=${nextParam}`}>Sign Up</a>
+      </Button>
+      <Button className="flex-1" asChild>
+        <a href={`${URLs.LOGIN_URL}?next=${nextParam}`}>Log In</a>
+      </Button>
+    </div>
+  );
+
+  // Couldn't load the invite. For an anonymous visitor this is either a private
+  // invite (the server withholds details until sign-in) or a bad link — either way
+  // show a minimal sign-in gate rather than revealing whether the invite exists.
   if (!invite) {
-    return <div className="flex h-screen items-center justify-center">Invalid or expired invite code</div>;
+    if (!status.isAuthenticated) {
+      return (
+        <div className="container max-w-md py-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>You've been invited</CardTitle>
+              <CardDescription>Sign up or log in to view this invitation.</CardDescription>
+            </CardHeader>
+            <CardContent>{authButtons}</CardContent>
+          </Card>
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-screen items-center justify-center">
+        {inviteError ? `Error: ${inviteError.message}` : "Invalid or expired invite code"}
+      </div>
+    );
   }
 
   const onAccept = async () => {
@@ -228,25 +261,7 @@ export function InvitePage() {
             </Button>
           </div>
         ) : (
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              asChild
-            >
-              <a href={`/account/signup?next=${encodeURIComponent(location.pathname + location.search)}`}>
-                Sign Up
-              </a>
-            </Button>
-            <Button 
-              className="flex-1"
-              asChild
-            >
-              <a href={`${URLs.LOGIN_URL}?next=${encodeURIComponent(location.pathname + location.search)}`}>
-                Log In to Accept
-              </a>
-            </Button>
-          </div>
+          authButtons
         )}
       </div>
     </div>
