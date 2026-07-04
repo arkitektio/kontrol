@@ -3,7 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Link, useLocation } from "react-router-dom"
 import { useSidebarOrganizationQuery, useCompositionsQuery } from "@/api/graphql"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes, Layers, Network, ChevronRight, Ticket } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, Boxes, Layers, Network, ChevronRight, Ticket } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
@@ -57,8 +57,7 @@ export function OrganizationSidebar() {
         { to: `${base}/mesh`, label: "Mesh", icon: Network },
         { to: `${base}/devices`, label: "Devices", icon: Smartphone, exact: true },
         { to: `${base}/devices/groups`, label: "Device Groups", icon: Boxes },
-        { to: `${base}/scopes`, label: "Scopes", icon: Lock },
-        { to: `${base}/roles`, label: "Roles", icon: Shield },
+        { to: `${base}/permissions`, label: "Permissions", icon: Shield },
     ]
 
     return (
@@ -101,12 +100,12 @@ export function OrganizationSidebar() {
 
         {hubs.map((hub, index) => {
           const hubPath = `${base}/compositions/${hub.id}`
-          const hubIsActive = location.pathname === hubPath
+          const hubIsActive = location.pathname === hubPath || location.pathname.startsWith(`${hubPath}/`)
           const hubLinks = [
-            { label: "Overview", hash: "", icon: LayoutDashboard },
-            { label: "Services", hash: "#services", icon: Zap },
-            { label: "Clients", hash: "#clients", icon: Package },
-            { label: "Redeem Tokens", hash: "#redeem-tokens", icon: Ticket },
+            { label: "Overview", to: hubPath, exact: true, icon: LayoutDashboard },
+            { label: "Services", to: `${hubPath}/services`, icon: Zap },
+            { label: "Clients", to: `${hubPath}/clients`, icon: Package },
+            { label: "Redeem Tokens", to: `${hubPath}/redeem-tokens`, icon: Ticket },
           ]
           return (
             <Collapsible key={hub.id} defaultOpen={index === 0 || hubIsActive} className="group/collapsible">
@@ -123,8 +122,8 @@ export function OrganizationSidebar() {
                     <SidebarMenu>
                       {hubLinks.map((link) => (
                         <SidebarMenuItem key={link.label}>
-                          <SidebarMenuButton asChild isActive={hubIsActive && (location.hash || "") === link.hash}>
-                            <Link to={`${hubPath}${link.hash}`}>
+                          <SidebarMenuButton asChild isActive={isActive(link.to, link.exact)}>
+                            <Link to={link.to}>
                               <link.icon />
                               <span>{link.label}</span>
                             </Link>

@@ -2,6 +2,7 @@ fragment Organization on ManagementOrganization {
   id
   name
   slug
+  amIOwner
   roles {
     id
     identifier

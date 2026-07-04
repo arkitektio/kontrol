@@ -12,7 +12,7 @@ export default function Clients() {
   
 
   const { data, loading, error } = useClientsQuery({variables: {
-      order: { lastReportedAt: Ordering.Desc },
+      ordering: [{ lastReportedAt: Ordering.Desc }],
       filters: {
         organization: orgId || undefined
       },

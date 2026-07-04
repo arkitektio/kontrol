@@ -1,5 +1,5 @@
-query Layers($filters: ManagementLayerFilter, $pagination: OffsetPaginationInput, $order: ManagementLayerOrder) {
-  layers(filters: $filters, pagination: $pagination, order: $order) {
+query Layers($filters: ManagementLayerFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementLayerOrdering!]) {
+  layers(filters: $filters, pagination: $pagination, ordering: $ordering) {
     ...ListLayer
   }
 }

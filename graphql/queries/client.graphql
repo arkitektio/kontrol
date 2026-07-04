@@ -1,5 +1,5 @@
-query Clients($filters: ManagementClientFilter, $pagination: OffsetPaginationInput, $order: ManagementClientOrder) {
-  clients(filters: $filters, pagination: $pagination, order: $order) {
+query Clients($filters: ManagementClientFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementClientOrdering!]) {
+  clients(filters: $filters, pagination: $pagination, ordering: $ordering) {
     ...ListClient
   }
 }

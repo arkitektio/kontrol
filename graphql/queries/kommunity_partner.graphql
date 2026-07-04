@@ -1,9 +1,9 @@
 query ListKommunityPartner(
   $pagination: OffsetPaginationInput
   $filters: ManagementKommunityPartnerFilter
-  $order: ManagementKommunityPartnerOrder
+  $ordering: [ManagementKommunityPartnerOrdering!]
 ) {
-  kommunityPartners(pagination: $pagination, filters: $filters, order: $order) {
+  kommunityPartners(pagination: $pagination, filters: $filters, ordering: $ordering) {
     ...ListKommunityPartner
   }
 }

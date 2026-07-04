@@ -1,5 +1,5 @@
-query IonscaleAuthKey($filters: ManagementIonscaleAuthKeyFilter, $pagination: OffsetPaginationInput, $order: ManagementIonscaleAuthKeyOrder) {
-  ionscaleAuthKeys(filters: $filters, pagination: $pagination, order: $order) {
+query IonscaleAuthKey($filters: ManagementIonscaleAuthKeyFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementIonscaleAuthKeyOrdering!]) {
+  ionscaleAuthKeys(filters: $filters, pagination: $pagination, ordering: $ordering) {
     ...IonscaleAuthKey
   }
 }

@@ -1,5 +1,5 @@
-query ListInstanceAlias($filters: ManagementInstanceAliasFilter, $pagination: OffsetPaginationInput, $order: ManagementInstanceAliasOrder) {
-  instanceAliases(filters: $filters, pagination: $pagination, order: $order) {
+query ListInstanceAlias($filters: ManagementInstanceAliasFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementInstanceAliasOrdering!]) {
+  instanceAliases(filters: $filters, pagination: $pagination, ordering: $ordering) {
     ...ListInstanceAlias
   }
 }

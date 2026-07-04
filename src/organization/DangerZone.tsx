@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "../components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
+import { MeshControl } from "./MeshControl"
 
 export default function DangerZone() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -92,10 +93,32 @@ export default function DangerZone() {
     }
   }
 
+  if (!org.amIOwner) {
+    return (
+      <div className="container mx-auto py-10 space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+          <p className="text-muted-foreground">
+            Only the organization owner can manage these settings.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto py-10 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Danger Zone</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+        <p className="text-muted-foreground">
+          Manage the mesh and other organization-wide settings
+        </p>
+      </div>
+
+      <MeshControl orgId={org.id} />
+
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Danger Zone</h2>
         <p className="text-muted-foreground">
           Irreversible and destructive actions
         </p>

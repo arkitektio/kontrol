@@ -108,6 +108,10 @@ const ServiceConfigurePage = lazyNamed(() => import('./service/ServiceConfigureP
 const CompositionConfigurePage = lazyNamed(() => import('./composition/CompositionConfigurePage'), 'CompositionConfigurePage')
 const Compositions = lazyDefault(() => import('./compositions/Compositions'))
 const Composition = lazyDefault(() => import('./compositions/Composition'))
+const HubOverview = lazyDefault(() => import('./compositions/hub/HubOverview'))
+const HubServices = lazyDefault(() => import('./compositions/hub/HubServices'))
+const HubClients = lazyDefault(() => import('./compositions/hub/HubClients'))
+const HubRedeemTokens = lazyDefault(() => import('./compositions/hub/HubRedeemTokens'))
 const Service = lazyDefault(() => import('./services/Service'))
 const ServiceInstance = lazyDefault(() => import('./services/ServiceInstance'))
 const ServiceInstanceMapping = lazyDefault(() => import('./services/ServiceInstanceMapping'))
@@ -120,14 +124,13 @@ const ProviderSignup = lazyDefault(() => import('./socialaccount/ProviderSignup'
 const SocialAccount = lazyDefault(() => import('./socialaccount/SocialAccount'))
 const Sessions = lazyDefault(() => import('./usersessions/Sessions'))
 const Role = lazyDefault(() => import('./roles/Role'))
-const Roles = lazyDefault(() => import('./roles/Roles'))
+const Permissions = lazyDefault(() => import('./permissions/Permissions'))
 const Mesh = lazyDefault(() => import('./mesh/Mesh'))
 const Machine = lazyDefault(() => import('./mesh/Machine'))
 const KommunityPartner = lazyDefault(() => import('./partners/KommunityPartner'))
 const KommunityPartners = lazyDefault(() => import('./partners/KommunityPartners'))
 const AuthKey = lazyDefault(() => import('./mesh/AuthKey'))
 const Scope = lazyDefault(() => import('./scopes/Scope'))
-const Scopes = lazyDefault(() => import('./scopes/Scopes'))
 const Callback = lazyDefault(() => import('./Callback'))
 const Authorize = lazyDefault(() => import('./oauth/Authorize'))
 const OpenSource = lazyDefault(() => import('./public/OpenSource'))
@@ -441,6 +444,24 @@ function createRouter() {
             {
               path: 'compositions/:name',
               element: <AuthenticatedRoute><Composition /></AuthenticatedRoute>,
+              children: [
+                {
+                  index: true,
+                  element: <HubOverview />,
+                },
+                {
+                  path: 'services',
+                  element: <HubServices />,
+                },
+                {
+                  path: 'clients',
+                  element: <HubClients />,
+                },
+                {
+                  path: 'redeem-tokens',
+                  element: <HubRedeemTokens />,
+                },
+              ],
             },
             {
               path: 'devices',
@@ -459,16 +480,12 @@ function createRouter() {
               element: <AuthenticatedRoute><DeviceGroup /></AuthenticatedRoute>,
             },
             {
-              path: 'scopes',
-              element: <AuthenticatedRoute><Scopes /></AuthenticatedRoute>,
+              path: 'permissions',
+              element: <AuthenticatedRoute><Permissions /></AuthenticatedRoute>,
             },
             {
               path: 'scopes/:id',
               element: <AuthenticatedRoute><Scope /></AuthenticatedRoute>,
-            },
-            {
-              path: 'roles',
-              element: <AuthenticatedRoute><Roles /></AuthenticatedRoute>,
             },
             {
               path: 'roles/:id',

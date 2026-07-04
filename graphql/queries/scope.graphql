@@ -1,5 +1,5 @@
-query Scopes($filters: ManagementScopeFilter, $order: ManagementScopeOrder, $pagination: OffsetPaginationInput) {
-  scopes(filters: $filters, order: $order, pagination: $pagination) {
+query Scopes($filters: ManagementScopeFilter, $ordering: [ManagementScopeOrdering!], $pagination: OffsetPaginationInput) {
+  scopes(filters: $filters, ordering: $ordering, pagination: $pagination) {
     ...ListScope
   }
 }

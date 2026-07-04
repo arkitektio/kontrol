@@ -244,6 +244,16 @@ export type ManagementApp = {
   releases: Array<ManagementRelease>;
 };
 
+
+/** An App is the Arkitekt equivalent of a Software Application. It is a collection of `Releases` that can be all part of the same application. E.g the App `Napari` could have the releases `0.1.0` and `0.2.0`. */
+export type ManagementAppReleasesArgs = {
+  ordering?: Array<ManagementReleaseOrdering>;
+};
+
+export type ManagementAppOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
+
 /**
  * A client is a way of authenticating users with a release.
  *  The strategy of authentication is defined by the kind of client. And allows for different authentication flow.
@@ -300,6 +310,7 @@ export type ManagementClient = {
  */
 export type ManagementClientMappingsArgs = {
   filters?: InputMaybe<ServiceInstanceMappingFilter>;
+  ordering?: Array<ManagementServiceInstanceMappingOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -312,7 +323,7 @@ export type ManagementClientMappingsArgs = {
  */
 export type ManagementClientScopesArgs = {
   filters?: InputMaybe<ManagementScopeFilter>;
-  order?: InputMaybe<ManagementScopeOrder>;
+  ordering?: Array<ManagementScopeOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -324,6 +335,7 @@ export type ManagementClientScopesArgs = {
  *  but also a DEVELOPMENT client that is used by a developer to test the app. The client model thinly wraps the oauth2 client model, which is used to authenticate users.
  */
 export type ManagementClientUsedAliasesArgs = {
+  ordering?: Array<ManagementUsedAliasOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -333,18 +345,19 @@ export type ManagementClientFilter = {
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
   NOT?: InputMaybe<ManagementClientFilter>;
   OR?: InputMaybe<ManagementClientFilter>;
+  composition?: InputMaybe<Scalars['ID']['input']>;
   functional?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   organization?: InputMaybe<Scalars['ID']['input']>;
-  /** Operational role: human INTERFACE vs autonomous task-receiving AGENT. */
   role?: InputMaybe<ClientRole>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementClientOrder =
-  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
-  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
-  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
+export type ManagementClientOrdering =
+  { createdAt: Ordering; id?: never; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; id: Ordering; lastReportedAt?: never; name?: never; }
+  |  { createdAt?: never; id?: never; lastReportedAt: Ordering; name?: never; }
+  |  { createdAt?: never; id?: never; lastReportedAt?: never; name: Ordering; };
 
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementComChannel = {
@@ -377,7 +390,7 @@ export type ManagementComposition = {
 /** A Composition is a collection of service instances and clients that work together. It represents a deployable configuration for an organization. */
 export type ManagementCompositionClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
-  order?: InputMaybe<ManagementClientOrder>;
+  ordering?: Array<ManagementClientOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -385,7 +398,7 @@ export type ManagementCompositionClientsArgs = {
 /** A Composition is a collection of service instances and clients that work together. It represents a deployable configuration for an organization. */
 export type ManagementCompositionInstancesArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: Array<ManagementServiceInstanceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -422,10 +435,9 @@ export type ManagementCompositionManifest = {
   instances: Array<ManagementStagingInstanceRequest>;
 };
 
-export type ManagementCompositionOrder =
-  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
-  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
-  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
+export type ManagementCompositionOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 /** Device(id, node_id, name, organization) */
 export type ManagementDevice = {
@@ -446,7 +458,7 @@ export type ManagementDevice = {
 /** Device(id, node_id, name, organization) */
 export type ManagementDeviceClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
-  order?: InputMaybe<ManagementClientOrder>;
+  ordering?: Array<ManagementClientOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -454,7 +466,7 @@ export type ManagementDeviceClientsArgs = {
 /** Device(id, node_id, name, organization) */
 export type ManagementDeviceDeviceGroupsArgs = {
   filters?: InputMaybe<ManagementDeviceGroupFilter>;
-  order?: InputMaybe<ManagementDeviceGroupOrder>;
+  ordering?: Array<ManagementDeviceGroupOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -462,7 +474,7 @@ export type ManagementDeviceDeviceGroupsArgs = {
 /** Device(id, node_id, name, organization) */
 export type ManagementDeviceServiceInstancesArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: Array<ManagementServiceInstanceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -518,15 +530,13 @@ export type ManagementDeviceGroupFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementDeviceGroupOrder =
-  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
-  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
-  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
+export type ManagementDeviceGroupOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
-export type ManagementDeviceOrder =
-  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
-  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
-  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
+export type ManagementDeviceOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 /**
  *
@@ -648,6 +658,7 @@ export type ManagementInstanceAlias = {
 
 /** An alias for a service instance. This is used to provide a more user-friendly name for the instance. */
 export type ManagementInstanceAliasUsagesArgs = {
+  ordering?: Array<ManagementUsedAliasOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -661,8 +672,9 @@ export type ManagementInstanceAliasFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementInstanceAliasOrder =
-  { name: Ordering; };
+export type ManagementInstanceAliasOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 /** A single-use magic invite link that allows one person to join an organization. */
 export type ManagementInvite = {
@@ -690,7 +702,7 @@ export type ManagementInvite = {
 /** A single-use magic invite link that allows one person to join an organization. */
 export type ManagementInviteCreatedMembershipsArgs = {
   filters?: InputMaybe<ManagementMembershipFilter>;
-  order?: InputMaybe<ManagementMembershipOrder>;
+  ordering?: Array<ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -698,7 +710,7 @@ export type ManagementInviteCreatedMembershipsArgs = {
 /** A single-use magic invite link that allows one person to join an organization. */
 export type ManagementInviteRolesArgs = {
   filters?: InputMaybe<ManagementRoleFilter>;
-  order?: InputMaybe<ManagementRoleOrder>;
+  ordering?: Array<ManagementRoleOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -726,9 +738,9 @@ export type ManagementIonscaleAuthKeyFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementIonscaleAuthKeyOrder =
-  { createdAt: Ordering; ephemeral?: never; }
-  |  { createdAt?: never; ephemeral: Ordering; };
+export type ManagementIonscaleAuthKeyOrdering =
+  { createdAt: Ordering; id?: never; }
+  |  { createdAt?: never; id: Ordering; };
 
 /** A KommunityPartner represents a pre-configured partner that can provide compositions and services to organizations. Partners can be auto-configured to automatically create compositions for new organizations. */
 export type ManagementKommunityPartner = {
@@ -781,10 +793,9 @@ export type ManagementKommunityPartnerFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementKommunityPartnerOrder =
-  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
-  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
-  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
+export type ManagementKommunityPartnerOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 /** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
 export type ManagementLayer = {
@@ -816,7 +827,7 @@ export type ManagementLayer = {
 /** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
 export type ManagementLayerAliasesArgs = {
   filters?: InputMaybe<ManagementInstanceAliasFilter>;
-  order?: InputMaybe<ManagementInstanceAliasOrder>;
+  ordering?: Array<ManagementInstanceAliasOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -824,7 +835,7 @@ export type ManagementLayerAliasesArgs = {
 /** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
 export type ManagementLayerAuthKeysArgs = {
   filters?: InputMaybe<ManagementIonscaleAuthKeyFilter>;
-  order?: InputMaybe<ManagementIonscaleAuthKeyOrder>;
+  ordering?: Array<ManagementIonscaleAuthKeyOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -845,10 +856,9 @@ export type ManagementLayerFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementLayerOrder =
-  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
-  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
-  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
+export type ManagementLayerOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 export type ManagementMachine = {
   __typename?: 'ManagementMachine';
@@ -914,7 +924,7 @@ export type ManagementMembership = {
  */
 export type ManagementMembershipRolesArgs = {
   filters?: InputMaybe<ManagementRoleFilter>;
-  order?: InputMaybe<ManagementRoleOrder>;
+  ordering?: Array<ManagementRoleOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -929,10 +939,8 @@ export type ManagementMembershipFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementMembershipOrder =
-  { createdAt: Ordering; lastReportedAt?: never; name?: never; }
-  |  { createdAt?: never; lastReportedAt: Ordering; name?: never; }
-  |  { createdAt?: never; lastReportedAt?: never; name: Ordering; };
+export type ManagementMembershipOrdering =
+  { id: Ordering; };
 
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOAuth2Client = {
@@ -992,6 +1000,8 @@ export type ManagementOrganization = {
   __typename?: 'ManagementOrganization';
   /** The users that are currently active in the organization */
   activeUsers: Array<ManagementUser>;
+  /** Whether the currently authenticated user is the owner of this organization. */
+  amIOwner: Scalars['Boolean']['output'];
   /** The clients that belong to this organization */
   clients: Array<ManagementClient>;
   /** A short description of the organization */
@@ -1018,6 +1028,7 @@ export type ManagementOrganization = {
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOrganizationActiveUsersArgs = {
   filters?: InputMaybe<UserFilter>;
+  ordering?: Array<ManagementUserOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1025,7 +1036,7 @@ export type ManagementOrganizationActiveUsersArgs = {
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOrganizationClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
-  order?: InputMaybe<ManagementClientOrder>;
+  ordering?: Array<ManagementClientOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1040,7 +1051,7 @@ export type ManagementOrganizationInvitesArgs = {
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOrganizationMembershipsArgs = {
   filters?: InputMaybe<ManagementMembershipFilter>;
-  order?: InputMaybe<ManagementMembershipOrder>;
+  ordering?: Array<ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1048,7 +1059,7 @@ export type ManagementOrganizationMembershipsArgs = {
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOrganizationServiceInstancesArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: Array<ManagementServiceInstanceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1056,8 +1067,13 @@ export type ManagementOrganizationServiceInstancesArgs = {
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOrganizationUsersArgs = {
   filters?: InputMaybe<UserFilter>;
+  ordering?: Array<ManagementUserOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
+
+export type ManagementOrganizationOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 /**
  *
@@ -1129,6 +1145,28 @@ export type ManagementRedeemToken = {
   user: ManagementUser;
 };
 
+/**
+ * A redeem token is a token that can be used to redeem the rights to create
+ * a client. It is used to give the recipient the right to create a client.
+ *
+ * If the token is not redeemed within the expires_at time, it will be invalid.
+ * If the token has been redeemed, but the manifest has changed, the token will be invalid.
+ */
+export type ManagementRedeemTokenFilter = {
+  AND?: InputMaybe<ManagementRedeemTokenFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ManagementRedeemTokenFilter>;
+  OR?: InputMaybe<ManagementRedeemTokenFilter>;
+  composition?: InputMaybe<Scalars['ID']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  organization?: InputMaybe<Scalars['ID']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ManagementRedeemTokenOrdering =
+  { createdAt: Ordering; id?: never; }
+  |  { createdAt?: never; id: Ordering; };
+
 /** A Release is a version of an app. Releases might change over time. E.g. a release might be updated to fix a bug, and the release might be updated to add a new feature. This is why they are the home for `scopes` and `requirements`, which might change over the release cycle. */
 export type ManagementRelease = {
   __typename?: 'ManagementRelease';
@@ -1153,9 +1191,13 @@ export type ManagementRelease = {
 /** A Release is a version of an app. Releases might change over time. E.g. a release might be updated to fix a bug, and the release might be updated to add a new feature. This is why they are the home for `scopes` and `requirements`, which might change over the release cycle. */
 export type ManagementReleaseClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
-  order?: InputMaybe<ManagementClientOrder>;
+  ordering?: Array<ManagementClientOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
+
+export type ManagementReleaseOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 /** A Role is a set of permissions that can be assigned to a user. It is used to define what a user can do in the system. */
 export type ManagementRole = {
@@ -1177,7 +1219,7 @@ export type ManagementRole = {
 /** A Role is a set of permissions that can be assigned to a user. It is used to define what a user can do in the system. */
 export type ManagementRoleMembershipsArgs = {
   filters?: InputMaybe<ManagementMembershipFilter>;
-  order?: InputMaybe<ManagementMembershipOrder>;
+  ordering?: Array<ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1185,7 +1227,7 @@ export type ManagementRoleMembershipsArgs = {
 /** A Role is a set of permissions that can be assigned to a user. It is used to define what a user can do in the system. */
 export type ManagementRoleUsedByArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: Array<ManagementServiceInstanceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1201,10 +1243,8 @@ export type ManagementRoleFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementRoleOrder =
-  { createdAt: Ordering; name?: never; updatedAt?: never; }
-  |  { createdAt?: never; name: Ordering; updatedAt?: never; }
-  |  { createdAt?: never; name?: never; updatedAt: Ordering; };
+export type ManagementRoleOrdering =
+  { id: Ordering; };
 
 /** A Scope represents a permission or capability that can be granted to clients and users. It is used to define what access level a user or client has in the system. */
 export type ManagementScope = {
@@ -1226,7 +1266,7 @@ export type ManagementScope = {
 /** A Scope represents a permission or capability that can be granted to clients and users. It is used to define what access level a user or client has in the system. */
 export type ManagementScopeMembershipsArgs = {
   filters?: InputMaybe<ManagementMembershipFilter>;
-  order?: InputMaybe<ManagementMembershipOrder>;
+  ordering?: Array<ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1234,7 +1274,7 @@ export type ManagementScopeMembershipsArgs = {
 /** A Scope represents a permission or capability that can be granted to clients and users. It is used to define what access level a user or client has in the system. */
 export type ManagementScopeUsedByArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: Array<ManagementServiceInstanceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1250,10 +1290,8 @@ export type ManagementScopeFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type ManagementScopeOrder =
-  { createdAt: Ordering; name?: never; updatedAt?: never; }
-  |  { createdAt?: never; name: Ordering; updatedAt?: never; }
-  |  { createdAt?: never; name?: never; updatedAt: Ordering; };
+export type ManagementScopeOrdering =
+  { id: Ordering; };
 
 /** A Service is a Webservice that a Client might want to access. It is not the configured instance of the service, but the service itself. */
 export type ManagementService = {
@@ -1275,6 +1313,7 @@ export type ManagementService = {
 /** A Service is a Webservice that a Client might want to access. It is not the configured instance of the service, but the service itself. */
 export type ManagementServiceReleasesArgs = {
   filters?: InputMaybe<ServiceInstanceFilter>;
+  ordering?: Array<ManagementServiceReleaseOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1332,7 +1371,7 @@ export type ManagementServiceInstance = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstanceAliasesArgs = {
   filters?: InputMaybe<ManagementInstanceAliasFilter>;
-  order?: InputMaybe<ManagementInstanceAliasOrder>;
+  ordering?: Array<ManagementInstanceAliasOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1347,6 +1386,7 @@ export type ManagementServiceInstanceAllowedGroupsArgs = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstanceAllowedUsersArgs = {
   filters?: InputMaybe<UserFilter>;
+  ordering?: Array<ManagementUserOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1361,6 +1401,7 @@ export type ManagementServiceInstanceDeniedGroupsArgs = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstanceDeniedUsersArgs = {
   filters?: InputMaybe<UserFilter>;
+  ordering?: Array<ManagementUserOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1368,6 +1409,7 @@ export type ManagementServiceInstanceDeniedUsersArgs = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstanceMappingsArgs = {
   filters?: InputMaybe<ServiceInstanceMappingFilter>;
+  ordering?: Array<ManagementServiceInstanceMappingOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1375,7 +1417,7 @@ export type ManagementServiceInstanceMappingsArgs = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstanceRolesArgs = {
   filters?: InputMaybe<ManagementRoleFilter>;
-  order?: InputMaybe<ManagementRoleOrder>;
+  ordering?: Array<ManagementRoleOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1383,7 +1425,7 @@ export type ManagementServiceInstanceRolesArgs = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstanceScopesArgs = {
   filters?: InputMaybe<ManagementScopeFilter>;
-  order?: InputMaybe<ManagementScopeOrder>;
+  ordering?: Array<ManagementScopeOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1393,8 +1435,8 @@ export type ManagementServiceInstanceFilter = {
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
   NOT?: InputMaybe<ManagementServiceInstanceFilter>;
   OR?: InputMaybe<ManagementServiceInstanceFilter>;
+  composition?: InputMaybe<Scalars['ID']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  /** The organization that owns this instance. If null the instance is global. */
   organization?: InputMaybe<Scalars['ID']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
@@ -1413,10 +1455,15 @@ export type ManagementServiceInstanceMapping = {
   optional: Scalars['Boolean']['output'];
 };
 
-export type ManagementServiceInstanceOrder =
-  { createdAt: Ordering; name?: never; updatedAt?: never; }
-  |  { createdAt?: never; name: Ordering; updatedAt?: never; }
-  |  { createdAt?: never; name?: never; updatedAt: Ordering; };
+export type ManagementServiceInstanceMappingOrdering =
+  { id: Ordering; };
+
+export type ManagementServiceInstanceOrdering =
+  { id: Ordering; };
+
+export type ManagementServiceOrdering =
+  { id: Ordering; name?: never; }
+  |  { id?: never; name: Ordering; };
 
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceRelease = {
@@ -1434,9 +1481,12 @@ export type ManagementServiceRelease = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceReleaseInstancesArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: Array<ManagementServiceInstanceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
+
+export type ManagementServiceReleaseOrdering =
+  { id: Ordering; };
 
 /**
  *
@@ -1535,6 +1585,9 @@ export type ManagementUsedAlias = {
   valid: Scalars['Boolean']['output'];
 };
 
+export type ManagementUsedAliasOrdering =
+  { id: Ordering; };
+
 /**
  *
  * A User is a person that can log in to the system. They are uniquely identified by their username.
@@ -1622,9 +1675,12 @@ export type ManagementUserGroupsArgs = {
  */
 export type ManagementUserMembershipsArgs = {
   filters?: InputMaybe<ManagementMembershipFilter>;
-  order?: InputMaybe<ManagementMembershipOrder>;
+  ordering?: Array<ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
+
+export type ManagementUserOrdering =
+  { id: Ordering; };
 
 export type Mutation = {
   __typename?: 'Mutation';
@@ -1999,6 +2055,7 @@ export type QueryAppArgs = {
 
 export type QueryAppsArgs = {
   filters?: InputMaybe<AppFilter>;
+  ordering?: Array<ManagementAppOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2010,7 +2067,7 @@ export type QueryClientArgs = {
 
 export type QueryClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
-  order?: InputMaybe<ManagementClientOrder>;
+  ordering?: Array<ManagementClientOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2032,7 +2089,7 @@ export type QueryCompositionDeviceCodeByCodeArgs = {
 
 export type QueryCompositionsArgs = {
   filters?: InputMaybe<ManagementCompositionFilter>;
-  order?: InputMaybe<ManagementCompositionOrder>;
+  ordering?: Array<ManagementCompositionOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2059,20 +2116,21 @@ export type QueryDeviceGroupArgs = {
 
 export type QueryDeviceGroupsArgs = {
   filters?: InputMaybe<ManagementDeviceGroupFilter>;
-  order?: InputMaybe<ManagementDeviceGroupOrder>;
+  ordering?: Array<ManagementDeviceGroupOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
 export type QueryDevicesArgs = {
   filters?: InputMaybe<ManagementDeviceFilter>;
-  order?: InputMaybe<ManagementDeviceOrder>;
+  ordering?: Array<ManagementDeviceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
 export type QueryFriendsArgs = {
   filters?: InputMaybe<UserFilter>;
+  ordering?: Array<ManagementUserOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2084,7 +2142,7 @@ export type QueryInstanceAliasArgs = {
 
 export type QueryInstanceAliasesArgs = {
   filters?: InputMaybe<ManagementInstanceAliasFilter>;
-  order?: InputMaybe<ManagementInstanceAliasOrder>;
+  ordering?: Array<ManagementInstanceAliasOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2106,7 +2164,7 @@ export type QueryIonscaleAuthKeyArgs = {
 
 export type QueryIonscaleAuthKeysArgs = {
   filters?: InputMaybe<ManagementIonscaleAuthKeyFilter>;
-  order?: InputMaybe<ManagementIonscaleAuthKeyOrder>;
+  ordering?: Array<ManagementIonscaleAuthKeyOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2118,7 +2176,7 @@ export type QueryKommunityPartnerArgs = {
 
 export type QueryKommunityPartnersArgs = {
   filters?: InputMaybe<ManagementKommunityPartnerFilter>;
-  order?: InputMaybe<ManagementKommunityPartnerOrder>;
+  ordering?: Array<ManagementKommunityPartnerOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2130,7 +2188,7 @@ export type QueryLayerArgs = {
 
 export type QueryLayersArgs = {
   filters?: InputMaybe<ManagementLayerFilter>;
-  order?: InputMaybe<ManagementLayerOrder>;
+  ordering?: Array<ManagementLayerOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2142,7 +2200,7 @@ export type QueryMachineArgs = {
 
 export type QueryManagementLayersArgs = {
   filters?: InputMaybe<ManagementLayerFilter>;
-  order?: InputMaybe<ManagementLayerOrder>;
+  ordering?: Array<ManagementLayerOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2154,7 +2212,7 @@ export type QueryMembershipArgs = {
 
 export type QueryMembershipsArgs = {
   filters?: InputMaybe<ManagementMembershipFilter>;
-  order?: InputMaybe<ManagementMembershipOrder>;
+  ordering?: Array<ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2171,17 +2229,25 @@ export type QueryOrganizationArgs = {
 
 export type QueryOrganizationsArgs = {
   filters?: InputMaybe<OrganizationFilter>;
+  ordering?: Array<ManagementOrganizationOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
 export type QueryRedeemTokensArgs = {
+  filters?: InputMaybe<ManagementRedeemTokenFilter>;
+  ordering?: Array<ManagementRedeemTokenOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
 export type QueryReleaseArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryReleasesArgs = {
+  ordering?: Array<ManagementReleaseOrdering>;
 };
 
 
@@ -2192,7 +2258,7 @@ export type QueryRoleArgs = {
 
 export type QueryRolesArgs = {
   filters?: InputMaybe<ManagementRoleFilter>;
-  order?: InputMaybe<ManagementRoleOrder>;
+  ordering?: Array<ManagementRoleOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2204,7 +2270,7 @@ export type QueryScopeArgs = {
 
 export type QueryScopesArgs = {
   filters?: InputMaybe<ManagementScopeFilter>;
-  order?: InputMaybe<ManagementScopeOrder>;
+  ordering?: Array<ManagementScopeOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2236,13 +2302,14 @@ export type QueryServiceInstanceMappingArgs = {
 
 export type QueryServiceInstanceMappingsArgs = {
   filters?: InputMaybe<ServiceInstanceMappingFilter>;
+  ordering?: Array<ManagementServiceInstanceMappingOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
 export type QueryServiceInstancesArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: Array<ManagementServiceInstanceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2254,12 +2321,14 @@ export type QueryServiceReleaseArgs = {
 
 export type QueryServiceReleasesArgs = {
   filters?: InputMaybe<ServiceInstanceFilter>;
+  ordering?: Array<ManagementServiceReleaseOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
 export type QueryServicesArgs = {
   filters?: InputMaybe<ServiceFilter>;
+  ordering?: Array<ManagementServiceOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2275,6 +2344,7 @@ export type QueryUsedAliasArgs = {
 
 
 export type QueryUsedAliasesArgs = {
+  ordering?: Array<ManagementUsedAliasOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2491,9 +2561,9 @@ export type ListDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id
 
 export type ListInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string } };
 
-export type InviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null };
+export type InviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null };
 
-export type DetailInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> };
+export type DetailInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> };
 
 export type LayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, localId: string, name: string, ipv4?: string | null, ipv6?: string | null, connected: boolean, ephemeral: boolean, lastSeen?: any | null, tags: Array<string> }>, authKeys: Array<{ __typename?: 'ManagementIonscaleAuthKey', id: string, key: string, createdAt: any, ephemeral: boolean, tags: Array<string>, creator: { __typename?: 'ManagementUser', id: string, email?: string | null } }> };
 
@@ -2513,7 +2583,7 @@ export type ListMembershipFragment = { __typename?: 'ManagementMembership', id: 
 
 export type Oauth2ClientFragment = { __typename?: 'ManagementOAuth2Client', id: string, name: string, clientId: string, redirectUris: string };
 
-export type OrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> };
+export type OrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> };
 
 export type ListOrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string };
 
@@ -2737,28 +2807,28 @@ export type CreateInviteMutationVariables = Exact<{
 }>;
 
 
-export type CreateInviteMutation = { __typename?: 'Mutation', createInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type CreateInviteMutation = { __typename?: 'Mutation', createInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type AcceptInviteMutationVariables = Exact<{
   input: AcceptInviteInput;
 }>;
 
 
-export type AcceptInviteMutation = { __typename?: 'Mutation', acceptInvite: { __typename?: 'ManagementMembership', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } } };
+export type AcceptInviteMutation = { __typename?: 'Mutation', acceptInvite: { __typename?: 'ManagementMembership', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } } };
 
 export type DeclineInviteMutationVariables = Exact<{
   input: DeclineInviteInput;
 }>;
 
 
-export type DeclineInviteMutation = { __typename?: 'Mutation', declineInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type DeclineInviteMutation = { __typename?: 'Mutation', declineInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type CancelInviteMutationVariables = Exact<{
   input: CancelInviteInput;
 }>;
 
 
-export type CancelInviteMutation = { __typename?: 'Mutation', cancelInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type CancelInviteMutation = { __typename?: 'Mutation', cancelInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type CreateIonscaleLayerMutationVariables = Exact<{
   input: CreateIonscaleLayerInput;
@@ -2814,14 +2884,14 @@ export type CreateOrganizationMutationVariables = Exact<{
 }>;
 
 
-export type CreateOrganizationMutation = { __typename?: 'Mutation', createOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type CreateOrganizationMutation = { __typename?: 'Mutation', createOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type UpdateOrganizationMutationVariables = Exact<{
   input: UpdateOrganizationInput;
 }>;
 
 
-export type UpdateOrganizationMutation = { __typename?: 'Mutation', updateOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type UpdateOrganizationMutation = { __typename?: 'Mutation', updateOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type DeleteOrganizationMutationVariables = Exact<{
   input: DeleteOrganizationInput;
@@ -2836,7 +2906,7 @@ export type ChangeOrganizationOwnerMutationVariables = Exact<{
 }>;
 
 
-export type ChangeOrganizationOwnerMutation = { __typename?: 'Mutation', changeOrganizationOwner: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type ChangeOrganizationOwnerMutation = { __typename?: 'Mutation', changeOrganizationOwner: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type CreateOrganizationProfileMutationVariables = Exact<{
   input: CreateOrganizationProfileInput;
@@ -2927,7 +2997,7 @@ export type DetailAppQuery = { __typename?: 'Query', app: { __typename?: 'Manage
 export type IonscaleAuthKeyQueryVariables = Exact<{
   filters?: InputMaybe<ManagementIonscaleAuthKeyFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
-  order?: InputMaybe<ManagementIonscaleAuthKeyOrder>;
+  ordering?: InputMaybe<Array<ManagementIonscaleAuthKeyOrdering> | ManagementIonscaleAuthKeyOrdering>;
 }>;
 
 
@@ -2943,7 +3013,7 @@ export type GetAuthKeyQuery = { __typename?: 'Query', ionscaleAuthKey: { __typen
 export type ClientsQueryVariables = Exact<{
   filters?: InputMaybe<ManagementClientFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
-  order?: InputMaybe<ManagementClientOrder>;
+  ordering?: InputMaybe<Array<ManagementClientOrdering> | ManagementClientOrdering>;
 }>;
 
 
@@ -2958,7 +3028,7 @@ export type DetailClientQuery = { __typename?: 'Query', client: { __typename?: '
 
 export type CompositionsQueryVariables = Exact<{
   filters?: InputMaybe<ManagementCompositionFilter>;
-  order?: InputMaybe<ManagementCompositionOrder>;
+  ordering?: InputMaybe<Array<ManagementCompositionOrdering> | ManagementCompositionOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 }>;
 
@@ -2982,7 +3052,7 @@ export type CompositionDeviceCodeByCodeQuery = { __typename?: 'Query', compositi
 export type ListDevicesQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
   filters?: InputMaybe<ManagementDeviceFilter>;
-  order?: InputMaybe<ManagementDeviceOrder>;
+  ordering?: InputMaybe<Array<ManagementDeviceOrdering> | ManagementDeviceOrdering>;
 }>;
 
 
@@ -3013,7 +3083,7 @@ export type ValidateDeviceCodeQuery = { __typename?: 'Query', validateDeviceCode
 export type ListDeviceGroupsQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
   filters?: InputMaybe<ManagementDeviceGroupFilter>;
-  order?: InputMaybe<ManagementDeviceGroupOrder>;
+  ordering?: InputMaybe<Array<ManagementDeviceGroupOrdering> | ManagementDeviceGroupOrdering>;
 }>;
 
 
@@ -3029,7 +3099,7 @@ export type GetDeviceGroupQuery = { __typename?: 'Query', deviceGroup: { __typen
 export type ListInstanceAliasQueryVariables = Exact<{
   filters?: InputMaybe<ManagementInstanceAliasFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
-  order?: InputMaybe<ManagementInstanceAliasOrder>;
+  ordering?: InputMaybe<Array<ManagementInstanceAliasOrdering> | ManagementInstanceAliasOrdering>;
 }>;
 
 
@@ -3047,19 +3117,19 @@ export type InviteByCodeQueryVariables = Exact<{
 }>;
 
 
-export type InviteByCodeQuery = { __typename?: 'Query', inviteByCode: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type InviteByCodeQuery = { __typename?: 'Query', inviteByCode: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type GetInviteQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetInviteQuery = { __typename?: 'Query', invite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> } };
+export type GetInviteQuery = { __typename?: 'Query', invite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> } };
 
 export type ListKommunityPartnerQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
   filters?: InputMaybe<ManagementKommunityPartnerFilter>;
-  order?: InputMaybe<ManagementKommunityPartnerOrder>;
+  ordering?: InputMaybe<Array<ManagementKommunityPartnerOrdering> | ManagementKommunityPartnerOrdering>;
 }>;
 
 
@@ -3075,7 +3145,7 @@ export type GetKommunityPartnerQuery = { __typename?: 'Query', kommunityPartner:
 export type LayersQueryVariables = Exact<{
   filters?: InputMaybe<ManagementLayerFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
-  order?: InputMaybe<ManagementLayerOrder>;
+  ordering?: InputMaybe<Array<ManagementLayerOrdering> | ManagementLayerOrdering>;
 }>;
 
 
@@ -3107,7 +3177,7 @@ export type MeQuery = { __typename?: 'Query', me: { __typename?: 'ManagementUser
 
 export type MembershipsQueryVariables = Exact<{
   filters?: InputMaybe<ManagementMembershipFilter>;
-  order?: InputMaybe<ManagementMembershipOrder>;
+  ordering?: InputMaybe<Array<ManagementMembershipOrdering> | ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 }>;
 
@@ -3133,7 +3203,7 @@ export type OrganizationQueryVariables = Exact<{
 }>;
 
 
-export type OrganizationQuery = { __typename?: 'Query', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type OrganizationQuery = { __typename?: 'Query', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type SidebarOrganizationQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -3159,6 +3229,7 @@ export type OrganizationOptionsQueryVariables = Exact<{
 export type OrganizationOptionsQuery = { __typename?: 'Query', options: Array<{ __typename?: 'ManagementOrganization', value: string, label?: string | null }> };
 
 export type RedeemTokensQueryVariables = Exact<{
+  filters?: InputMaybe<ManagementRedeemTokenFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 }>;
 
@@ -3179,7 +3250,7 @@ export type DetailReleaseQuery = { __typename?: 'Query', release: { __typename?:
 
 export type RolesQueryVariables = Exact<{
   filters?: InputMaybe<ManagementRoleFilter>;
-  order?: InputMaybe<ManagementRoleOrder>;
+  ordering?: InputMaybe<Array<ManagementRoleOrdering> | ManagementRoleOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 }>;
 
@@ -3195,7 +3266,7 @@ export type GetRoleQuery = { __typename?: 'Query', role: { __typename?: 'Managem
 
 export type ScopesQueryVariables = Exact<{
   filters?: InputMaybe<ManagementScopeFilter>;
-  order?: InputMaybe<ManagementScopeOrder>;
+  ordering?: InputMaybe<Array<ManagementScopeOrdering> | ManagementScopeOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 }>;
 
@@ -3219,7 +3290,7 @@ export type ServiceDeviceCodeByCodeQuery = { __typename?: 'Query', serviceDevice
 export type ListServiceInstancesQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+  ordering?: InputMaybe<Array<ManagementServiceInstanceOrdering> | ManagementServiceInstanceOrdering>;
 }>;
 
 
@@ -3742,6 +3813,7 @@ export const OrganizationFragmentDoc = gql`
   id
   name
   slug
+  amIOwner
   roles {
     id
     identifier
@@ -5848,8 +5920,12 @@ export type DetailAppLazyQueryHookResult = ReturnType<typeof useDetailAppLazyQue
 export type DetailAppSuspenseQueryHookResult = ReturnType<typeof useDetailAppSuspenseQuery>;
 export type DetailAppQueryResult = Apollo.QueryResult<DetailAppQuery, DetailAppQueryVariables>;
 export const IonscaleAuthKeyDocument = gql`
-    query IonscaleAuthKey($filters: ManagementIonscaleAuthKeyFilter, $pagination: OffsetPaginationInput, $order: ManagementIonscaleAuthKeyOrder) {
-  ionscaleAuthKeys(filters: $filters, pagination: $pagination, order: $order) {
+    query IonscaleAuthKey($filters: ManagementIonscaleAuthKeyFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementIonscaleAuthKeyOrdering!]) {
+  ionscaleAuthKeys(
+    filters: $filters
+    pagination: $pagination
+    ordering: $ordering
+  ) {
     ...IonscaleAuthKey
   }
 }
@@ -5869,7 +5945,7 @@ export const IonscaleAuthKeyDocument = gql`
  *   variables: {
  *      filters: // value for 'filters'
  *      pagination: // value for 'pagination'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */
@@ -5936,8 +6012,8 @@ export type GetAuthKeyLazyQueryHookResult = ReturnType<typeof useGetAuthKeyLazyQ
 export type GetAuthKeySuspenseQueryHookResult = ReturnType<typeof useGetAuthKeySuspenseQuery>;
 export type GetAuthKeyQueryResult = Apollo.QueryResult<GetAuthKeyQuery, GetAuthKeyQueryVariables>;
 export const ClientsDocument = gql`
-    query Clients($filters: ManagementClientFilter, $pagination: OffsetPaginationInput, $order: ManagementClientOrder) {
-  clients(filters: $filters, pagination: $pagination, order: $order) {
+    query Clients($filters: ManagementClientFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementClientOrdering!]) {
+  clients(filters: $filters, pagination: $pagination, ordering: $ordering) {
     ...ListClient
   }
 }
@@ -5957,7 +6033,7 @@ export const ClientsDocument = gql`
  *   variables: {
  *      filters: // value for 'filters'
  *      pagination: // value for 'pagination'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */
@@ -6024,8 +6100,8 @@ export type DetailClientLazyQueryHookResult = ReturnType<typeof useDetailClientL
 export type DetailClientSuspenseQueryHookResult = ReturnType<typeof useDetailClientSuspenseQuery>;
 export type DetailClientQueryResult = Apollo.QueryResult<DetailClientQuery, DetailClientQueryVariables>;
 export const CompositionsDocument = gql`
-    query Compositions($filters: ManagementCompositionFilter, $order: ManagementCompositionOrder, $pagination: OffsetPaginationInput) {
-  compositions(filters: $filters, order: $order, pagination: $pagination) {
+    query Compositions($filters: ManagementCompositionFilter, $ordering: [ManagementCompositionOrdering!], $pagination: OffsetPaginationInput) {
+  compositions(filters: $filters, ordering: $ordering, pagination: $pagination) {
     ...ListComposition
   }
 }
@@ -6044,7 +6120,7 @@ export const CompositionsDocument = gql`
  * const { data, loading, error } = useCompositionsQuery({
  *   variables: {
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *      pagination: // value for 'pagination'
  *   },
  * });
@@ -6155,8 +6231,8 @@ export type CompositionDeviceCodeByCodeLazyQueryHookResult = ReturnType<typeof u
 export type CompositionDeviceCodeByCodeSuspenseQueryHookResult = ReturnType<typeof useCompositionDeviceCodeByCodeSuspenseQuery>;
 export type CompositionDeviceCodeByCodeQueryResult = Apollo.QueryResult<CompositionDeviceCodeByCodeQuery, CompositionDeviceCodeByCodeQueryVariables>;
 export const ListDevicesDocument = gql`
-    query ListDevices($pagination: OffsetPaginationInput, $filters: ManagementDeviceFilter, $order: ManagementDeviceOrder) {
-  devices(pagination: $pagination, filters: $filters, order: $order) {
+    query ListDevices($pagination: OffsetPaginationInput, $filters: ManagementDeviceFilter, $ordering: [ManagementDeviceOrdering!]) {
+  devices(pagination: $pagination, filters: $filters, ordering: $ordering) {
     ...ListDevice
   }
 }
@@ -6176,7 +6252,7 @@ export const ListDevicesDocument = gql`
  *   variables: {
  *      pagination: // value for 'pagination'
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */
@@ -6342,8 +6418,8 @@ export type ValidateDeviceCodeLazyQueryHookResult = ReturnType<typeof useValidat
 export type ValidateDeviceCodeSuspenseQueryHookResult = ReturnType<typeof useValidateDeviceCodeSuspenseQuery>;
 export type ValidateDeviceCodeQueryResult = Apollo.QueryResult<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>;
 export const ListDeviceGroupsDocument = gql`
-    query ListDeviceGroups($pagination: OffsetPaginationInput, $filters: ManagementDeviceGroupFilter, $order: ManagementDeviceGroupOrder) {
-  deviceGroups(pagination: $pagination, filters: $filters, order: $order) {
+    query ListDeviceGroups($pagination: OffsetPaginationInput, $filters: ManagementDeviceGroupFilter, $ordering: [ManagementDeviceGroupOrdering!]) {
+  deviceGroups(pagination: $pagination, filters: $filters, ordering: $ordering) {
     ...ListDeviceGroup
   }
 }
@@ -6363,7 +6439,7 @@ export const ListDeviceGroupsDocument = gql`
  *   variables: {
  *      pagination: // value for 'pagination'
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */
@@ -6430,8 +6506,8 @@ export type GetDeviceGroupLazyQueryHookResult = ReturnType<typeof useGetDeviceGr
 export type GetDeviceGroupSuspenseQueryHookResult = ReturnType<typeof useGetDeviceGroupSuspenseQuery>;
 export type GetDeviceGroupQueryResult = Apollo.QueryResult<GetDeviceGroupQuery, GetDeviceGroupQueryVariables>;
 export const ListInstanceAliasDocument = gql`
-    query ListInstanceAlias($filters: ManagementInstanceAliasFilter, $pagination: OffsetPaginationInput, $order: ManagementInstanceAliasOrder) {
-  instanceAliases(filters: $filters, pagination: $pagination, order: $order) {
+    query ListInstanceAlias($filters: ManagementInstanceAliasFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementInstanceAliasOrdering!]) {
+  instanceAliases(filters: $filters, pagination: $pagination, ordering: $ordering) {
     ...ListInstanceAlias
   }
 }
@@ -6451,7 +6527,7 @@ export const ListInstanceAliasDocument = gql`
  *   variables: {
  *      filters: // value for 'filters'
  *      pagination: // value for 'pagination'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */
@@ -6604,8 +6680,12 @@ export type GetInviteLazyQueryHookResult = ReturnType<typeof useGetInviteLazyQue
 export type GetInviteSuspenseQueryHookResult = ReturnType<typeof useGetInviteSuspenseQuery>;
 export type GetInviteQueryResult = Apollo.QueryResult<GetInviteQuery, GetInviteQueryVariables>;
 export const ListKommunityPartnerDocument = gql`
-    query ListKommunityPartner($pagination: OffsetPaginationInput, $filters: ManagementKommunityPartnerFilter, $order: ManagementKommunityPartnerOrder) {
-  kommunityPartners(pagination: $pagination, filters: $filters, order: $order) {
+    query ListKommunityPartner($pagination: OffsetPaginationInput, $filters: ManagementKommunityPartnerFilter, $ordering: [ManagementKommunityPartnerOrdering!]) {
+  kommunityPartners(
+    pagination: $pagination
+    filters: $filters
+    ordering: $ordering
+  ) {
     ...ListKommunityPartner
   }
 }
@@ -6625,7 +6705,7 @@ export const ListKommunityPartnerDocument = gql`
  *   variables: {
  *      pagination: // value for 'pagination'
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */
@@ -6692,8 +6772,8 @@ export type GetKommunityPartnerLazyQueryHookResult = ReturnType<typeof useGetKom
 export type GetKommunityPartnerSuspenseQueryHookResult = ReturnType<typeof useGetKommunityPartnerSuspenseQuery>;
 export type GetKommunityPartnerQueryResult = Apollo.QueryResult<GetKommunityPartnerQuery, GetKommunityPartnerQueryVariables>;
 export const LayersDocument = gql`
-    query Layers($filters: ManagementLayerFilter, $pagination: OffsetPaginationInput, $order: ManagementLayerOrder) {
-  layers(filters: $filters, pagination: $pagination, order: $order) {
+    query Layers($filters: ManagementLayerFilter, $pagination: OffsetPaginationInput, $ordering: [ManagementLayerOrdering!]) {
+  layers(filters: $filters, pagination: $pagination, ordering: $ordering) {
     ...ListLayer
   }
 }
@@ -6713,7 +6793,7 @@ export const LayersDocument = gql`
  *   variables: {
  *      filters: // value for 'filters'
  *      pagination: // value for 'pagination'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */
@@ -6865,8 +6945,8 @@ export type MeLazyQueryHookResult = ReturnType<typeof useMeLazyQuery>;
 export type MeSuspenseQueryHookResult = ReturnType<typeof useMeSuspenseQuery>;
 export type MeQueryResult = Apollo.QueryResult<MeQuery, MeQueryVariables>;
 export const MembershipsDocument = gql`
-    query Memberships($filters: ManagementMembershipFilter, $order: ManagementMembershipOrder, $pagination: OffsetPaginationInput) {
-  memberships(filters: $filters, order: $order, pagination: $pagination) {
+    query Memberships($filters: ManagementMembershipFilter, $ordering: [ManagementMembershipOrdering!], $pagination: OffsetPaginationInput) {
+  memberships(filters: $filters, ordering: $ordering, pagination: $pagination) {
     ...ListMembership
   }
 }
@@ -6885,7 +6965,7 @@ export const MembershipsDocument = gql`
  * const { data, loading, error } = useMembershipsQuery({
  *   variables: {
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *      pagination: // value for 'pagination'
  *   },
  * });
@@ -7171,8 +7251,8 @@ export type OrganizationOptionsLazyQueryHookResult = ReturnType<typeof useOrgani
 export type OrganizationOptionsSuspenseQueryHookResult = ReturnType<typeof useOrganizationOptionsSuspenseQuery>;
 export type OrganizationOptionsQueryResult = Apollo.QueryResult<OrganizationOptionsQuery, OrganizationOptionsQueryVariables>;
 export const RedeemTokensDocument = gql`
-    query RedeemTokens($pagination: OffsetPaginationInput) {
-  redeemTokens(pagination: $pagination) {
+    query RedeemTokens($filters: ManagementRedeemTokenFilter, $pagination: OffsetPaginationInput) {
+  redeemTokens(filters: $filters, pagination: $pagination) {
     ...ListRedeemToken
   }
 }
@@ -7190,6 +7270,7 @@ export const RedeemTokensDocument = gql`
  * @example
  * const { data, loading, error } = useRedeemTokensQuery({
  *   variables: {
+ *      filters: // value for 'filters'
  *      pagination: // value for 'pagination'
  *   },
  * });
@@ -7299,8 +7380,8 @@ export type DetailReleaseLazyQueryHookResult = ReturnType<typeof useDetailReleas
 export type DetailReleaseSuspenseQueryHookResult = ReturnType<typeof useDetailReleaseSuspenseQuery>;
 export type DetailReleaseQueryResult = Apollo.QueryResult<DetailReleaseQuery, DetailReleaseQueryVariables>;
 export const RolesDocument = gql`
-    query Roles($filters: ManagementRoleFilter, $order: ManagementRoleOrder, $pagination: OffsetPaginationInput) {
-  roles(filters: $filters, order: $order, pagination: $pagination) {
+    query Roles($filters: ManagementRoleFilter, $ordering: [ManagementRoleOrdering!], $pagination: OffsetPaginationInput) {
+  roles(filters: $filters, ordering: $ordering, pagination: $pagination) {
     ...ListRole
   }
 }
@@ -7319,7 +7400,7 @@ export const RolesDocument = gql`
  * const { data, loading, error } = useRolesQuery({
  *   variables: {
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *      pagination: // value for 'pagination'
  *   },
  * });
@@ -7387,8 +7468,8 @@ export type GetRoleLazyQueryHookResult = ReturnType<typeof useGetRoleLazyQuery>;
 export type GetRoleSuspenseQueryHookResult = ReturnType<typeof useGetRoleSuspenseQuery>;
 export type GetRoleQueryResult = Apollo.QueryResult<GetRoleQuery, GetRoleQueryVariables>;
 export const ScopesDocument = gql`
-    query Scopes($filters: ManagementScopeFilter, $order: ManagementScopeOrder, $pagination: OffsetPaginationInput) {
-  scopes(filters: $filters, order: $order, pagination: $pagination) {
+    query Scopes($filters: ManagementScopeFilter, $ordering: [ManagementScopeOrdering!], $pagination: OffsetPaginationInput) {
+  scopes(filters: $filters, ordering: $ordering, pagination: $pagination) {
     ...ListScope
   }
 }
@@ -7407,7 +7488,7 @@ export const ScopesDocument = gql`
  * const { data, loading, error } = useScopesQuery({
  *   variables: {
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *      pagination: // value for 'pagination'
  *   },
  * });
@@ -7518,8 +7599,12 @@ export type ServiceDeviceCodeByCodeLazyQueryHookResult = ReturnType<typeof useSe
 export type ServiceDeviceCodeByCodeSuspenseQueryHookResult = ReturnType<typeof useServiceDeviceCodeByCodeSuspenseQuery>;
 export type ServiceDeviceCodeByCodeQueryResult = Apollo.QueryResult<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>;
 export const ListServiceInstancesDocument = gql`
-    query ListServiceInstances($pagination: OffsetPaginationInput, $filters: ManagementServiceInstanceFilter, $order: ManagementServiceInstanceOrder) {
-  serviceInstances(pagination: $pagination, filters: $filters, order: $order) {
+    query ListServiceInstances($pagination: OffsetPaginationInput, $filters: ManagementServiceInstanceFilter, $ordering: [ManagementServiceInstanceOrdering!]) {
+  serviceInstances(
+    pagination: $pagination
+    filters: $filters
+    ordering: $ordering
+  ) {
     ...ListServiceInstance
   }
 }
@@ -7539,7 +7624,7 @@ export const ListServiceInstancesDocument = gql`
  *   variables: {
  *      pagination: // value for 'pagination'
  *      filters: // value for 'filters'
- *      order: // value for 'order'
+ *      ordering: // value for 'ordering'
  *   },
  * });
  */

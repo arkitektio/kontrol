@@ -1,5 +1,5 @@
-query Compositions($filters: ManagementCompositionFilter, $order: ManagementCompositionOrder, $pagination: OffsetPaginationInput) {
-  compositions(filters: $filters, order: $order, pagination: $pagination) {
+query Compositions($filters: ManagementCompositionFilter, $ordering: [ManagementCompositionOrdering!], $pagination: OffsetPaginationInput) {
+  compositions(filters: $filters, ordering: $ordering, pagination: $pagination) {
     ...ListComposition
   }
 }

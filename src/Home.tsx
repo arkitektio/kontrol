@@ -21,7 +21,7 @@ export default function Home() {
     const { data: clientsData, loading: clientsLoading, error: clientsError } = useClientsQuery({
         variables: {
             filters: { functional: false },
-            order: { createdAt: Ordering.Desc },
+            ordering: [{ createdAt: Ordering.Desc }],
             pagination: { limit: 5 }
         }
     })

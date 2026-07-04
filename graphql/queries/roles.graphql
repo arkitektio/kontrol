@@ -1,5 +1,5 @@
-query Roles($filters: ManagementRoleFilter, $order: ManagementRoleOrder, $pagination: OffsetPaginationInput) {
-  roles(filters: $filters, order: $order, pagination: $pagination) {
+query Roles($filters: ManagementRoleFilter, $ordering: [ManagementRoleOrdering!], $pagination: OffsetPaginationInput) {
+  roles(filters: $filters, ordering: $ordering, pagination: $pagination) {
     ...ListRole
   }
 }
