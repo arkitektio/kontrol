@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { useCancelInviteMutation, useOrganizationQuery } from "../api/graphql"
 import { CreateInviteDialog } from "../components/CreateInviteDialog"
+import { PageHeader } from "../components/PageHeader"
 import { Button } from "../components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import {
@@ -88,18 +89,13 @@ export default function Invites() {
   }
 
   return (
-    <div className="container mx-auto py-10 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-            <h2 className="text-3xl font-bold tracking-tight">Invites</h2>
-            <p className="text-muted-foreground">
-                Manage invitations for {org.name}
-            </p>
-        </div>
-        <Button onClick={() => setInviteOpen(true)}>
-            Invite Member
-        </Button>
-      </div>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Mail}
+        title="Invites"
+        description={<>Manage invitations for {org.name}</>}
+        actions={<Button onClick={() => setInviteOpen(true)}>Invite Member</Button>}
+      />
 
       <Card>
         <CardHeader>

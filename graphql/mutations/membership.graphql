@@ -6,5 +6,11 @@ mutation UpdateMembership($input: UpdateMembershipInput!) {
 }
 
 mutation DeleteMembership($input: DeleteMembershipInput!) {
-  deleteMembership(input: $input) 
+  deleteMembership(input: $input)
+}
+
+mutation SetMembershipBrandHue($input: SetMembershipBrandHueInput!) {
+  setMembershipBrandHue(input: $input) {
+    ...Membership
+  }
 }

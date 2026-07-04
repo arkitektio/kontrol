@@ -3,7 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Link, useLocation } from "react-router-dom"
 import { useSidebarOrganizationQuery, useCompositionsQuery } from "@/api/graphql"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, Boxes, Layers, Network, ChevronRight, Ticket } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
@@ -47,6 +47,7 @@ export function OrganizationSidebar() {
     const mainItems = [
         { to: base, label: "Overview", icon: LayoutDashboard, exact: true },
         { to: `${base}/profile`, label: "Profile", icon: Building2 },
+        { to: `${base}/me`, label: "My Access", icon: UserCircle, exact: true },
         { to: `${base}/members`, label: "Members", icon: Users },
         { to: `${base}/invites`, label: "Invites", icon: Mail },
         { to: `${base}/danger-zone`, label: "Settings", icon: Settings },
@@ -97,6 +98,29 @@ export function OrganizationSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {compData && hubs.length === 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Hubs</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(`${base}/connect-hub`, true)}
+                    tooltip="Connect a hub"
+                    className="border border-dashed border-sidebar-border text-sidebar-foreground/80 hover:text-sidebar-foreground"
+                  >
+                    <Link to={`${base}/connect-hub`}>
+                      <Plug />
+                      <span>Connect a hub</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {hubs.map((hub, index) => {
           const hubPath = `${base}/compositions/${hub.id}`

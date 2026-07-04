@@ -3,7 +3,7 @@ import { useLayersQuery, useDetailLayerQuery, useCreateIonscaleAuthKeyMutation }
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
-import { Separator } from "../components/ui/separator"
+import { PageHeader } from "../components/PageHeader"
 import { Network, Key, Plus, Monitor, Info } from "lucide-react"
 import { useState } from "react"
 import { Input } from "../components/ui/input"
@@ -80,19 +80,11 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
   return (
     <>
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted">
-          <Network className="h-7 w-7" />
-        </div>
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Mesh</h1>
-          <p className="text-sm text-muted-foreground">
-            The private WireGuard network for this organization. Clients opt in to join it.
-          </p>
-        </div>
-      </div>
-
-      <Separator />
+      <PageHeader
+        icon={Network}
+        title="Mesh"
+        description="The private WireGuard network for this organization. Clients opt in to join it."
+      />
 
       {/* Machines */}
       <section className="space-y-3">

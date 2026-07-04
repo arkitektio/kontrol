@@ -1,0 +1,23 @@
+fragment RoleRequest on ManagementRoleRequest {
+  id
+  status
+  reason
+  createdAt
+  respondedAt
+  role {
+    ...ListRole
+  }
+  membership {
+    id
+    user {
+      id
+      username
+      profile {
+        id
+        avatar {
+          presignedUrl
+        }
+      }
+    }
+  }
+}

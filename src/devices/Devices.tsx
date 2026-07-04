@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom"
 import { useListDevicesQuery } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
+import { PageHeader } from "../components/PageHeader"
 import { Laptop, Smartphone, Tablet } from "lucide-react"
 
 export default function Devices() {
@@ -31,10 +32,12 @@ export default function Devices() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Devices</h2>
-      </div>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Smartphone}
+        title="Devices"
+        description="Hardware registered with this organization."
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {devices.map((device) => (

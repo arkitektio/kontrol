@@ -6,22 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kontrol</title>
     <script>
-      // Apply the brand hue before first paint. Use the saved hue if there is
-      // one; otherwise pick a random hue for this (first) visit AND persist it,
-      // so the choice is stable on every later load. Runs here (not in React)
-      // to avoid flashing the default violet before the app mounts.
+      // Apply the brand hue and theme before first paint. A `brand-hue` and/or
+      // `theme` (dark|light) URL query param wins and is persisted; otherwise the
+      // saved value is used; otherwise a random hue is picked (and persisted) for
+      // this first visit. Runs here (not in React) to avoid flashing the default
+      // appearance before the app mounts — important for the embedded /configure
+      // pages, whose host can pass e.g. ?brand-hue=210&theme=light.
       (function () {
         try {
-          var k = "arkitekt-brand-hue";
-          var s = localStorage.getItem(k);
-          var h;
-          if (s != null) {
-            h = parseFloat(s);
-          } else {
-            h = Math.floor(Math.random() * 360);
-            localStorage.setItem(k, String(h));
+          var params = new URLSearchParams(window.location.search);
+
+          // Brand hue
+          var hueKey = "arkitekt-brand-hue";
+          var hueParam = params.get("brand-hue");
+          var s = hueParam != null ? hueParam : localStorage.getItem(hueKey);
+          var h = s != null ? parseFloat(s) : Math.floor(Math.random() * 360);
+          if (!isNaN(h)) {
+            localStorage.setItem(hueKey, String(h));
+            document.documentElement.style.setProperty("--brand-hue", String(h));
           }
-          document.documentElement.style.setProperty("--brand-hue", String(h));
+
+          // Theme
+          var themeKey = "vite-ui-theme";
+          var themeParam = params.get("theme");
+          var t = themeParam === "dark" || themeParam === "light"
+            ? themeParam
+            : localStorage.getItem(themeKey);
+          if (t === "dark" || t === "light") {
+            if (themeParam) localStorage.setItem(themeKey, t);
+            document.documentElement.classList.remove("light", "dark");
+            document.documentElement.classList.add(t);
+          }
         } catch (e) {}
       })();
     </script>

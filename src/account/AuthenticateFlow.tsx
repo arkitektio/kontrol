@@ -2,17 +2,17 @@ import { Link, useLocation } from 'react-router-dom'
 import { pathForFlow } from '../auth'
 import { Flows, AuthenticatorType } from '../lib/allauth'
 
-const flowLabels = {}
+const flowLabels: Record<string, string> = {}
 flowLabels[Flows.REAUTHENTICATE] = 'Use your password'
 flowLabels[`${Flows.MFA_REAUTHENTICATE}:${AuthenticatorType.TOTP}`] = 'Use your authenticator app'
 flowLabels[`${Flows.MFA_REAUTHENTICATE}:${AuthenticatorType.RECOVERY_CODES}`] = 'Use a recovery code'
 flowLabels[`${Flows.MFA_REAUTHENTICATE}:${AuthenticatorType.WEBAUTHN}`] = 'Use security key'
 
-function flowsToMethods (flows) {
-  const methods = []
+function flowsToMethods (flows: { id: string, types?: string[] }[]) {
+  const methods: { label: string, id: string, path: string }[] = []
   flows.forEach(flow => {
     if (flow.id === Flows.MFA_REAUTHENTICATE) {
-      flow.types.forEach(typ => {
+      flow.types?.forEach(typ => {
         methods.push({
           label: flowLabels[`${flow.id}:${typ}`] || flow.id,
           id: flow.id,
@@ -30,7 +30,7 @@ function flowsToMethods (flows) {
   return methods
 }
 
-export default function ReauthenticateFlow (props) {
+export default function ReauthenticateFlow (props: { method: string, children: React.ReactNode }) {
   const location = useLocation()
   const methods = flowsToMethods(location.state.reauth.data.flows)
 

@@ -6,6 +6,8 @@ import { Badge } from "../components/ui/badge"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { ClientLabel } from "../components/ClientLabel"
 import { clientInitials } from "../lib/clientLabel"
+import { PageHeader } from "../components/PageHeader"
+import { Package } from "lucide-react"
 
 export default function Clients() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -26,10 +28,12 @@ export default function Clients() {
   // Note: Ideally this should be done on the backend, but the current filter type doesn't seem to support it directly
   const clients = data?.clients
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Clients</h2>
-      </div>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Package}
+        title="Clients"
+        description="Apps and services connected to this organization."
+      />
 
       {clients && clients.length > 0 && (
         <div className="w-full">

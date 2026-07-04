@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom"
 import { useRolesQuery, useScopesQuery } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { PageHeader } from "../components/PageHeader"
 import { Shield, Lock, Users, AppWindow } from "lucide-react"
 
 export default function Permissions() {
@@ -17,15 +18,18 @@ export default function Permissions() {
   const scopes = scopesData?.scopes || []
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Permissions</h2>
-        <p className="text-muted-foreground max-w-3xl">
-          Permissions come in two flavours. <strong>Roles</strong> describe what a{" "}
-          <em>member</em> is allowed to do, and <strong>Scopes</strong> describe what an{" "}
-          <em>app or client</em> is allowed to access.
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Shield}
+        title="Permissions"
+        description={
+          <>
+            Permissions come in two flavours. <strong>Roles</strong> describe what a{" "}
+            <em>member</em> is allowed to do, and <strong>Scopes</strong> describe what an{" "}
+            <em>app or client</em> is allowed to access.
+          </>
+        }
+      />
 
       {/* Difference explainer */}
       <div className="grid gap-4 md:grid-cols-2">

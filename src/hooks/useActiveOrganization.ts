@@ -1,7 +1,15 @@
 import { useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { useListOrganizationsQuery, type ListOrganizationFragment } from "@/api/graphql"
+import { useMeQuery } from "@/api/graphql"
 import { useUser } from "@/auth"
+
+/** Minimal org shape the shell needs — sourced from the already-fetched Me query. */
+export interface OrgSummary {
+  id: string
+  name?: string | null
+  slug: string
+  brandHue?: number | null
+}
 
 const STORAGE_KEY = "kontrol-active-org"
 
@@ -31,12 +39,17 @@ function orgIdFromPath(pathname: string): string | null {
 export interface ActiveOrganization {
   /** The resolved active org id, or null when the user has no memberships. */
   activeOrgId: string | null
-  activeOrg: ListOrganizationFragment | null
-  organizations: ListOrganizationFragment[]
+  activeOrg: OrgSummary | null
+  organizations: OrgSummary[]
   /** True while the org list is still loading — gate redirects on this. */
   loading: boolean
   /** Switch the active org: persist it and navigate into its dashboard. */
   setActiveOrg: (id: string) => void
+  /**
+   * The brand hue that should tint an org: the member's personal override for
+   * that org → the org's default → null. Mirrors MembershipHueSync's precedence.
+   */
+  effectiveHueForOrg: (orgId: string | null | undefined) => number | null
 }
 
 /**
@@ -51,8 +64,25 @@ export function useActiveOrganization(): ActiveOrganization {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const { data, loading } = useListOrganizationsQuery({ skip: !user })
-  const organizations = data?.organizations ?? []
+  // Sourced from Me (already fetched by the sidebar) rather than a separate
+  // ListOrganizations request — the memberships carry the org list *and* the
+  // per-membership brand hue, so this both de-duplicates a query and gives us
+  // effective hues for free.
+  const { data, loading } = useMeQuery({ skip: !user })
+  const memberships = data?.me?.memberships ?? []
+  const organizations: OrgSummary[] = memberships.map((m) => ({
+    id: m.organization.id,
+    name: m.organization.name,
+    slug: m.organization.slug,
+    brandHue: m.organization.brandHue,
+  }))
+
+  function effectiveHueForOrg(orgId: string | null | undefined): number | null {
+    if (!orgId) return null
+    const m = memberships.find((mem) => mem.organization.id === orgId)
+    if (!m) return null
+    return m.brandHue ?? m.organization.brandHue ?? null
+  }
 
   const urlOrgId = orgIdFromPath(location.pathname)
 
@@ -77,5 +107,5 @@ export function useActiveOrganization(): ActiveOrganization {
     navigate(`/organization/${id}`)
   }
 
-  return { activeOrgId, activeOrg, organizations, loading, setActiveOrg }
+  return { activeOrgId, activeOrg, organizations, loading, setActiveOrg, effectiveHueForOrg }
 }

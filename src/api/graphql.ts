@@ -135,6 +135,7 @@ export type CreateIonscaleLayerInput = {
 };
 
 export type CreateOrganizationInput = {
+  brandHue?: InputMaybe<Scalars['Float']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
 };
@@ -907,13 +908,29 @@ export type ManagementMediaStorePresignedUrlArgs = {
  */
 export type ManagementMembership = {
   __typename?: 'ManagementMembership';
+  /** The member's personal brand hue (0–360) for this organization, if set. */
+  brandHue?: Maybe<Scalars['Float']['output']>;
   /** The invite that created this membership */
   createdThrough?: Maybe<ManagementInvite>;
   id: Scalars['ID']['output'];
   organization: ManagementOrganization;
+  /** The role requests this member has made in the organization */
+  roleRequests: Array<ManagementRoleRequest>;
   /** The roles that the user has in the organization */
   roles: Array<ManagementRole>;
   user: ManagementUser;
+};
+
+
+/**
+ *
+ * A Membership is a relation between a User and an Organization. It can have multiple Roles assigned to it.
+ *
+ */
+export type ManagementMembershipRoleRequestsArgs = {
+  filters?: InputMaybe<ManagementRoleRequestFilter>;
+  ordering?: Array<ManagementRoleRequestOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
@@ -1002,6 +1019,8 @@ export type ManagementOrganization = {
   activeUsers: Array<ManagementUser>;
   /** Whether the currently authenticated user is the owner of this organization. */
   amIOwner: Scalars['Boolean']['output'];
+  /** The organization's default brand hue (0–360), if set. Members can override it per-membership. */
+  brandHue?: Maybe<Scalars['Float']['output']>;
   /** The clients that belong to this organization */
   clients: Array<ManagementClient>;
   /** A short description of the organization */
@@ -1245,6 +1264,45 @@ export type ManagementRoleFilter = {
 
 export type ManagementRoleOrdering =
   { id: Ordering; };
+
+/** A member's request to be granted an additional role in their organization. The organization owner approves or declines it. */
+export type ManagementRoleRequest = {
+  __typename?: 'ManagementRoleRequest';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  membership: ManagementMembership;
+  /** An optional note from the member explaining the request. */
+  reason?: Maybe<Scalars['String']['output']>;
+  /** The owner who approved or declined the request. */
+  resolvedBy?: Maybe<ManagementUser>;
+  respondedAt?: Maybe<Scalars['DateTime']['output']>;
+  role: ManagementRole;
+  /** The status of the request: pending, approved, or declined. */
+  status: Scalars['String']['output'];
+};
+
+/**
+ * A member's request to be granted an additional Role in their Organization.
+ *
+ * A request only makes sense for an existing membership, so it hangs off the
+ * Membership (which pins the user and organization) plus the Role being asked
+ * for. The organization owner approves or declines it; approval adds the role
+ * to the membership.
+ */
+export type ManagementRoleRequestFilter = {
+  AND?: InputMaybe<ManagementRoleRequestFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ManagementRoleRequestFilter>;
+  OR?: InputMaybe<ManagementRoleRequestFilter>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  membership?: InputMaybe<Scalars['ID']['input']>;
+  organization?: InputMaybe<Scalars['ID']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ManagementRoleRequestOrdering =
+  { createdAt: Ordering; id?: never; }
+  |  { createdAt?: never; id: Ordering; };
 
 /** A Scope represents a permission or capability that can be granted to clients and users. It is used to define what access level a user or client has in the system. */
 export type ManagementScope = {
@@ -1690,7 +1748,9 @@ export type Mutation = {
   acceptInvite: ManagementMembership;
   acceptServiceDeviceCode: ManagementServiceInstance;
   addDeviceToGroup: ManagementDevice;
+  approveRoleRequest: ManagementRoleRequest;
   cancelInvite: ManagementInvite;
+  cancelRoleRequest: Scalars['ID']['output'];
   changeOrganizationOwner: ManagementOrganization;
   connectKommunityPartner: ManagementComposition;
   createAlias: ManagementInstanceAlias;
@@ -1708,6 +1768,7 @@ export type Mutation = {
   declineDeviceCode: ManagementDeviceCode;
   /** Decline an invite to join an organization. */
   declineInvite: ManagementInvite;
+  declineRoleRequest: ManagementRoleRequest;
   declineServiceDeviceCode: ManagementServiceDeviceCode;
   deleteAlias: Scalars['ID']['output'];
   deleteComposition: Scalars['ID']['output'];
@@ -1719,6 +1780,8 @@ export type Mutation = {
   deleteOrganizationProfile: Scalars['ID']['output'];
   deleteProfile: Scalars['ID']['output'];
   requestMediaUpload: PresignedPostCredentials;
+  requestRole: ManagementRoleRequest;
+  setMembershipBrandHue: ManagementMembership;
   updateAlias: ManagementInstanceAlias;
   updateComposition: ManagementComposition;
   updateDevice: ManagementDevice;
@@ -1760,8 +1823,18 @@ export type MutationAddDeviceToGroupArgs = {
 };
 
 
+export type MutationApproveRoleRequestArgs = {
+  input: ResolveRoleRequestInput;
+};
+
+
 export type MutationCancelInviteArgs = {
   input: CancelInviteInput;
+};
+
+
+export type MutationCancelRoleRequestArgs = {
+  input: ResolveRoleRequestInput;
 };
 
 
@@ -1846,6 +1919,11 @@ export type MutationDeclineInviteArgs = {
 };
 
 
+export type MutationDeclineRoleRequestArgs = {
+  input: ResolveRoleRequestInput;
+};
+
+
 export type MutationDeclineServiceDeviceCodeArgs = {
   input: DeclineServiceDeviceCodeInput;
 };
@@ -1898,6 +1976,16 @@ export type MutationDeleteProfileArgs = {
 
 export type MutationRequestMediaUploadArgs = {
   input: RequestMediaUploadInput;
+};
+
+
+export type MutationRequestRoleArgs = {
+  input: RequestRoleInput;
+};
+
+
+export type MutationSetMembershipBrandHueArgs = {
+  input: SetMembershipBrandHueInput;
 };
 
 
@@ -2027,6 +2115,7 @@ export type Query = {
   release: ManagementRelease;
   releases: Array<ManagementRelease>;
   role: ManagementRole;
+  roleRequests: Array<ManagementRoleRequest>;
   roles: Array<ManagementRole>;
   scope: ManagementScope;
   scopes: Array<ManagementScope>;
@@ -2256,6 +2345,13 @@ export type QueryRoleArgs = {
 };
 
 
+export type QueryRoleRequestsArgs = {
+  filters?: InputMaybe<ManagementRoleRequestFilter>;
+  ordering?: Array<ManagementRoleRequestOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
 export type QueryRolesArgs = {
   filters?: InputMaybe<ManagementRoleFilter>;
   ordering?: Array<ManagementRoleOrdering>;
@@ -2359,6 +2455,16 @@ export type RequestMediaUploadInput = {
   key: Scalars['String']['input'];
 };
 
+export type RequestRoleInput = {
+  organization: Scalars['ID']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+  role: Scalars['ID']['input'];
+};
+
+export type ResolveRoleRequestInput = {
+  id: Scalars['ID']['input'];
+};
+
 /** Service(id, name, identifier, logo, description) */
 export type ServiceFilter = {
   AND?: InputMaybe<ServiceFilter>;
@@ -2388,6 +2494,11 @@ export type ServiceInstanceMappingFilter = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   organization?: InputMaybe<Scalars['ID']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SetMembershipBrandHueInput = {
+  brandHue?: InputMaybe<Scalars['Float']['input']>;
+  organization: Scalars['ID']['input'];
 };
 
 export type StagingAlias = {
@@ -2474,6 +2585,7 @@ export type UpdateMembershipInput = {
 
 export type UpdateOrganizationInput = {
   avatar?: InputMaybe<Scalars['ID']['input']>;
+  brandHue?: InputMaybe<Scalars['Float']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
@@ -2559,11 +2671,11 @@ export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', 
 
 export type ListDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string };
 
-export type ListInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string } };
+export type ListInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null } };
 
-export type InviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null };
+export type InviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null };
 
-export type DetailInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> };
+export type DetailInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> };
 
 export type LayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, localId: string, name: string, ipv4?: string | null, ipv6?: string | null, connected: boolean, ephemeral: boolean, lastSeen?: any | null, tags: Array<string> }>, authKeys: Array<{ __typename?: 'ManagementIonscaleAuthKey', id: string, key: string, createdAt: any, ephemeral: boolean, tags: Array<string>, creator: { __typename?: 'ManagementUser', id: string, email?: string | null } }> };
 
@@ -2577,15 +2689,15 @@ export type ServiceManifestFragment = { __typename?: 'ManagementStagingServiceMa
 
 export type CompositionManifestFragment = { __typename?: 'ManagementCompositionManifest', identifier: string, instances: Array<{ __typename?: 'ManagementStagingInstanceRequest', description?: string | null, identifier: string, manifest: { __typename?: 'ManagementStagingServiceManifest', identifier: string, version: string, logo?: string | null, description?: string | null, roles?: Array<{ __typename?: 'StagingRole', key: string, description?: string | null }> | null, scopes?: Array<{ __typename?: 'StagingScope', key: string, description?: string | null }> | null, publicSources: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> } }>, clients: Array<{ __typename?: 'ManagementStagingClientRequest', description?: string | null, identifier: string, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }> };
 
-export type MembershipFragment = { __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } };
+export type MembershipFragment = { __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } };
 
-export type ListMembershipFragment = { __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, latestClients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, latestServices: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } };
+export type ListMembershipFragment = { __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, latestClients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, latestServices: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } };
 
 export type Oauth2ClientFragment = { __typename?: 'ManagementOAuth2Client', id: string, name: string, clientId: string, redirectUris: string };
 
-export type OrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> };
+export type OrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> };
 
-export type ListOrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string };
+export type ListOrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null };
 
 export type SidebarOrganizationFragment = { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, latestClients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, latestServices: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> };
 
@@ -2610,6 +2722,8 @@ export type ListReleaseFragment = { __typename?: 'ManagementRelease', id: string
 export type RoleFragment = { __typename?: 'ManagementRole', id: string, identifier: string, description: string, creatingInstance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } } | null, organization: { __typename?: 'ManagementOrganization', id: string }, usedBy: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> };
 
 export type ListRoleFragment = { __typename?: 'ManagementRole', id: string, description: string, identifier: string };
+
+export type RoleRequestFragment = { __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
 
 export type ScopeFragment = { __typename?: 'ManagementScope', id: string, description: string, identifier: string, creatingInstance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } } | null, organization: { __typename?: 'ManagementOrganization', id: string }, usedBy: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> };
 
@@ -2688,9 +2802,9 @@ export type DetailUsedAliasFragment = { __typename?: 'ManagementUsedAlias', id: 
 
 export type ListUserFragment = { __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
 
-export type DetailUserFragment = { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, groups: Array<{ __typename?: 'ManagementGroup', id: string, name: string }>, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } }> };
+export type DetailUserFragment = { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, groups: Array<{ __typename?: 'ManagementGroup', id: string, name: string }>, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } }> };
 
-export type MeUserFragment = { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } }>, socialAccounts: Array<
+export type MeUserFragment = { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } }>, socialAccounts: Array<
     | { __typename: 'ManagementGenericAccount', id: string, provider: string }
     | { __typename: 'ManagementGithubAccount', id: string, provider: string }
     | { __typename: 'ManagementGoogleAccount', id: string, provider: string }
@@ -2807,28 +2921,28 @@ export type CreateInviteMutationVariables = Exact<{
 }>;
 
 
-export type CreateInviteMutation = { __typename?: 'Mutation', createInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type CreateInviteMutation = { __typename?: 'Mutation', createInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type AcceptInviteMutationVariables = Exact<{
   input: AcceptInviteInput;
 }>;
 
 
-export type AcceptInviteMutation = { __typename?: 'Mutation', acceptInvite: { __typename?: 'ManagementMembership', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } } };
+export type AcceptInviteMutation = { __typename?: 'Mutation', acceptInvite: { __typename?: 'ManagementMembership', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } } };
 
 export type DeclineInviteMutationVariables = Exact<{
   input: DeclineInviteInput;
 }>;
 
 
-export type DeclineInviteMutation = { __typename?: 'Mutation', declineInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type DeclineInviteMutation = { __typename?: 'Mutation', declineInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type CancelInviteMutationVariables = Exact<{
   input: CancelInviteInput;
 }>;
 
 
-export type CancelInviteMutation = { __typename?: 'Mutation', cancelInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type CancelInviteMutation = { __typename?: 'Mutation', cancelInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type CreateIonscaleLayerMutationVariables = Exact<{
   input: CreateIonscaleLayerInput;
@@ -2863,7 +2977,7 @@ export type UpdateMembershipMutationVariables = Exact<{
 }>;
 
 
-export type UpdateMembershipMutation = { __typename?: 'Mutation', updateMembership: { __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } } };
+export type UpdateMembershipMutation = { __typename?: 'Mutation', updateMembership: { __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } } };
 
 export type DeleteMembershipMutationVariables = Exact<{
   input: DeleteMembershipInput;
@@ -2871,6 +2985,13 @@ export type DeleteMembershipMutationVariables = Exact<{
 
 
 export type DeleteMembershipMutation = { __typename?: 'Mutation', deleteMembership: string };
+
+export type SetMembershipBrandHueMutationVariables = Exact<{
+  input: SetMembershipBrandHueInput;
+}>;
+
+
+export type SetMembershipBrandHueMutation = { __typename?: 'Mutation', setMembershipBrandHue: { __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } } };
 
 export type AcceptAuthorizeCodeMutationVariables = Exact<{
   input: AcceptAuthorizeCodeInput;
@@ -2884,14 +3005,14 @@ export type CreateOrganizationMutationVariables = Exact<{
 }>;
 
 
-export type CreateOrganizationMutation = { __typename?: 'Mutation', createOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type CreateOrganizationMutation = { __typename?: 'Mutation', createOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type UpdateOrganizationMutationVariables = Exact<{
   input: UpdateOrganizationInput;
 }>;
 
 
-export type UpdateOrganizationMutation = { __typename?: 'Mutation', updateOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type UpdateOrganizationMutation = { __typename?: 'Mutation', updateOrganization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type DeleteOrganizationMutationVariables = Exact<{
   input: DeleteOrganizationInput;
@@ -2906,7 +3027,7 @@ export type ChangeOrganizationOwnerMutationVariables = Exact<{
 }>;
 
 
-export type ChangeOrganizationOwnerMutation = { __typename?: 'Mutation', changeOrganizationOwner: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type ChangeOrganizationOwnerMutation = { __typename?: 'Mutation', changeOrganizationOwner: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type CreateOrganizationProfileMutationVariables = Exact<{
   input: CreateOrganizationProfileInput;
@@ -2956,6 +3077,34 @@ export type CreateRedeemTokenMutationVariables = Exact<{
 
 
 export type CreateRedeemTokenMutation = { __typename?: 'Mutation', createRedeemToken: { __typename?: 'ManagementRedeemToken', id: string, token: string, createdAt: any, expiresAt?: any | null, composition: { __typename?: 'ManagementComposition', id: string, name: string, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null } }, user: { __typename?: 'ManagementUser', id: string, email?: string | null }, client?: { __typename?: 'ManagementClient', id: string, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+
+export type RequestRoleMutationVariables = Exact<{
+  input: RequestRoleInput;
+}>;
+
+
+export type RequestRoleMutation = { __typename?: 'Mutation', requestRole: { __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } } };
+
+export type ApproveRoleRequestMutationVariables = Exact<{
+  input: ResolveRoleRequestInput;
+}>;
+
+
+export type ApproveRoleRequestMutation = { __typename?: 'Mutation', approveRoleRequest: { __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } } };
+
+export type DeclineRoleRequestMutationVariables = Exact<{
+  input: ResolveRoleRequestInput;
+}>;
+
+
+export type DeclineRoleRequestMutation = { __typename?: 'Mutation', declineRoleRequest: { __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } } };
+
+export type CancelRoleRequestMutationVariables = Exact<{
+  input: ResolveRoleRequestInput;
+}>;
+
+
+export type CancelRoleRequestMutation = { __typename?: 'Mutation', cancelRoleRequest: string };
 
 export type AcceptServiceDeviceCodeMutationVariables = Exact<{
   input: AcceptServiceDeviceCodeInput;
@@ -3117,14 +3266,14 @@ export type InviteByCodeQueryVariables = Exact<{
 }>;
 
 
-export type InviteByCodeQuery = { __typename?: 'Query', inviteByCode: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+export type InviteByCodeQuery = { __typename?: 'Query', inviteByCode: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type GetInviteQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetInviteQuery = { __typename?: 'Query', invite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> } };
+export type GetInviteQuery = { __typename?: 'Query', invite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> } };
 
 export type ListKommunityPartnerQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -3168,7 +3317,7 @@ export type DetailMachineQuery = { __typename?: 'Query', machine: { __typename?:
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { __typename?: 'Query', me: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } }>, socialAccounts: Array<
+export type MeQuery = { __typename?: 'Query', me: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } }>, socialAccounts: Array<
       | { __typename: 'ManagementGenericAccount', id: string, provider: string }
       | { __typename: 'ManagementGithubAccount', id: string, provider: string }
       | { __typename: 'ManagementGoogleAccount', id: string, provider: string }
@@ -3182,14 +3331,14 @@ export type MembershipsQueryVariables = Exact<{
 }>;
 
 
-export type MembershipsQuery = { __typename?: 'Query', memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, latestClients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, latestServices: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } }> };
+export type MembershipsQuery = { __typename?: 'Query', memberships: Array<{ __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, latestClients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, latestServices: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } }> };
 
 export type GetMembershipQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetMembershipQuery = { __typename?: 'Query', membership: { __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } } };
+export type GetMembershipQuery = { __typename?: 'Query', membership: { __typename?: 'ManagementMembership', id: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }> } } };
 
 export type GetOauth2ClientByClientIdQueryVariables = Exact<{
   clientId: Scalars['String']['input'];
@@ -3203,7 +3352,7 @@ export type OrganizationQueryVariables = Exact<{
 }>;
 
 
-export type OrganizationQuery = { __typename?: 'Query', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
+export type OrganizationQuery = { __typename?: 'Query', organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, amIOwner: boolean, brandHue?: number | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type SidebarOrganizationQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -3218,7 +3367,7 @@ export type ListOrganizationsQueryVariables = Exact<{
 }>;
 
 
-export type ListOrganizationsQuery = { __typename?: 'Query', organizations: Array<{ __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string }> };
+export type ListOrganizationsQuery = { __typename?: 'Query', organizations: Array<{ __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string, brandHue?: number | null }> };
 
 export type OrganizationOptionsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
@@ -3247,6 +3396,15 @@ export type DetailReleaseQueryVariables = Exact<{
 
 
 export type DetailReleaseQuery = { __typename?: 'Query', release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }> } };
+
+export type RoleRequestsQueryVariables = Exact<{
+  filters?: InputMaybe<ManagementRoleRequestFilter>;
+  ordering?: InputMaybe<Array<ManagementRoleRequestOrdering> | ManagementRoleRequestOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+}>;
+
+
+export type RoleRequestsQuery = { __typename?: 'Query', roleRequests: Array<{ __typename?: 'ManagementRoleRequest', id: string, status: string, reason?: string | null, createdAt: any, respondedAt?: any | null, role: { __typename?: 'ManagementRole', id: string, description: string, identifier: string }, membership: { __typename?: 'ManagementMembership', id: string, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }> };
 
 export type RolesQueryVariables = Exact<{
   filters?: InputMaybe<ManagementRoleFilter>;
@@ -3777,6 +3935,7 @@ export const ListOrganizationFragmentDoc = gql`
   id
   name
   slug
+  brandHue
 }
     `;
 export const ListInviteFragmentDoc = gql`
@@ -3814,6 +3973,7 @@ export const OrganizationFragmentDoc = gql`
   name
   slug
   amIOwner
+  brandHue
   roles {
     id
     identifier
@@ -4036,6 +4196,7 @@ ${ListServiceInstanceFragmentDoc}`;
 export const ListMembershipFragmentDoc = gql`
     fragment ListMembership on ManagementMembership {
   id
+  brandHue
   roles {
     identifier
     id
@@ -4176,13 +4337,6 @@ export const RoleFragmentDoc = gql`
   }
 }
     ${ListServiceInstanceFragmentDoc}`;
-export const ListRoleFragmentDoc = gql`
-    fragment ListRole on ManagementRole {
-  id
-  description
-  identifier
-}
-    `;
 export const ScopeFragmentDoc = gql`
     fragment Scope on ManagementScope {
   id
@@ -4448,12 +4602,48 @@ export const DetailUsedAliasFragmentDoc = gql`
 }
     ${InstanceAliasFragmentDoc}
 ${ListClientFragmentDoc}`;
+export const ListRoleFragmentDoc = gql`
+    fragment ListRole on ManagementRole {
+  id
+  description
+  identifier
+}
+    `;
+export const RoleRequestFragmentDoc = gql`
+    fragment RoleRequest on ManagementRoleRequest {
+  id
+  status
+  reason
+  createdAt
+  respondedAt
+  role {
+    ...ListRole
+  }
+  membership {
+    id
+    user {
+      id
+      username
+      profile {
+        id
+        avatar {
+          presignedUrl
+        }
+      }
+    }
+  }
+}
+    ${ListRoleFragmentDoc}`;
 export const MembershipFragmentDoc = gql`
     fragment Membership on ManagementMembership {
   id
+  brandHue
   roles {
     identifier
     id
+  }
+  roleRequests {
+    ...RoleRequest
   }
   user {
     id
@@ -4475,7 +4665,8 @@ export const MembershipFragmentDoc = gql`
     }
   }
 }
-    ${ListOrganizationFragmentDoc}`;
+    ${RoleRequestFragmentDoc}
+${ListOrganizationFragmentDoc}`;
 export const DetailUserFragmentDoc = gql`
     fragment DetailUser on ManagementUser {
   id
@@ -5340,6 +5531,39 @@ export function useDeleteMembershipMutation(baseOptions?: Apollo.MutationHookOpt
 export type DeleteMembershipMutationHookResult = ReturnType<typeof useDeleteMembershipMutation>;
 export type DeleteMembershipMutationResult = Apollo.MutationResult<DeleteMembershipMutation>;
 export type DeleteMembershipMutationOptions = Apollo.BaseMutationOptions<DeleteMembershipMutation, DeleteMembershipMutationVariables>;
+export const SetMembershipBrandHueDocument = gql`
+    mutation SetMembershipBrandHue($input: SetMembershipBrandHueInput!) {
+  setMembershipBrandHue(input: $input) {
+    ...Membership
+  }
+}
+    ${MembershipFragmentDoc}`;
+export type SetMembershipBrandHueMutationFn = Apollo.MutationFunction<SetMembershipBrandHueMutation, SetMembershipBrandHueMutationVariables>;
+
+/**
+ * __useSetMembershipBrandHueMutation__
+ *
+ * To run a mutation, you first call `useSetMembershipBrandHueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetMembershipBrandHueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setMembershipBrandHueMutation, { data, loading, error }] = useSetMembershipBrandHueMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useSetMembershipBrandHueMutation(baseOptions?: Apollo.MutationHookOptions<SetMembershipBrandHueMutation, SetMembershipBrandHueMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<SetMembershipBrandHueMutation, SetMembershipBrandHueMutationVariables>(SetMembershipBrandHueDocument, options);
+      }
+export type SetMembershipBrandHueMutationHookResult = ReturnType<typeof useSetMembershipBrandHueMutation>;
+export type SetMembershipBrandHueMutationResult = Apollo.MutationResult<SetMembershipBrandHueMutation>;
+export type SetMembershipBrandHueMutationOptions = Apollo.BaseMutationOptions<SetMembershipBrandHueMutation, SetMembershipBrandHueMutationVariables>;
 export const AcceptAuthorizeCodeDocument = gql`
     mutation AcceptAuthorizeCode($input: AcceptAuthorizeCodeInput!) {
   acceptAuthorizeCode(input: $input)
@@ -5732,6 +5956,136 @@ export function useCreateRedeemTokenMutation(baseOptions?: Apollo.MutationHookOp
 export type CreateRedeemTokenMutationHookResult = ReturnType<typeof useCreateRedeemTokenMutation>;
 export type CreateRedeemTokenMutationResult = Apollo.MutationResult<CreateRedeemTokenMutation>;
 export type CreateRedeemTokenMutationOptions = Apollo.BaseMutationOptions<CreateRedeemTokenMutation, CreateRedeemTokenMutationVariables>;
+export const RequestRoleDocument = gql`
+    mutation RequestRole($input: RequestRoleInput!) {
+  requestRole(input: $input) {
+    ...RoleRequest
+  }
+}
+    ${RoleRequestFragmentDoc}`;
+export type RequestRoleMutationFn = Apollo.MutationFunction<RequestRoleMutation, RequestRoleMutationVariables>;
+
+/**
+ * __useRequestRoleMutation__
+ *
+ * To run a mutation, you first call `useRequestRoleMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRequestRoleMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [requestRoleMutation, { data, loading, error }] = useRequestRoleMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useRequestRoleMutation(baseOptions?: Apollo.MutationHookOptions<RequestRoleMutation, RequestRoleMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RequestRoleMutation, RequestRoleMutationVariables>(RequestRoleDocument, options);
+      }
+export type RequestRoleMutationHookResult = ReturnType<typeof useRequestRoleMutation>;
+export type RequestRoleMutationResult = Apollo.MutationResult<RequestRoleMutation>;
+export type RequestRoleMutationOptions = Apollo.BaseMutationOptions<RequestRoleMutation, RequestRoleMutationVariables>;
+export const ApproveRoleRequestDocument = gql`
+    mutation ApproveRoleRequest($input: ResolveRoleRequestInput!) {
+  approveRoleRequest(input: $input) {
+    ...RoleRequest
+  }
+}
+    ${RoleRequestFragmentDoc}`;
+export type ApproveRoleRequestMutationFn = Apollo.MutationFunction<ApproveRoleRequestMutation, ApproveRoleRequestMutationVariables>;
+
+/**
+ * __useApproveRoleRequestMutation__
+ *
+ * To run a mutation, you first call `useApproveRoleRequestMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useApproveRoleRequestMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [approveRoleRequestMutation, { data, loading, error }] = useApproveRoleRequestMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useApproveRoleRequestMutation(baseOptions?: Apollo.MutationHookOptions<ApproveRoleRequestMutation, ApproveRoleRequestMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ApproveRoleRequestMutation, ApproveRoleRequestMutationVariables>(ApproveRoleRequestDocument, options);
+      }
+export type ApproveRoleRequestMutationHookResult = ReturnType<typeof useApproveRoleRequestMutation>;
+export type ApproveRoleRequestMutationResult = Apollo.MutationResult<ApproveRoleRequestMutation>;
+export type ApproveRoleRequestMutationOptions = Apollo.BaseMutationOptions<ApproveRoleRequestMutation, ApproveRoleRequestMutationVariables>;
+export const DeclineRoleRequestDocument = gql`
+    mutation DeclineRoleRequest($input: ResolveRoleRequestInput!) {
+  declineRoleRequest(input: $input) {
+    ...RoleRequest
+  }
+}
+    ${RoleRequestFragmentDoc}`;
+export type DeclineRoleRequestMutationFn = Apollo.MutationFunction<DeclineRoleRequestMutation, DeclineRoleRequestMutationVariables>;
+
+/**
+ * __useDeclineRoleRequestMutation__
+ *
+ * To run a mutation, you first call `useDeclineRoleRequestMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeclineRoleRequestMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [declineRoleRequestMutation, { data, loading, error }] = useDeclineRoleRequestMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeclineRoleRequestMutation(baseOptions?: Apollo.MutationHookOptions<DeclineRoleRequestMutation, DeclineRoleRequestMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeclineRoleRequestMutation, DeclineRoleRequestMutationVariables>(DeclineRoleRequestDocument, options);
+      }
+export type DeclineRoleRequestMutationHookResult = ReturnType<typeof useDeclineRoleRequestMutation>;
+export type DeclineRoleRequestMutationResult = Apollo.MutationResult<DeclineRoleRequestMutation>;
+export type DeclineRoleRequestMutationOptions = Apollo.BaseMutationOptions<DeclineRoleRequestMutation, DeclineRoleRequestMutationVariables>;
+export const CancelRoleRequestDocument = gql`
+    mutation CancelRoleRequest($input: ResolveRoleRequestInput!) {
+  cancelRoleRequest(input: $input)
+}
+    `;
+export type CancelRoleRequestMutationFn = Apollo.MutationFunction<CancelRoleRequestMutation, CancelRoleRequestMutationVariables>;
+
+/**
+ * __useCancelRoleRequestMutation__
+ *
+ * To run a mutation, you first call `useCancelRoleRequestMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCancelRoleRequestMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [cancelRoleRequestMutation, { data, loading, error }] = useCancelRoleRequestMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCancelRoleRequestMutation(baseOptions?: Apollo.MutationHookOptions<CancelRoleRequestMutation, CancelRoleRequestMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CancelRoleRequestMutation, CancelRoleRequestMutationVariables>(CancelRoleRequestDocument, options);
+      }
+export type CancelRoleRequestMutationHookResult = ReturnType<typeof useCancelRoleRequestMutation>;
+export type CancelRoleRequestMutationResult = Apollo.MutationResult<CancelRoleRequestMutation>;
+export type CancelRoleRequestMutationOptions = Apollo.BaseMutationOptions<CancelRoleRequestMutation, CancelRoleRequestMutationVariables>;
 export const AcceptServiceDeviceCodeDocument = gql`
     mutation AcceptServiceDeviceCode($input: AcceptServiceDeviceCodeInput!) {
   acceptServiceDeviceCode(input: $input) {
@@ -7379,6 +7733,51 @@ export type DetailReleaseQueryHookResult = ReturnType<typeof useDetailReleaseQue
 export type DetailReleaseLazyQueryHookResult = ReturnType<typeof useDetailReleaseLazyQuery>;
 export type DetailReleaseSuspenseQueryHookResult = ReturnType<typeof useDetailReleaseSuspenseQuery>;
 export type DetailReleaseQueryResult = Apollo.QueryResult<DetailReleaseQuery, DetailReleaseQueryVariables>;
+export const RoleRequestsDocument = gql`
+    query RoleRequests($filters: ManagementRoleRequestFilter, $ordering: [ManagementRoleRequestOrdering!], $pagination: OffsetPaginationInput) {
+  roleRequests(filters: $filters, ordering: $ordering, pagination: $pagination) {
+    ...RoleRequest
+  }
+}
+    ${RoleRequestFragmentDoc}`;
+
+/**
+ * __useRoleRequestsQuery__
+ *
+ * To run a query within a React component, call `useRoleRequestsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRoleRequestsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRoleRequestsQuery({
+ *   variables: {
+ *      filters: // value for 'filters'
+ *      ordering: // value for 'ordering'
+ *      pagination: // value for 'pagination'
+ *   },
+ * });
+ */
+export function useRoleRequestsQuery(baseOptions?: Apollo.QueryHookOptions<RoleRequestsQuery, RoleRequestsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<RoleRequestsQuery, RoleRequestsQueryVariables>(RoleRequestsDocument, options);
+      }
+export function useRoleRequestsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RoleRequestsQuery, RoleRequestsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<RoleRequestsQuery, RoleRequestsQueryVariables>(RoleRequestsDocument, options);
+        }
+// @ts-ignore
+export function useRoleRequestsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<RoleRequestsQuery, RoleRequestsQueryVariables>): Apollo.UseSuspenseQueryResult<RoleRequestsQuery, RoleRequestsQueryVariables>;
+export function useRoleRequestsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RoleRequestsQuery, RoleRequestsQueryVariables>): Apollo.UseSuspenseQueryResult<RoleRequestsQuery | undefined, RoleRequestsQueryVariables>;
+export function useRoleRequestsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RoleRequestsQuery, RoleRequestsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<RoleRequestsQuery, RoleRequestsQueryVariables>(RoleRequestsDocument, options);
+        }
+export type RoleRequestsQueryHookResult = ReturnType<typeof useRoleRequestsQuery>;
+export type RoleRequestsLazyQueryHookResult = ReturnType<typeof useRoleRequestsLazyQuery>;
+export type RoleRequestsSuspenseQueryHookResult = ReturnType<typeof useRoleRequestsSuspenseQuery>;
+export type RoleRequestsQueryResult = Apollo.QueryResult<RoleRequestsQuery, RoleRequestsQueryVariables>;
 export const RolesDocument = gql`
     query Roles($filters: ManagementRoleFilter, $ordering: [ManagementRoleOrdering!], $pagination: OffsetPaginationInput) {
   roles(filters: $filters, ordering: $ordering, pagination: $pagination) {

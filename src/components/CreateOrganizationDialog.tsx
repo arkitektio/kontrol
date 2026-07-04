@@ -17,15 +17,22 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import * as z from "zod";
 import { useCreateOrganizationMutation } from "../api/graphql";
+import { DEFAULT_BRAND_HUE } from "@/lib/brand";
 
 const formSchema = z.object({
   name: z.string().min(1, "Organization name is required"),
   description: z.string().optional(),
+  brandHue: z.number().min(0).max(360),
 });
+
+const HUE_GRADIENT =
+  "linear-gradient(to right, hsl(0 70% 50%), hsl(60 70% 50%), hsl(120 70% 50%), hsl(180 70% 50%), hsl(240 70% 50%), hsl(300 70% 50%), hsl(360 70% 50%))";
 
 interface CreateOrganizationDialogProps {
   open: boolean;
@@ -36,8 +43,13 @@ export const CreateOrganizationDialog = ({
   open,
   onOpenChange,
 }: CreateOrganizationDialogProps) => {
+  const navigate = useNavigate();
   const [createOrganization, { loading }] = useCreateOrganizationMutation({
-    refetchQueries: ['ListOrganizations']
+    // Refetch Me too — the sidebar/org switcher and active-org resolution read
+    // the org list off Me — and await it so the new membership exists before we
+    // navigate into the new organization.
+    refetchQueries: ['ListOrganizations', 'Me'],
+    awaitRefetchQueries: true,
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -45,6 +57,7 @@ export const CreateOrganizationDialog = ({
     defaultValues: {
       name: "",
       description: "",
+      brandHue: DEFAULT_BRAND_HUE,
     },
   });
 
@@ -54,11 +67,14 @@ export const CreateOrganizationDialog = ({
         input: {
           name: values.name,
           description: values.description || undefined,
+          brandHue: values.brandHue,
         },
       },
-    }).then(() => {
+    }).then((result) => {
       onOpenChange(false);
       form.reset();
+      const newOrg = result.data?.createOrganization;
+      if (newOrg) navigate(`/organization/${newOrg.id}`);
     }).catch((error) => {
       console.error("Failed to create organization:", error);
     });
@@ -99,6 +115,43 @@ export const CreateOrganizationDialog = ({
                       placeholder="A brief description of your organization"
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="brandHue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default brand colour</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="h-9 w-9 shrink-0 rounded-full border"
+                        style={{ backgroundColor: `hsl(${field.value} 70% 50%)` }}
+                        aria-hidden
+                      />
+                      <div className="flex-1 space-y-2">
+                        <div
+                          className="h-3 w-full rounded-full"
+                          style={{ background: HUE_GRADIENT }}
+                          aria-hidden
+                        />
+                        <Slider
+                          min={0}
+                          max={360}
+                          step={1}
+                          value={[field.value]}
+                          onValueChange={([v]) => field.onChange(v)}
+                          aria-label="Default brand hue"
+                        />
+                      </div>
+                      <span className="w-10 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+                        {Math.round(field.value)}
+                      </span>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

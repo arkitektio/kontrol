@@ -8,10 +8,10 @@ import {
 } from "./api/graphql"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/card"
-import { ArrowRight, Server, Layers, AlertCircle, CheckCircle2 } from "lucide-react"
+import { ArrowRight, Server, Layers, AlertCircle, CheckCircle2, LayoutDashboard } from "lucide-react"
 import { ClientCard } from "./components/ClientCard"
 import { ServiceInstanceCard } from "./components/ServiceInstanceCard"
-import { MeshControl } from "./organization/MeshControl"
+import { PageHeader } from "./components/PageHeader"
 
 export default function OrganizationDashboard() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -57,8 +57,12 @@ export default function OrganizationDashboard() {
   const hasUnhealthy = unhealthyClients.length > 0
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Managing {org.name}</h1>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Overview"
+        description={`Managing ${org.name}`}
+      />
 
       {hasUnhealthy ? (
         <Card className="border-destructive/30 bg-destructive/5">
@@ -100,8 +104,6 @@ export default function OrganizationDashboard() {
           </CardHeader>
         </Card>
       ) : null}
-
-      <MeshControl orgId={orgId!} />
 
       {!hasCompositions && (
         <div className="space-y-0">

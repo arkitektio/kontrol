@@ -3,6 +3,7 @@ import { useCompositionsQuery, useListKommunityPartnerQuery } from "../api/graph
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
+import { PageHeader } from "../components/PageHeader"
 import { Layers, ArrowRight, Server } from "lucide-react"
 
 export default function Compositions() {
@@ -24,10 +25,12 @@ export default function Compositions() {
   const partners = partnersData?.kommunityPartners || []
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Hubs</h2>
-      </div>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Layers}
+        title="Hubs"
+        description="Pre-configured stacks of services and clients for this organization."
+      />
 
       {compositions.length === 0 ? (
         <div className="space-y-0">

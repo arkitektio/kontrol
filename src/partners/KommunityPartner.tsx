@@ -56,7 +56,12 @@ export default function KommunityPartner() {
   const [connectKommunityPartner, { loading: connectLoading }] = useMutation<
     ConnectKommunityPartnerMutation,
     ConnectKommunityPartnerMutationVariables
-  >(ConnectKommunityPartnerDocument);
+  >(ConnectKommunityPartnerDocument, {
+    // Reload the hub list so the new composition shows up (and the sidebar's
+    // "Connect a hub" call-to-action clears) before we navigate to it.
+    refetchQueries: ["Compositions"],
+    awaitRefetchQueries: true,
+  });
 
   if (loading || meLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;

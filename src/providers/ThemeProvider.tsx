@@ -24,12 +24,11 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<"dark" | "light">(
-    () => localStorage.getItem(storageKey) as "dark" | "light"  || window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-  );
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const stored = localStorage.getItem(storageKey);
+    if (stored === "dark" || stored === "light") return stored;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;

@@ -3,7 +3,8 @@ import { useOrganizationQuery, useDeleteOrganizationMutation, useChangeOrganizat
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { useState } from "react"
-import { AlertTriangle, Shield } from "lucide-react"
+import { AlertTriangle, Shield, Settings } from "lucide-react"
+import { PageHeader } from "../components/PageHeader"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +26,7 @@ import {
 } from "../components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { MeshControl } from "./MeshControl"
+import { OrgBrandHuePicker } from "../components/OrgBrandHuePicker"
 
 export default function DangerZone() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -95,27 +97,27 @@ export default function DangerZone() {
 
   if (!org.amIOwner) {
     return (
-      <div className="container mx-auto py-10 space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-          <p className="text-muted-foreground">
-            Only the organization owner can manage these settings.
-          </p>
-        </div>
+      <div className="flex flex-1 flex-col gap-8 p-6">
+        <PageHeader
+          icon={Settings}
+          title="Settings"
+          description="Only the organization owner can manage these settings."
+        />
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto py-10 space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">
-          Manage the mesh and other organization-wide settings
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Settings}
+        title="Settings"
+        description="Manage the mesh and other organization-wide settings"
+      />
 
       <MeshControl orgId={org.id} />
+
+      <OrgBrandHuePicker organizationId={org.id} brandHue={org.brandHue} />
 
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Danger Zone</h2>

@@ -97,6 +97,7 @@ const RecoveryCodes = lazyDefault(recoveryCodesModule)
 const SignupByPasskey = lazyDefault(() => import('./mfa/SignupByPasskey'))
 const Trust = lazyDefault(() => import('./mfa/Trust'))
 const DangerZone = lazyDefault(() => import('./organization/DangerZone'))
+const MyMembership = lazyDefault(() => import('./organization/MyMembership'))
 const OrganizationDashboard = lazyDefault(() => import('./OrganizationDashboard'))
 const OrganizationProfile = lazyDefault(() => import('./OrganizationProfile'))
 const Profile = lazyDefault(() => import('./Profile'))
@@ -107,6 +108,7 @@ const ServiceReleases = lazyDefault(() => import('./service-releases/ServiceRele
 const ServiceConfigurePage = lazyNamed(() => import('./service/ServiceConfigurePage'), 'ServiceConfigurePage')
 const CompositionConfigurePage = lazyNamed(() => import('./composition/CompositionConfigurePage'), 'CompositionConfigurePage')
 const Compositions = lazyDefault(() => import('./compositions/Compositions'))
+const ConnectHub = lazyDefault(() => import('./compositions/ConnectHub'))
 const Composition = lazyDefault(() => import('./compositions/Composition'))
 const HubOverview = lazyDefault(() => import('./compositions/hub/HubOverview'))
 const HubServices = lazyDefault(() => import('./compositions/hub/HubServices'))
@@ -386,6 +388,10 @@ function createRouter() {
               element: <AuthenticatedRoute><OrganizationProfile /></AuthenticatedRoute>,
             },
             {
+              path: 'me',
+              element: <AuthenticatedRoute><MyMembership /></AuthenticatedRoute>,
+            },
+            {
               path: 'members',
               element: <AuthenticatedRoute><Memberships /></AuthenticatedRoute>,
             },
@@ -440,6 +446,10 @@ function createRouter() {
             {
               path: 'compositions',
               element: <AuthenticatedRoute><Compositions /></AuthenticatedRoute>,
+            },
+            {
+              path: 'connect-hub',
+              element: <AuthenticatedRoute><ConnectHub /></AuthenticatedRoute>,
             },
             {
               path: 'compositions/:name',

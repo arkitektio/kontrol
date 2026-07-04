@@ -1,0 +1,5 @@
+query RoleRequests($filters: ManagementRoleRequestFilter, $ordering: [ManagementRoleRequestOrdering!], $pagination: OffsetPaginationInput) {
+  roleRequests(filters: $filters, ordering: $ordering, pagination: $pagination) {
+    ...RoleRequest
+  }
+}

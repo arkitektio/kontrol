@@ -1,8 +1,12 @@
 fragment Membership on ManagementMembership {
   id
+  brandHue
   roles {
     identifier
     id
+  }
+  roleRequests {
+    ...RoleRequest
   }
   user {
     id
@@ -27,6 +31,7 @@ fragment Membership on ManagementMembership {
 
 fragment ListMembership on ManagementMembership {
   id
+  brandHue
   roles {
     identifier
     id

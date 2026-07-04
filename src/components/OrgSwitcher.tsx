@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react"
+import { Check, ChevronsUpDown, Plus } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,11 @@ import {
 import { DynamicArkitektLogo } from "@/logos/ArkitektLogo"
 import { CreateOrganizationDialog } from "@/components/CreateOrganizationDialog"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
+import { DEFAULT_BRAND_HUE } from "@/lib/brand"
+
+/** Inline style that re-tints a single Arkitekt logo's cube via `--brand-hue`. */
+const hueStyle = (hue: number | null): React.CSSProperties =>
+  ({ ["--brand-hue"]: String(hue ?? DEFAULT_BRAND_HUE) } as React.CSSProperties)
 
 /**
  * Header workspace switcher (shadcn sidebar-07 pattern): shows the active
@@ -26,7 +31,8 @@ import { useActiveOrganization } from "@/hooks/useActiveOrganization"
  */
 export function OrgSwitcher() {
   const { isMobile } = useSidebar()
-  const { organizations, activeOrg, activeOrgId, setActiveOrg } = useActiveOrganization()
+  const { organizations, activeOrg, activeOrgId, setActiveOrg, effectiveHueForOrg } =
+    useActiveOrganization()
   const [createOrgOpen, setCreateOrgOpen] = useState(false)
 
   if (organizations.length === 0) {
@@ -60,8 +66,11 @@ export function OrgSwitcher() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <Building2 className="size-4" />
+              <div
+                className="text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+                style={hueStyle(effectiveHueForOrg(activeOrgId))}
+              >
+                <DynamicArkitektLogo width="100%" height="100%" strokeColor="currentColor" aColor="currentColor" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{label}</span>
@@ -81,8 +90,11 @@ export function OrgSwitcher() {
             </DropdownMenuLabel>
             {organizations.map((org) => (
               <DropdownMenuItem key={org.id} onClick={() => setActiveOrg(org.id)} className="gap-2 p-2">
-                <div className="flex size-6 items-center justify-center rounded-md border">
-                  <Building2 className="size-3.5 shrink-0" />
+                <div
+                  className="flex size-6 items-center justify-center rounded-md border"
+                  style={hueStyle(effectiveHueForOrg(org.id))}
+                >
+                  <DynamicArkitektLogo width="100%" height="100%" strokeColor="currentColor" aColor="currentColor" />
                 </div>
                 <span className="flex-1 truncate">{org.name || org.slug}</span>
                 {org.id === activeOrgId && <Check className="size-4" />}

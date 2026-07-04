@@ -6,6 +6,9 @@ import { Button } from "../components/ui/button"
 import { useState } from "react"
 import { CreateInviteDialog } from "../components/CreateInviteDialog"
 import { Badge } from "../components/ui/badge"
+import { PageHeader } from "../components/PageHeader"
+import { RoleRequestInbox } from "./RoleRequestInbox"
+import { Users } from "lucide-react"
 
 export default function Memberships() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -30,18 +33,15 @@ export default function Memberships() {
   const org = orgData?.organization
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div className="flex items-center justify-between space-y-2">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight">Members</h2>
-                <p className="text-muted-foreground">
-                    Manage members of {org?.name}
-                </p>
-            </div>
-            <Button onClick={() => setInviteOpen(true)}>
-                Invite Member
-            </Button>
-        </div>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+        <PageHeader
+            icon={Users}
+            title="Members"
+            description={<>Manage members of {org?.name}</>}
+            actions={<Button onClick={() => setInviteOpen(true)}>Invite Member</Button>}
+        />
+
+      {org?.amIOwner && <RoleRequestInbox organizationId={org.id} />}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {memberships.map((membership) => (

@@ -2,6 +2,8 @@ import { useListKommunityPartnerQuery } from "../api/graphql";
 import { Link, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { PageHeader } from "../components/PageHeader";
+import { Handshake } from "lucide-react";
 
 export default function KommunityPartners() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -12,8 +14,12 @@ export default function KommunityPartners() {
   if (!orgId) return <div>Organization not found</div>;
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Kommunity Partners</h1>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Handshake}
+        title="Kommunity Partners"
+        description="Partners you can connect to deploy a pre-configured stack."
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.kommunityPartners?.map((partner) => (
           <Card key={partner.id} className="flex flex-col overflow-hidden">

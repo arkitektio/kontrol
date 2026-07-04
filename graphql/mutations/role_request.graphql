@@ -1,0 +1,21 @@
+mutation RequestRole($input: RequestRoleInput!) {
+  requestRole(input: $input) {
+    ...RoleRequest
+  }
+}
+
+mutation ApproveRoleRequest($input: ResolveRoleRequestInput!) {
+  approveRoleRequest(input: $input) {
+    ...RoleRequest
+  }
+}
+
+mutation DeclineRoleRequest($input: ResolveRoleRequestInput!) {
+  declineRoleRequest(input: $input) {
+    ...RoleRequest
+  }
+}
+
+mutation CancelRoleRequest($input: ResolveRoleRequestInput!) {
+  cancelRoleRequest(input: $input)
+}

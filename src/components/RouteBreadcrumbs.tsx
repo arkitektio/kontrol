@@ -1,7 +1,7 @@
 import { useLocation, Link } from "react-router-dom"
 import { ChevronRight } from "lucide-react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "./ui/breadcrumb"
-import { useListOrganizationsQuery } from "@/api/graphql"
+import { useMeQuery } from "@/api/graphql"
 
 interface BreadcrumbSegment {
   label: string
@@ -14,9 +14,14 @@ export const useRouteBreadcrumbs = (): BreadcrumbSegment[] => {
   const pathname = location.pathname
 
   // Resolve the `/organization/:id` segment to the org's name instead of its id.
-  const { data } = useListOrganizationsQuery()
+  // Sourced from the memberships on Me (already fetched by the sidebar) so the
+  // breadcrumbs don't trigger a separate ListOrganizations request.
+  const { data } = useMeQuery()
   const orgNameById = new Map(
-    (data?.organizations ?? []).map((o) => [o.id, o.name || o.slug]),
+    (data?.me?.memberships ?? []).map((m) => [
+      m.organization.id,
+      m.organization.name || m.organization.slug,
+    ]),
   )
 
   const segments: BreadcrumbSegment[] = [{ label: "Home", path: "/" }]

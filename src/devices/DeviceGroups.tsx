@@ -3,7 +3,8 @@ import { useParams, Link } from "react-router-dom"
 import { useListDeviceGroupsQuery, useCreateDeviceGroupMutation, useDeleteDeviceGroupMutation } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
-import { Plus } from "lucide-react"
+import { PageHeader } from "../components/PageHeader"
+import { Plus, Boxes } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -61,9 +62,12 @@ export default function DeviceGroups() {
   if (error) return <div className="p-4">Error: {error.message}</div>
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Device Groups</h2>
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Boxes}
+        title="Device Groups"
+        description="Organize devices into groups."
+        actions={
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -99,7 +103,8 @@ export default function DeviceGroups() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {deviceGroups.map((group) => (
