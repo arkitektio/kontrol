@@ -9,6 +9,9 @@ fragment Organization on ManagementOrganization {
     identifier
     description
   }
+  roleSets {
+    ...RoleSet
+  }
   memberships {
     id
     roles {

@@ -26,6 +26,9 @@ fragment Membership on ManagementMembership {
         identifier
         description
     }
+    roleSets {
+      ...RoleSet
+    }
   }
 }
 

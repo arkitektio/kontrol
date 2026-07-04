@@ -174,7 +174,7 @@ export default function Invites() {
             ))}
         </CardContent>
       </Card>
-      <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} />
+      <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} roleSets={org.roleSets} />
       
       <Dialog open={sendEmailOpen} onOpenChange={setSendEmailOpen}>
         <DialogContent>

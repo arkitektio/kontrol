@@ -17,12 +17,34 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useCreateInviteMutation } from "../api/graphql";
 import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ChevronsUpDown, X } from "lucide-react";
 
 const formSchema = z.object({
   expiresInDays: z.coerce.number().min(1).default(1),
@@ -35,6 +57,7 @@ interface CreateInviteDialogProps {
   onOpenChange: (open: boolean) => void;
   organizationId: string;
   availableRoles: { identifier: string; id: string; description?: string | null }[];
+  roleSets?: { id: string; name: string; roles: { identifier: string }[] }[];
 }
 
 export const CreateInviteDialog = ({
@@ -42,9 +65,11 @@ export const CreateInviteDialog = ({
   onOpenChange,
   organizationId,
   availableRoles,
+  roleSets = [],
 }: CreateInviteDialogProps) => {
   const [createdInviteToken, setCreatedInviteToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
 
   const [createInvite] = useCreateInviteMutation({
     refetchQueries: ['Organization']
@@ -55,7 +80,7 @@ export const CreateInviteDialog = ({
     defaultValues: {
       expiresInDays: 1,
       roles: [],
-      public: false,
+      public: true,
     },
   });
 
@@ -138,57 +163,105 @@ export const CreateInviteDialog = ({
                 </FormItem>
               )}
             />
+            {roleSets.length > 0 && (
+              <div className="space-y-1">
+                <FormLabel>Start from a role set</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Optional — fills the roles below. You can still fine-tune them.
+                </p>
+                <Select
+                  onValueChange={(rsId) => {
+                    const rs = roleSets.find((r) => r.id === rsId);
+                    // createInvite matches roles by identifier, and the multiselect
+                    // below is keyed on identifier too — so set identifiers, not ids.
+                    if (rs) form.setValue("roles", rs.roles.map((r) => r.identifier));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a role set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleSets.map((rs) => (
+                      <SelectItem key={rs.id} value={rs.id}>
+                        {rs.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <FormField
               control={form.control}
               name="roles"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className="text-base">Roles</FormLabel>
-                  </div>
-                  {availableRoles.map((role) => (
-                    <FormField
-                      key={role.id}
-                      control={form.control}
-                      name="roles"
-                      render={({ field }) => {
-                        return (
-                          <FormItem
-                            key={role.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(role.identifier)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...(field.value || []), role.identifier])
-                                    : field.onChange(
-                                      field.value?.filter(
-                                        (value) => value !== role.identifier
-                                      )
-                                    );
-                                }}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel className="font-normal">
-                                {role.identifier}
-                              </FormLabel>
-                              {role.description && (
-                                <p className="text-sm text-muted-foreground">
-                                  {role.description}
-                                </p>
-                              )}
-                            </div>
-                          </FormItem>
-                        );
-                      }}
-                    />
-                  ))}
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const selected = field.value ?? [];
+                const toggle = (identifier: string) =>
+                  field.onChange(
+                    selected.includes(identifier)
+                      ? selected.filter((v) => v !== identifier)
+                      : [...selected, identifier],
+                  );
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Roles</FormLabel>
+                    <Popover open={rolesOpen} onOpenChange={setRolesOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" className="justify-between font-normal">
+                          {selected.length > 0
+                            ? `${selected.length} role${selected.length > 1 ? "s" : ""} selected`
+                            : "Select roles"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search roles..." />
+                          {/* CommandList caps its own height and scrolls, so a long
+                              role list no longer overflows the dialog. */}
+                          <CommandList>
+                            <CommandEmpty>No roles found.</CommandEmpty>
+                            <CommandGroup>
+                              {availableRoles.map((role) => (
+                                <CommandItem
+                                  key={role.id}
+                                  value={role.identifier}
+                                  onSelect={() => toggle(role.identifier)}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selected.includes(role.identifier) ? "opacity-100" : "opacity-0",
+                                    )}
+                                  />
+                                  <span>{role.identifier}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {selected.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-2">
+                        {selected.map((identifier) => (
+                          <Badge key={identifier} variant="secondary" className="gap-1">
+                            {identifier}
+                            <button
+                              type="button"
+                              aria-label={`Remove ${identifier}`}
+                              onClick={() => toggle(identifier)}
+                              className="ml-0.5 rounded-sm hover:text-foreground"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             <FormField
               control={form.control}

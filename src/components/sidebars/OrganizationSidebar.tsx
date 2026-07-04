@@ -3,7 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Link, useLocation } from "react-router-dom"
 import { useSidebarOrganizationQuery, useCompositionsQuery } from "@/api/graphql"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug, Tags } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
@@ -50,6 +50,7 @@ export function OrganizationSidebar() {
         { to: `${base}/me`, label: "My Access", icon: UserCircle, exact: true },
         { to: `${base}/members`, label: "Members", icon: Users },
         { to: `${base}/invites`, label: "Invites", icon: Mail },
+        { to: `${base}/rolesets`, label: "Role Sets", icon: Tags },
         { to: `${base}/danger-zone`, label: "Settings", icon: Settings },
     ]
 

@@ -8,6 +8,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
 import { Checkbox } from "../components/ui/checkbox"
 import { Label } from "../components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { Pencil } from "lucide-react"
 
 export default function Membership() {
@@ -48,8 +49,16 @@ export default function Membership() {
         })
     }
     
-    // @ts-expect-error roles is missing in organization type but present in query
     const availableRoles = membership.organization?.roles || []
+    const roleSets = membership.organization?.roleSets || []
+
+    // Union a role set's roles into the current selection (deduped). Reuses the
+    // existing Save button → updateMembership, which matches roles by id.
+    const applyRoleSet = (roleSetId: string) => {
+        const rs = roleSets.find(r => r.id === roleSetId)
+        if (!rs) return
+        setSelectedRoles(prev => Array.from(new Set([...prev, ...rs.roles.map(r => r.id)])))
+    }
 
     return (
         <div className="container mx-auto py-10 max-w-2xl">
@@ -85,7 +94,25 @@ export default function Membership() {
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="grid gap-4 py-4">
-                                        {availableRoles.map((role: { id: string, identifier: string, description?: string | null }) => (
+                                        {roleSets.length > 0 && (
+                                            <div className="space-y-1 border-b pb-4">
+                                                <Label>Apply a role set</Label>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Adds all of the set's roles to the selection below.
+                                                </p>
+                                                <Select onValueChange={applyRoleSet}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Choose a role set" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {roleSets.map(rs => (
+                                                            <SelectItem key={rs.id} value={rs.id}>{rs.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        )}
+                                        {availableRoles.map((role) => (
                                             <div className="flex items-start space-x-3 space-y-0" key={role.id}>
                                                 <Checkbox 
                                                     id={role.id} 

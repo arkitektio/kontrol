@@ -1,0 +1,13 @@
+query OrganizationRoleSets($id: ID!) {
+  organization(id: $id) {
+    id
+    name
+    amIOwner
+    roles {
+      ...ListRole
+    }
+    roleSets {
+      ...RoleSet
+    }
+  }
+}

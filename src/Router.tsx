@@ -126,6 +126,7 @@ const ProviderSignup = lazyDefault(() => import('./socialaccount/ProviderSignup'
 const SocialAccount = lazyDefault(() => import('./socialaccount/SocialAccount'))
 const Sessions = lazyDefault(() => import('./usersessions/Sessions'))
 const Role = lazyDefault(() => import('./roles/Role'))
+const RoleSets = lazyDefault(() => import('./rolesets/RoleSets'))
 const Permissions = lazyDefault(() => import('./permissions/Permissions'))
 const Mesh = lazyDefault(() => import('./mesh/Mesh'))
 const Machine = lazyDefault(() => import('./mesh/Machine'))
@@ -494,6 +495,10 @@ function createRouter() {
             {
               path: 'permissions',
               element: <AuthenticatedRoute><Permissions /></AuthenticatedRoute>,
+            },
+            {
+              path: 'rolesets',
+              element: <AuthenticatedRoute><RoleSets /></AuthenticatedRoute>,
             },
             {
               path: 'scopes/:id',

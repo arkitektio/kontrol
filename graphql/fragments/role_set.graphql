@@ -1,0 +1,7 @@
+fragment RoleSet on ManagementRoleSet {
+  id
+  name
+  roles {
+    ...ListRole
+  }
+}
