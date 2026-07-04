@@ -1779,6 +1779,7 @@ export type Mutation = {
   deleteOrganization: Scalars['ID']['output'];
   deleteOrganizationProfile: Scalars['ID']['output'];
   deleteProfile: Scalars['ID']['output'];
+  removeDeviceFromGroup: ManagementDevice;
   requestMediaUpload: PresignedPostCredentials;
   requestRole: ManagementRoleRequest;
   setMembershipBrandHue: ManagementMembership;
@@ -1971,6 +1972,11 @@ export type MutationDeleteOrganizationProfileArgs = {
 
 export type MutationDeleteProfileArgs = {
   input: DeleteProfileInput;
+};
+
+
+export type MutationRemoveDeviceFromGroupArgs = {
+  input: RemoveDeviceFromGroupInput;
 };
 
 
@@ -2450,6 +2456,11 @@ export type QueryValidateDeviceCodeArgs = {
   deviceCode: Scalars['ID']['input'];
 };
 
+export type RemoveDeviceFromGroupInput = {
+  device: Scalars['ID']['input'];
+  deviceGroup: Scalars['ID']['input'];
+};
+
 export type RequestMediaUploadInput = {
   datalayer: Scalars['String']['input'];
   key: Scalars['String']['input'];
@@ -2663,11 +2674,11 @@ export type DeviceFragment = { __typename?: 'ManagementDevice', id: string, name
 
 export type DetailDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null }, clients: Array<{ __typename?: 'ManagementClient', id: string, token: string, name: string, lastReportedAt?: any | null, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, organization: { __typename?: 'ManagementOrganization', id: string, name?: string | null, slug: string }, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }>, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> }, scopes: Array<{ __typename?: 'ManagementScope', id: string, identifier: string, description: string }> }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }>, serviceInstances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> };
 
-export type ListDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string };
+export type ListDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> };
 
 export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
 
-export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> };
+export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> }> };
 
 export type ListDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string };
 
@@ -2900,7 +2911,7 @@ export type CreateDeviceGroupMutationVariables = Exact<{
 }>;
 
 
-export type CreateDeviceGroupMutation = { __typename?: 'Mutation', createDeviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> } };
+export type CreateDeviceGroupMutation = { __typename?: 'Mutation', createDeviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> }> } };
 
 export type DeleteDeviceGroupMutationVariables = Exact<{
   input: DeleteDeviceGroupInput;
@@ -2915,6 +2926,13 @@ export type AddDeviceToGroupMutationVariables = Exact<{
 
 
 export type AddDeviceToGroupMutation = { __typename?: 'Mutation', addDeviceToGroup: { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }>, serviceInstances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } };
+
+export type RemoveDeviceFromGroupMutationVariables = Exact<{
+  input: RemoveDeviceFromGroupInput;
+}>;
+
+
+export type RemoveDeviceFromGroupMutation = { __typename?: 'Mutation', removeDeviceFromGroup: { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }>, serviceInstances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } };
 
 export type CreateInviteMutationVariables = Exact<{
   input: CreateInviteInput;
@@ -3205,7 +3223,7 @@ export type ListDevicesQueryVariables = Exact<{
 }>;
 
 
-export type ListDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> };
+export type ListDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> }> };
 
 export type GetDeviceQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -3243,7 +3261,7 @@ export type GetDeviceGroupQueryVariables = Exact<{
 }>;
 
 
-export type GetDeviceGroupQuery = { __typename?: 'Query', deviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> } };
+export type GetDeviceGroupQuery = { __typename?: 'Query', deviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> }> } };
 
 export type ListInstanceAliasQueryVariables = Exact<{
   filters?: InputMaybe<ManagementInstanceAliasFilter>;
@@ -3919,8 +3937,11 @@ export const ListDeviceFragmentDoc = gql`
   id
   name
   nodeId
+  deviceGroups {
+    ...ListDeviceGroup
+  }
 }
-    `;
+    ${ListDeviceGroupFragmentDoc}`;
 export const DetailDeviceGroupFragmentDoc = gql`
     fragment DetailDeviceGroup on ManagementDeviceGroup {
   id
@@ -5203,6 +5224,39 @@ export function useAddDeviceToGroupMutation(baseOptions?: Apollo.MutationHookOpt
 export type AddDeviceToGroupMutationHookResult = ReturnType<typeof useAddDeviceToGroupMutation>;
 export type AddDeviceToGroupMutationResult = Apollo.MutationResult<AddDeviceToGroupMutation>;
 export type AddDeviceToGroupMutationOptions = Apollo.BaseMutationOptions<AddDeviceToGroupMutation, AddDeviceToGroupMutationVariables>;
+export const RemoveDeviceFromGroupDocument = gql`
+    mutation RemoveDeviceFromGroup($input: RemoveDeviceFromGroupInput!) {
+  removeDeviceFromGroup(input: $input) {
+    ...Device
+  }
+}
+    ${DeviceFragmentDoc}`;
+export type RemoveDeviceFromGroupMutationFn = Apollo.MutationFunction<RemoveDeviceFromGroupMutation, RemoveDeviceFromGroupMutationVariables>;
+
+/**
+ * __useRemoveDeviceFromGroupMutation__
+ *
+ * To run a mutation, you first call `useRemoveDeviceFromGroupMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemoveDeviceFromGroupMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [removeDeviceFromGroupMutation, { data, loading, error }] = useRemoveDeviceFromGroupMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useRemoveDeviceFromGroupMutation(baseOptions?: Apollo.MutationHookOptions<RemoveDeviceFromGroupMutation, RemoveDeviceFromGroupMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RemoveDeviceFromGroupMutation, RemoveDeviceFromGroupMutationVariables>(RemoveDeviceFromGroupDocument, options);
+      }
+export type RemoveDeviceFromGroupMutationHookResult = ReturnType<typeof useRemoveDeviceFromGroupMutation>;
+export type RemoveDeviceFromGroupMutationResult = Apollo.MutationResult<RemoveDeviceFromGroupMutation>;
+export type RemoveDeviceFromGroupMutationOptions = Apollo.BaseMutationOptions<RemoveDeviceFromGroupMutation, RemoveDeviceFromGroupMutationVariables>;
 export const CreateInviteDocument = gql`
     mutation CreateInvite($input: CreateInviteInput!) {
   createInvite(input: $input) {

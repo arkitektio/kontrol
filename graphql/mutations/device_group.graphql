@@ -16,3 +16,10 @@ mutation AddDeviceToGroup($input: AddDeviceToGroupInput!) {
     ...Device
   }
 }
+
+
+mutation RemoveDeviceFromGroup($input: RemoveDeviceFromGroupInput!) {
+  removeDeviceFromGroup(input: $input) {
+    ...Device
+  }
+}

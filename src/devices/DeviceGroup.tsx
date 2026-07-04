@@ -17,6 +17,7 @@ import {
 } from "../components/ui/alert-dialog"
 import { useState } from "react"
 import { Avatar, AvatarFallback } from "../components/ui/avatar"
+import { DeviceContextMenu } from "./DeviceContextMenu"
 
 export default function DeviceGroup() {
   const { groupId, orgId } = useParams<{ groupId: string, orgId: string }>()
@@ -106,22 +107,24 @@ export default function DeviceGroup() {
                   {devices.length > 0 ? (
                       <div className="grid gap-2">
                         {devices.map(device => (
-                            <Link key={device.id} to={`/devices/${device.id}`}>
-                                <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                          <div className="p-2 bg-muted rounded-full">
-                                                {getDeviceIcon(device.name)}
-                                          </div>
-                                          <div>
-                                              <div className="font-medium">{device.name}</div>
-                                              <div className="text-xs text-muted-foreground font-mono">{device.nodeId}</div>
-                                          </div>
+                            <DeviceContextMenu key={device.id} device={device}>
+                                <Link to={`/devices/${device.id}`}>
+                                    <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                              <div className="p-2 bg-muted rounded-full">
+                                                    {getDeviceIcon(device.name)}
+                                              </div>
+                                              <div>
+                                                  <div className="font-medium">{device.name}</div>
+                                                  <div className="text-xs text-muted-foreground font-mono">{device.nodeId}</div>
+                                              </div>
+                                        </div>
+                                        <Badge variant={(device.clients && device.clients.length > 0) ? "default" : "secondary"}>
+                                            {(device.clients && device.clients.length > 0) ? "Connected" : "Offline"}
+                                        </Badge>
                                     </div>
-                                    <Badge variant={(device.clients && device.clients.length > 0) ? "default" : "secondary"}>
-                                        {(device.clients && device.clients.length > 0) ? "Connected" : "Offline"}
-                                    </Badge>
-                                </div>
-                            </Link>
+                                </Link>
+                            </DeviceContextMenu>
                         ))}
                       </div>
                   ) : (

@@ -36,4 +36,7 @@ fragment ListDevice on ManagementDevice {
   id
   name
   nodeId
+  deviceGroups {
+    ...ListDeviceGroup
+  }
 }
