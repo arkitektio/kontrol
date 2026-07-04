@@ -26,7 +26,7 @@ import {
 } from "../components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { MeshControl } from "./MeshControl"
-import { OrgBrandHuePicker } from "../components/OrgBrandHuePicker"
+import { RenameOrganizationCard } from "../components/RenameOrganizationCard"
 
 export default function DangerZone() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -117,7 +117,7 @@ export default function DangerZone() {
 
       <MeshControl orgId={org.id} />
 
-      <OrgBrandHuePicker organizationId={org.id} brandHue={org.brandHue} />
+      <RenameOrganizationCard organizationId={org.id} name={org.name} slug={org.slug} />
 
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Danger Zone</h2>

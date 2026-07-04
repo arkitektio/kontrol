@@ -2601,6 +2601,7 @@ export type UpdateOrganizationInput = {
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
   slug?: InputMaybe<Scalars['String']['input']>;
+  syncMine?: Scalars['Boolean']['input'];
 };
 
 export type UpdateOrganizationProfileInput = {
