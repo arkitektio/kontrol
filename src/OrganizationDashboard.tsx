@@ -1,14 +1,24 @@
 import { useParams, Link } from "react-router-dom"
 import {
   useSidebarOrganizationQuery,
-  useListKommunityPartnerQuery,
   useCompositionsQuery,
   useClientsQuery,
   Ordering,
 } from "./api/graphql"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/card"
-import { ArrowRight, Server, Layers, AlertCircle, CheckCircle2, LayoutDashboard, UserPlus } from "lucide-react"
+import { ArrowRight, Layers, AlertCircle, CheckCircle2, LayoutDashboard, UserPlus, Plug } from "lucide-react"
+
+// A little personality for the members tile — a nudge that scales with the crew size.
+function funnyMemberLine(count: number): string {
+  if (count <= 1) return "Just you so far — invite someone to get the party started."
+  if (count === 2) return "Two's good, but three's a party."
+  if (count === 3) return "Three? Let's make it four."
+  if (count === 4) return "Four and counting — a proper little crew."
+  if (count <= 6) return `${count} strong. The band keeps growing.`
+  if (count <= 12) return `${count} of you now — a real team.`
+  return `${count} members. This is a movement.`
+}
 import { ClientCard } from "./components/ClientCard"
 import { ServiceInstanceCard } from "./components/ServiceInstanceCard"
 import { PageHeader } from "./components/PageHeader"
@@ -25,10 +35,6 @@ export default function OrganizationDashboard() {
   const { data: compositionsData } = useCompositionsQuery({
     variables: { filters: { organization: orgId || undefined } },
     skip: !orgId,
-  })
-
-  const { data: partnersData } = useListKommunityPartnerQuery({
-    variables: { pagination: { limit: 6 } }
   })
 
   // Action items: apps this org owns that are currently reporting problems.
@@ -49,7 +55,6 @@ export default function OrganizationDashboard() {
   const latestClients = org.latestClients || []
   const latestServices = org.latestServices || []
   const compositions = compositionsData?.compositions || []
-  const partners = partnersData?.kommunityPartners || []
   const unhealthyClients = unhealthyData?.clients || []
 
   const hasCompositions = compositions.length > 0
@@ -131,11 +136,7 @@ export default function OrganizationDashboard() {
             <CardTitle className="text-4xl font-bold tabular-nums">{memberCount}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {isLonely ? (
-              <p className="text-sm text-muted-foreground">
-                It's just you so far. Invite teammates so you can collaborate.
-              </p>
-            ) : (
+            {!isLonely && (
               <div className="flex items-center -space-x-2">
                 {members.slice(0, 6).map(m => (
                   <Avatar key={m.id} className="h-8 w-8 border-2 border-background">
@@ -150,80 +151,58 @@ export default function OrganizationDashboard() {
                 )}
               </div>
             )}
+            <p className="text-sm text-muted-foreground">{funnyMemberLine(memberCount)}</p>
             <Button variant={isLonely ? "default" : "outline"} size="sm" asChild className="w-full">
               <Link to={`/organization/${orgId}/invites`}>Invite others</Link>
             </Button>
           </CardContent>
         </Card>
 
-        {/* Onboarding hero (empty org) — full-width tile */}
-        {!hasCompositions && (
-          <Card className="lg:col-span-6 overflow-hidden gap-0 p-0">
-            <div className="bg-gradient-to-b from-primary/8 to-background px-8 pt-12 pb-8 flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
-                <Layers className="w-7 h-7 text-primary" />
+        {/* Hubs — stat tile mirroring Members: count + quick links, or a connect CTA
+            when the org has none (links to the same connect-hub page as the sidebar). */}
+        <Card className={`lg:col-span-2`}>
+          <CardHeader className="pb-2">
+            <CardDescription className="flex items-center gap-2">
+              <Layers className="h-4 w-4" /> {compositions.length === 1 ? "Hub" : "Hubs"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {hasCompositions ? (
+              <div className="flex flex-col gap-2">
+                {/* One hub per org is the norm, so just list the hub(s) — no count. */}
+                {compositions.slice(0, 4).map(hub => (
+                  <Link
+                    key={hub.id}
+                    to={`/organization/${orgId}/compositions/${hub.id}`}
+                    className="flex items-center gap-2 font-medium hover:underline"
+                  >
+                    <Layers className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{hub.name}</span>
+                  </Link>
+                ))}
+                {compositions.length > 4 && (
+                  <Link
+                    to={`/organization/${orgId}/compositions`}
+                    className="text-xs text-muted-foreground hover:underline"
+                  >
+                    +{compositions.length - 4} more
+                  </Link>
+                )}
               </div>
-              <h2 className="text-2xl font-bold tracking-tight mb-2">Welcome to {org.name}</h2>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
-                Connect a Kommunity Partner to deploy a pre-configured stack in minutes,
-                or self-host your own Arkitekt instance.
-              </p>
-            </div>
-
-            <div className="border-t bg-muted/30 px-8 py-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Kommunity Partners
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  No hub yet. Connect one to deploy a pre-configured stack in minutes.
                 </p>
-                <Button variant="ghost" size="sm" asChild className="text-xs h-7 px-2">
-                  <Link to={`/organization/${orgId}/partners`}>
-                    View all <ArrowRight className="ml-1 w-3 h-3" />
+                <Button size="sm" asChild className="w-full">
+                  <Link to={`/organization/${orgId}/connect-hub`}>
+                    <Plug className="h-4 w-4 mr-2" /> Connect a hub
                   </Link>
                 </Button>
-              </div>
-
-              {partners.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {partners.map(partner => (
-                    <Link
-                      key={partner.id}
-                      to={`/organization/${orgId}/partners/${partner.id}`}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/40 hover:shadow-sm transition-all group"
-                    >
-                      <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center overflow-hidden border">
-                        {partner.logoUrl
-                          ? <img src={partner.logoUrl} alt={partner.name} className="w-full h-full object-contain p-1" />
-                          : <span className="text-sm font-bold text-muted-foreground">{partner.name.charAt(0)}</span>
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{partner.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {partner.shortDescription || partner.description}
-                        </p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No partners available yet.</p>
-              )}
-            </div>
-
-            <div className="border-t px-8 py-4 flex items-center justify-between bg-muted/10">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Server className="w-4 h-4 flex-shrink-0" />
-                <span>Prefer to run your own infrastructure?</span>
-              </div>
-              <Button variant="ghost" size="sm" asChild className="text-xs h-7 px-3 flex-shrink-0">
-                <a href="https://arkitekt.live/docs/hosting" target="_blank" rel="noopener noreferrer">
-                  Self-hosting guide <ArrowRight className="ml-1 w-3 h-3" />
-                </a>
-              </Button>
-            </div>
-          </Card>
-        )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Services — recent preview tile */}
         {hasCompositions && (

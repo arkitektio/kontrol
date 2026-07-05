@@ -7,6 +7,7 @@ export interface AuthConfig {
     account: {
       authentication_method: string
       login_by_code_enabled?: boolean
+      email_verification_by_code_enabled?: boolean
     }
     socialaccount: {
       providers: Array<{

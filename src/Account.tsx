@@ -1,25 +1,25 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Separator } from "@/components/ui/separator";
+import { Mail, KeyRound, Users, ShieldCheck, MonitorSmartphone } from "lucide-react";
 import { useConfig } from "./auth";
 
 export default function Account() {
   const config = useConfig();
 
   return (
-    <div className="container max-w-3xl py-8">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Account Settings</h1>
-          <p className="text-muted-foreground">Manage your account security and preferences</p>
-        </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
+        <p className="text-muted-foreground mt-2">Manage your account security and preferences</p>
+      </div>
 
-        <Separator />
-
-        <Card>
+      <Card>
           <CardHeader>
-            <CardTitle>Email Settings</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email Settings
+            </CardTitle>
             <CardDescription>Manage your email address</CardDescription>
           </CardHeader>
           <CardContent>
@@ -31,7 +31,10 @@ export default function Account() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Password</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Password
+            </CardTitle>
             <CardDescription>Update your password</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -47,7 +50,10 @@ export default function Account() {
         {config?.data.socialaccount && (
           <Card>
             <CardHeader>
-              <CardTitle>Social Accounts</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Social Accounts
+              </CardTitle>
               <CardDescription>Manage connected social accounts</CardDescription>
             </CardHeader>
             <CardContent>
@@ -61,7 +67,10 @@ export default function Account() {
         {config?.data.mfa && (
           <Card>
             <CardHeader>
-              <CardTitle>Two-Factor Authentication</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                Two-Factor Authentication
+              </CardTitle>
               <CardDescription>Enhance your account security</CardDescription>
             </CardHeader>
             <CardContent>
@@ -75,7 +84,10 @@ export default function Account() {
         {config?.data.usersessions && (
           <Card>
             <CardHeader>
-              <CardTitle>Active Sessions</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <MonitorSmartphone className="h-5 w-5" />
+                Active Sessions
+              </CardTitle>
               <CardDescription>View and manage your active sessions</CardDescription>
             </CardHeader>
             <CardContent>
@@ -85,7 +97,6 @@ export default function Account() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   );
 }

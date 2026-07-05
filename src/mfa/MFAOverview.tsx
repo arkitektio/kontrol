@@ -3,6 +3,7 @@ import * as allauth from '../lib/allauth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { ShieldCheck } from "lucide-react"
 
 export async function loader ({ params }) {
   const resp = await allauth.getAuthenticators()
@@ -16,12 +17,22 @@ export default function MFAOverview (props: any) {
   const recoveryCodes = authenticators.find(authenticator => authenticator.type === allauth.AuthenticatorType.RECOVERY_CODES)
   
   return (
-    <div className="flex justify-center items-center min-h-[50vh] p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Two-Factor Authentication</h1>
+        <p className="text-muted-foreground mt-2">
+          Add an extra layer of security to your account by managing your two-factor authentication methods
+        </p>
+      </div>
+
+      <Card>
         <CardHeader>
-          <CardTitle>Two-Factor Authentication</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" />
+            Authentication Methods
+          </CardTitle>
           <CardDescription>
-            Manage your two-factor authentication methods.
+            Configure the ways you verify your identity when signing in.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

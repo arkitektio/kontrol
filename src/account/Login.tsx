@@ -1,63 +1,21 @@
-import React, { useState } from 'react'
-import { login } from '../lib/allauth'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { URLs, useConfig } from '../auth'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useConfig } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, GalleryVerticalEnd } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import type { AuthFlow } from '@/auth/types'
-import { handleFormErrors } from "@/lib/utils"
+import { AlertCircle } from "lucide-react"
+import { Card } from "@/components/ui/card"
 import { useLoginForm } from '@/hooks/use-next'
 import GoogleOneTap from '@/socialaccount/GoogleOneTap'
 
-const formSchema = z.object({
-  username: z.string().min(1, "Username/Email is required"),
-  password: z.string().min(1, "Password is required"),
-})
-
-
-
-export const flowToMessage = (flow: AuthFlow): string => {
-  switch (flow.id) {
-    case 'two_factor_auth':
-      return 'Two-Factor Authentication is required. Please complete the verification to proceed.'
-    case 'email_verification':
-      return 'Email verification is required. Please check your email for the verification link.'
-    default:
-      return `The authentication flow "${flow.id}" requires additional actions. Please complete them to proceed.`
-  }
-}
-
-
-export const flowToActionButton = (flow: AuthFlow): React.ReactNode => {
-  switch (flow.id) {
-    case 'mfa_authenticate':
-      return <Button asChild><Link to="/account/authenticate/totp">Complete Two-Factor Authentication</Link></Button>
-    case 'email_verification':
-      return <Button asChild><Link to="/account/verify-email">Resend Verification Email</Link></Button>
-    default:
-      return <Button asChild>Unknown action</Button>
-  }
-}
-
-
-
 export const LoginForm = () => {
-  const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
   const hasProviders = (config?.data?.socialaccount?.providers?.length ?? 0) > 0
   const next = useSearchParams()[0].get("next") || "/home"
 
-  const [pendingFlows, setPendingFlows] = useState<AuthFlow[]>([])
-
-  const {form, onSubmit} = useLoginForm()
+  const { form, onSubmit, globalError } = useLoginForm()
 
   return (
     <div className="space-y-4">
@@ -75,18 +33,6 @@ export const LoginForm = () => {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{globalError}</AlertDescription>
         </Alert>
-      )}
-
-      {pendingFlows.length > 0 && (
-        <>{pendingFlows.map((p) => <>
-          <Alert key={p.id} variant="default">
-            <AlertTitle>Action Required: {p.id}</AlertTitle>
-            <AlertDescription>
-              {flowToMessage(p)}
-            </AlertDescription>
-            {flowToActionButton(p)}
-          </Alert>
-        </>)}</>
       )}
 
       <div className="space-y-6">
@@ -171,7 +117,9 @@ export const LoginForm = () => {
               </div>
             </div>
             <div className="mt-4">
-              <Link className='btn btn-secondary' to='/account/login/code'>Send me a sign-in code</Link>
+              <Button asChild variant="outline" className="w-full">
+                <Link to='/account/login/code'>Send me a sign-in code</Link>
+              </Button>
             </div>
           </div>
         )}

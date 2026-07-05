@@ -9,8 +9,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, GalleryVerticalEnd } from "lucide-react"
+import { AlertCircle } from "lucide-react"
+import { handleFormErrors } from "@/lib/utils"
 
 const formSchema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -32,20 +34,13 @@ export const ConfirmLoginCodeForm = () => {
     confirmLoginCode(data.code).then((content) => {
       if (content.status === 200) {
         window.location.href = "/"
-      } else {
-        if (content.errors) {
-             if (content.errors.code) {
-                 form.setError("code", { message: content.errors.code.join(" ") })
-             }
-             if (content.errors.non_field_errors) {
-                 setGlobalError(content.errors.non_field_errors.join(" "))
-             }
-             if (!content.errors.code && !content.errors.non_field_errors) {
-                 setGlobalError("Confirmation failed.")
-             }
-        } else {
-            setGlobalError("An error occurred.")
-        }
+        return
+      }
+      // allauth returns errors as [{ message, code, param }]; map them onto the
+      // code field / global alert via the shared helper.
+      const handled = handleFormErrors(content.errors, form.setError, setGlobalError)
+      if (!handled) {
+        setGlobalError("Confirmation failed. Please check the code and try again.")
       }
     }).catch((e) => {
       console.error(e)
@@ -107,29 +102,12 @@ export const ConfirmLoginCodeForm = () => {
 
 export default function ConfirmLoginCode () {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <Link to="/" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
-            Acme Inc.
-          </Link>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <ConfirmLoginCodeForm />
-          </div>
-        </div>
-      </div>
-      <div className="bg-muted relative hidden lg:block">
-        <img
-          src="/placeholder.svg"
-          alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-        />
-      </div>
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          <ConfirmLoginCodeForm />
+        </CardContent>
+      </Card>
     </div>
   )
 }
