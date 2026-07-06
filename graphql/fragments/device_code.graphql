@@ -8,7 +8,6 @@ fragment DeviceCode on ManagementDeviceCode {
     nodeId
     logo
     description
-    url
     repoUrl
     scopes
     requirements {

@@ -2734,7 +2734,7 @@ export type DetailDeviceFragment = { __typename?: 'ManagementDevice', id: string
 
 export type ListDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> };
 
-export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
+export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
 
 export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> }> };
 
@@ -2966,7 +2966,7 @@ export type DeclineDeviceCodeMutationVariables = Exact<{
 }>;
 
 
-export type DeclineDeviceCodeMutation = { __typename?: 'Mutation', declineDeviceCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+export type DeclineDeviceCodeMutation = { __typename?: 'Mutation', declineDeviceCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
 
 export type CreateDeviceGroupMutationVariables = Exact<{
   input: CreateDeviceGroupInput;
@@ -3320,7 +3320,7 @@ export type DeviceCodeByCodeQueryVariables = Exact<{
 }>;
 
 
-export type DeviceCodeByCodeQuery = { __typename?: 'Query', deviceCodeByCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, url?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+export type DeviceCodeByCodeQuery = { __typename?: 'Query', deviceCodeByCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, nodeId: string, logo?: string | null, description?: string | null, repoUrl?: string | null, scopes: Array<string>, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, service: string, optional: boolean, description?: string | null }>, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
 
 export type ValidateDeviceCodeQueryVariables = Exact<{
   deviceCode: Scalars['ID']['input'];
@@ -3994,7 +3994,6 @@ export const DeviceCodeFragmentDoc = gql`
     nodeId
     logo
     description
-    url
     repoUrl
     scopes
     requirements {
