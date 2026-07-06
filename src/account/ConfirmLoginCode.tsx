@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { confirmLoginCode, Flows } from '../lib/allauth'
-import { Navigate, Link } from 'react-router-dom'
+import { Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStatus } from '../auth'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,8 @@ const formSchema = z.object({
 export const ConfirmLoginCodeForm = () => {
   const [, authInfo] = useAuthStatus()
   const [globalError, setGlobalError] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const next = useSearchParams()[0].get('next') || '/home'
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -33,7 +35,7 @@ export const ConfirmLoginCodeForm = () => {
     setGlobalError(null)
     confirmLoginCode(data.code).then((content) => {
       if (content.status === 200) {
-        window.location.href = "/"
+        navigate(next)
         return
       }
       // allauth returns errors as [{ message, code, param }]; map them onto the

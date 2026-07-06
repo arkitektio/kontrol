@@ -1,6 +1,6 @@
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { pathForFlow } from '../auth'
-import { Flows, AuthenticatorType } from '../lib/allauth'
+import { AuthenticatorType } from '../lib/allauth'
 import { useAuthInfo } from '../auth/hooks'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,8 +12,16 @@ labels[AuthenticatorType.WEBAUTHN] = 'Use security key'
 
 export default function AuthenticateFlow (props: any) {
   const authInfo = useAuthInfo()
+  const location = useLocation()
 
   const flow = authInfo.pendingFlow
+
+  // Reached only mid-login when an MFA flow is pending. On a direct visit (or once
+  // authentication is complete) there is no pending flow, so bounce to login
+  // instead of dereferencing `flow.types` and crashing.
+  if (!flow) {
+    return <Navigate to="/account/login" />
+  }
 
   return (
     <div className="flex justify-center items-center min-h-[50vh] p-4">
@@ -27,7 +35,7 @@ export default function AuthenticateFlow (props: any) {
         <CardContent className="space-y-4">
           {props.children}
         </CardContent>
-        {flow.types.length > 1 && (
+        {flow.types && flow.types.length > 1 && (
             <CardFooter className="flex flex-col items-start gap-2 border-t pt-4">
                 <p className="text-sm font-medium text-muted-foreground">Alternative Options</p>
                 <div className="flex flex-col gap-1 w-full">
@@ -35,7 +43,7 @@ export default function AuthenticateFlow (props: any) {
                         if (typ === props.authenticatorType) return null
                         return (
                             <Button key={typ} variant="link" asChild className="justify-start h-auto p-0">
-                                <Link replace to={pathForFlow(flow, typ)}>{labels[typ]}</Link>
+                                <Link replace to={pathForFlow(flow, typ) + location.search}>{labels[typ]}</Link>
                             </Button>
                         )
                     })}

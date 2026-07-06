@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthenticatorType, getWebAuthnRequestOptionsForAuthentication, authenticateUsingWebAuthn } from '../lib/allauth'
 import { Button } from "@/components/ui/button"
 import {
@@ -11,6 +12,8 @@ import { AlertCircle } from "lucide-react"
 
 export default function AuthenticateWebAuthn (props: any) {
   const [response, setResponse] = useState<{ fetching: boolean, content: any, error?: string }>({ fetching: false, content: null })
+  const navigate = useNavigate()
+  const next = useSearchParams()[0].get('next') || '/home'
 
   async function submit () {
     setResponse({ ...response, fetching: true, error: undefined })
@@ -21,7 +24,7 @@ export default function AuthenticateWebAuthn (props: any) {
       const credential = await get(options)
       const reauthResp = await authenticateUsingWebAuthn(credential)
       if (reauthResp.status === 200) {
-          window.location.href = "/"
+          navigate(next)
       } else {
           setResponse((r) => { return { ...r, content: reauthResp, error: "Authentication failed." } })
       }

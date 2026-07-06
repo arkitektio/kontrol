@@ -33,20 +33,23 @@ export const ConfirmPasswordResetCodeForm = () => {
     getPasswordReset(data.code).then((content) => {
       if (content.status === 200) {
         setSuccessResponse(content)
-      } else {
-        if (content.errors) {
-             if (content.errors.key) {
-                 form.setError("code", { message: content.errors.key.join(" ") })
-             }
-             if (content.errors.non_field_errors) {
-                 setGlobalError(content.errors.non_field_errors.join(" "))
-             }
-             if (!content.errors.key && !content.errors.non_field_errors) {
-                 setGlobalError("Confirmation failed.")
-             }
+        return
+      }
+      // allauth returns errors as [{ message, code, param }]; the reset code is
+      // submitted as `key`, so bind that param onto the visible `code` field and
+      // surface anything else globally.
+      const errors = content.errors ?? []
+      let handled = false
+      for (const e of errors) {
+        if (e.param === 'key') {
+          form.setError('code', { message: e.message })
         } else {
-            setGlobalError("An error occurred.")
+          setGlobalError(e.message)
         }
+        handled = true
+      }
+      if (!handled) {
+        setGlobalError("Confirmation failed. Please check the code and try again.")
       }
     }).catch((e) => {
       console.error(e)

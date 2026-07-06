@@ -24,6 +24,12 @@ export interface AuthConfig {
     usersessions: {
       track_activity: boolean
     }
+    /**
+     * Policy (set in lok via `PRIVACY_GUARDS`) for integrated login widgets like
+     * Google One Tap that load third-party scripts and can track before a click.
+     * Absent on older backends — consumers default to 'opt-in'.
+     */
+    privacy_guards?: 'strict' | 'opt-in' | 'disabled'
   }
 }
 

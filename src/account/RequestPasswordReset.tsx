@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { requestPasswordReset } from '../lib/allauth'
-import { Navigate, Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { handleFormErrors } from "@/lib/utils"
 
 const requestPasswordResetSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -40,19 +41,18 @@ export default function RequestPasswordReset() {
     requestPasswordReset(values.email).then((content) => {
       if (content.status === 200) {
         setSuccess(true)
-      } else if (content.status === 401) {
-          // Flow requires code verification?
-          navigate('/account/password/reset/confirm')
-      } else {
-        if (content.errors?.email) {
-            form.setError("email", { message: content.errors.email.join(" ") })
-        } else if (content.errors) {
-             // Handle other errors
-             const errors = Object.values(content.errors).flat().join(" ")
-             setGlobalError(errors)
-        } else {
-            setGlobalError("An error occurred.")
-        }
+        return
+      }
+      if (content.status === 401) {
+        // Flow requires code verification.
+        navigate('/account/password/reset/confirm')
+        return
+      }
+      // allauth returns errors as [{ message, code, param }]; the `email` param
+      // maps onto the email field, anything else surfaces globally.
+      const handled = handleFormErrors(content.errors, form.setError, setGlobalError)
+      if (!handled) {
+        setGlobalError("Request failed. Please try again.")
       }
     }).catch((e) => {
       console.error(e)

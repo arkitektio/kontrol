@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { requestLoginCode } from '../lib/allauth'
-import { Navigate, Link } from 'react-router-dom'
+import { Navigate, Link, useSearchParams } from 'react-router-dom'
+import { appendNext } from '../auth'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +21,7 @@ const formSchema = z.object({
 export const RequestLoginCodeForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const nextParam = useSearchParams()[0].get("next")
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,7 +50,7 @@ export const RequestLoginCodeForm = () => {
   }
 
   if (success) {
-    return <Navigate to='/account/login/code/confirm' />
+    return <Navigate to={appendNext('/account/login/code/confirm', nextParam)} />
   }
 
   return (

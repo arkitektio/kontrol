@@ -25,8 +25,19 @@ function installGoogleOneTap (cb: () => void) {
 
 export default function GoogleOneTap (props: {process: string}) {
   const config = useConfig()
-  const [enabled, setEnabled] = useState(() => window.sessionStorage.getItem('googleOneTapEnabled') === 'yes')
-  
+  // Deployment policy for integrated widgets. Default to 'opt-in' when the backend
+  // doesn't report it (older lok) so we never load Google's script without consent.
+  const policy = config?.data?.privacy_guards ?? 'opt-in'
+  // 'disabled' means the deployment turned the guards off — auto-load, no prompt.
+  const [enabled, setEnabled] = useState(
+    () => policy === 'disabled' || window.sessionStorage.getItem('googleOneTapEnabled') === 'yes'
+  )
+
+  // 'strict' — never render and never inject accounts.google.com/gsi/client.
+  if (policy === 'strict') {
+    return null
+  }
+
   function onGoogleOneTapInstalled () {
     const provider = config?.data?.socialaccount?.providers?.find(p => p.id === 'google')
     if (provider && window.google) {

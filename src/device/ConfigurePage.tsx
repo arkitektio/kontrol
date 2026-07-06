@@ -13,19 +13,31 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Monitor, Smartphone, Globe, CheckCircle2, XCircle, Circle,
   Loader2, ExternalLink, Github, ChevronDown, Check, X,
 } from "lucide-react";
+import { useActiveOrganization } from "@/hooks/useActiveOrganization";
+import { BRAND_HUE_KEY, DEFAULT_BRAND_HUE } from "@/lib/brand";
 
 interface ConfigureFormData {
   composition: string;
 }
 
 const KIND_ICON = { development: Smartphone, desktop: Monitor, website: Globe } as const;
+
+/** The hub picker's row: the organization name over its hub below it. */
+function WorkspaceRow({ org, hub }: { org: string; hub: string }) {
+  return (
+    <div className="grid min-w-0 flex-1 text-left leading-tight">
+      <span className="truncate text-sm font-medium">{org}</span>
+      <span className="text-muted-foreground truncate text-xs">{hub}</span>
+    </div>
+  );
+}
 
 export function ConfigurePage() {
   const { deviceCode: code } = useParams<{ deviceCode: string }>();
@@ -54,11 +66,32 @@ export function ConfigurePage() {
   const [deviceName, setDeviceName] = useState("");
   const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
 
+  const { effectiveHueForOrg } = useActiveOrganization();
+
   useEffect(() => {
     if (compData?.compositions?.length && !selectedComposition) {
       setValue("composition", compData.compositions[0].id);
     }
   }, [compData, selectedComposition, setValue]);
+
+  // The workspace lives in an organization; tint the whole page with that org's
+  // membership brand hue (the member's personal hue → the org default → the
+  // neutral brand hue) so the authorization screen wears the workspace's colours.
+  const selectedComp =
+    compData?.compositions?.find((c) => c.id === selectedComposition) ?? null;
+  const activeHue = selectedComp
+    ? effectiveHueForOrg(selectedComp.organization.id) ?? DEFAULT_BRAND_HUE
+    : null;
+
+  useEffect(() => {
+    if (activeHue == null) return;
+    document.documentElement.style.setProperty("--brand-hue", String(activeHue));
+    try {
+      localStorage.setItem(BRAND_HUE_KEY, String(activeHue));
+    } catch {
+      /* localStorage unavailable */
+    }
+  }, [activeHue]);
 
   if (!code) return null;
 
@@ -231,8 +264,7 @@ export function ConfigurePage() {
             )}
 
             <p className="text-muted-foreground text-sm">
-              Authorizing as{" "}
-              <span className="text-foreground font-medium">{meData?.me?.username ?? "…"}</span>
+              A new app wants to connect to one of your hubs. Review the requested permissions and required services, then choose which hub to assign it to.
             </p>
 
             {/* Requested permissions */}
@@ -347,20 +379,29 @@ export function ConfigurePage() {
             <div className="space-y-4 border-t pt-5">
               {compData?.compositions?.length ? (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Assign to workspace</p>
+                  <p className="text-sm font-medium">Assign to hub</p>
                   <Controller
                     control={control}
                     name="composition"
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger className="h-11 w-full text-base">
-                          <SelectValue placeholder="Select a workspace…" />
+                        <SelectTrigger className="h-auto w-full py-2" aria-label="Hub">
+                          {selectedComp ? (
+                            <WorkspaceRow
+                              org={selectedComp.organization.name || "Organization"}
+                              hub={selectedComp.name || "Unnamed"}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">Select a hub…</span>
+                          )}
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
                           {compData.compositions.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name || "Unnamed"}
-                              {c.organization?.name ? ` · ${c.organization.name}` : ""}
+                            <SelectItem key={c.id} value={c.id} className="py-2">
+                              <WorkspaceRow
+                                org={c.organization.name || "Organization"}
+                                hub={c.name || "Unnamed"}
+                              />
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -370,7 +411,7 @@ export function ConfigurePage() {
                 </div>
               ) : (
                 <p className="text-muted-foreground text-sm">
-                  No workspaces available.{" "}
+                  No hubs available.{" "}
                   <Link to="/" className="underline">Set one up first.</Link>
                 </p>
               )}

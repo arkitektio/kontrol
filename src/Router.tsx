@@ -202,6 +202,59 @@ function createRouter() {
               path: '/account/signup',
               element: <AnonymousRoute><Signup /></AnonymousRoute>,
             },
+            {
+              path: '/account/login/code',
+              element: <AnonymousRoute><RequestLoginCode /></AnonymousRoute>,
+            },
+            {
+              path: '/account/login/code/confirm',
+              element: <AnonymousRoute><ConfirmLoginCode /></AnonymousRoute>,
+            },
+            {
+              path: '/account/provider/signup',
+              element: <AnonymousRoute><ProviderSignup /></AnonymousRoute>,
+            },
+            {
+              path: '/account/signup/passkey',
+              element: <AnonymousRoute><SignupByPasskey /></AnonymousRoute>,
+            },
+            {
+              path: '/account/signup/passkey/create',
+              element: <AnonymousRoute><CreateSignupPasskey /></AnonymousRoute>,
+            },
+            {
+              path: '/account/password/reset',
+              element: <AnonymousRoute><RequestPasswordReset /></AnonymousRoute>,
+            },
+            {
+              path: '/account/password/reset/confirm',
+              element: <AnonymousRoute><ConfirmPasswordResetCode /></AnonymousRoute>,
+            },
+            {
+              path: '/account/password/reset/complete',
+              element: <AnonymousRoute><ResetPasswordByCode /></AnonymousRoute>,
+            },
+            {
+              path: '/account/password/reset/key/:key',
+              element: <AnonymousRoute><ResetPasswordByLink /></AnonymousRoute>,
+              loader: resetPasswordByLinkLoader,
+            },
+            {
+              path: '/account/authenticate/totp',
+              element: <AnonymousRoute><AuthenticateTOTP /></AnonymousRoute>,
+            },
+            {
+              path: '/account/2fa/trust',
+              element: <AnonymousRoute><Trust /></AnonymousRoute>,
+            },
+            {
+              path: '/account/authenticate/recovery-codes',
+              element: <AnonymousRoute><AuthenticateRecoveryCodes /></AnonymousRoute>,
+            },
+            {
+              path: '/account/authenticate/webauthn',
+              element: <AnonymousRoute><AuthenticateWebAuthn /></AnonymousRoute>,
+            },
           ],
         },
         {
@@ -214,10 +267,6 @@ function createRouter() {
             {
               path: '/callback',
               element: <Callback />,
-            },
-            {
-              path: '/home',
-              element: <AuthenticatedRoute><Home /></AuthenticatedRoute>,
             },
             {
               path: '/services',
@@ -276,32 +325,12 @@ function createRouter() {
               element: <AuthenticatedRoute><Device /></AuthenticatedRoute>,
             },
             {
-              path: '/account/login/code',
-              element: <AnonymousRoute><RequestLoginCode /></AnonymousRoute>,
-            },
-            {
-              path: '/account/login/code/confirm',
-              element: <AnonymousRoute><ConfirmLoginCode /></AnonymousRoute>,
-            },
-            {
               path: '/account/logout',
               element: <Logout />,
             },
             {
               path: '/account/provider/callback',
               element: <ProviderCallback />,
-            },
-            {
-              path: '/account/provider/signup',
-              element: <AnonymousRoute><ProviderSignup /></AnonymousRoute>,
-            },
-            {
-              path: '/account/signup/passkey',
-              element: <AnonymousRoute><SignupByPasskey /></AnonymousRoute>,
-            },
-            {
-              path: '/account/signup/passkey/create',
-              element: <AnonymousRoute><CreateSignupPasskey /></AnonymousRoute>,
             },
             {
               path: '/account/verify-email',
@@ -311,39 +340,6 @@ function createRouter() {
               path: '/account/verify-email/:key',
               element: <VerifyEmail />,
               loader: verifyEmailLoader,
-            },
-            {
-              path: '/account/password/reset',
-              element: <AnonymousRoute><RequestPasswordReset /></AnonymousRoute>,
-            },
-            {
-              path: '/account/password/reset/confirm',
-              element: <AnonymousRoute><ConfirmPasswordResetCode /></AnonymousRoute>,
-            },
-            {
-              path: '/account/password/reset/complete',
-              element: <AnonymousRoute><ResetPasswordByCode /></AnonymousRoute>,
-            },
-            {
-              path: '/account/password/reset/key/:key',
-              element: <AnonymousRoute><ResetPasswordByLink /></AnonymousRoute>,
-              loader: resetPasswordByLinkLoader,
-            },
-            {
-              path: '/account/authenticate/totp',
-              element: <AnonymousRoute><AuthenticateTOTP /></AnonymousRoute>,
-            },
-            {
-              path: '/account/2fa/trust',
-              element: <AnonymousRoute><Trust /></AnonymousRoute>,
-            },
-            {
-              path: '/account/authenticate/recovery-codes',
-              element: <AnonymousRoute><AuthenticateRecoveryCodes /></AnonymousRoute>,
-            },
-            {
-              path: '/account/authenticate/webauthn',
-              element: <AnonymousRoute><AuthenticateWebAuthn /></AnonymousRoute>,
             },
             {
               path: '/invites/:id',

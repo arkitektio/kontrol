@@ -2,7 +2,7 @@ import {
   Navigate,
   useLocation
 } from 'react-router-dom'
-import { useAuthChange, AuthChangeEvent, useAuthStatus } from './hooks'
+import { useAuthStatus } from './hooks'
 import { Flows, AuthenticatorType } from '../lib/allauth'
 
 export const URLs = Object.freeze({
@@ -10,6 +10,20 @@ export const URLs = Object.freeze({
   LOGIN_REDIRECT_URL: '/home',
   LOGOUT_REDIRECT_URL: '/'
 })
+
+// Carry the post-auth redirect target forward across an auth-flow transition.
+// Every hop reads `next` via searchParams.get() (decoded) and re-attaches it here
+// (encoded once), so a user routed through an intermediate step (MFA, email
+// verification, provider signup, ...) still lands on their original destination.
+// Pass the RAW nullable value from searchParams.get('next') — never a
+// `|| '/home'`-defaulted value, or every downstream step gets pinned to /home.
+export function appendNext (path: string, next: string | null | undefined): string {
+  if (!next) {
+    return path
+  }
+  const sep = path.includes('?') ? '&' : '?'
+  return `${path}${sep}next=${encodeURIComponent(next)}`
+}
 
 const flow2path: { [key: string]: string } = {}
 flow2path[Flows.LOGIN] = '/account/login'
@@ -50,14 +64,6 @@ export function pathForPendingFlow (auth) {
   return null
 }
 
-function navigateToPendingFlow (auth) {
-  const path = pathForPendingFlow(auth)
-  if (path) {
-    return <Navigate to={path} />
-  }
-  return null
-}
-
 export function AuthenticatedRoute ({ children }) {
   const location = useLocation()
   const [, status] = useAuthStatus()
@@ -69,44 +75,16 @@ export function AuthenticatedRoute ({ children }) {
 }
 
 export function AnonymousRoute ({ children }) {
+  const location = useLocation()
   const [, status] = useAuthStatus()
   if (!status.isAuthenticated) {
     return children
-  } else {
-    return <Navigate to={URLs.LOGIN_REDIRECT_URL} />
   }
+  // Already authenticated: honor `?next` (e.g. a deep link the user was sent to
+  // login for) instead of always dumping them on /home. This also makes the
+  // login-success redirect deterministic — the imperative navigate(next) in
+  // useNextFunc and this guard now resolve to the same destination.
+  const next = new URLSearchParams(location.search).get('next')
+  return <Navigate to={next || URLs.LOGIN_REDIRECT_URL} />
 }
 
-export function AuthChangeRedirector ({ children }) {
-  const [auth, event] = useAuthChange()
-  const location = useLocation()
-  console.log('AuthChangeRedirector: event=', event, auth)
-  switch (event) {
-    case AuthChangeEvent.LOGGED_OUT:
-      return <Navigate to={URLs.LOGOUT_REDIRECT_URL} />
-    case AuthChangeEvent.LOGGED_IN:
-      return <Navigate to={URLs.LOGIN_REDIRECT_URL} />
-    case AuthChangeEvent.REAUTHENTICATED:
-    {
-      const next = new URLSearchParams(location.search).get('next') || '/'
-      return <Navigate to={next} />
-    }
-    case AuthChangeEvent.REAUTHENTICATION_REQUIRED: {
-      console.log('Reauthentication required')
-      const next = `next=${encodeURIComponent(location.pathname + location.search)}`
-      const path = pathForFlow(auth.data.flows[0])
-      console.log('Redirecting to reauthentication flow:', path)
-      return <Navigate to={`${path}?${next}`} state={{ reauth: auth }} />
-    }
-    case AuthChangeEvent.FLOW_UPDATED:
-      const pendingFlow = navigateToPendingFlow(auth)
-      if (!pendingFlow) {
-        throw new Error()
-      }
-      return pendingFlow
-    default:
-      break
-  }
-  // ...stay where we are
-  return children
-}

@@ -47,20 +47,26 @@ function ResetPassword ({ resetKey, resetKeyResponse }: { resetKey: string, rese
   function onSubmit(values: z.infer<typeof resetPasswordSchema>) {
     setGlobalError(null)
     resetPassword({ key: resetKey, password: values.password }).then((resp) => {
-      if (resp.status === 200) {
+      // 200 = reset done; 401 = reset done with a further auth step pending. Either
+      // way the password was changed, so send the user to login.
+      if (resp.status === 200 || resp.status === 401) {
         setSuccess(true)
-      } else if (resp.status === 401) {
-          // Should not happen if key was valid, but maybe expired during fill
-          setSuccess(true) // Treat as success to redirect to login? Or show error?
-          // Original code redirected on 401 too.
-      } else {
-          if (resp.data?.errors?.password) {
-              form.setError("password", { message: resp.data.errors.password.join(" ") })
-          } else if (resp.data?.errors?.key) {
-              setGlobalError("Invalid or expired reset key.")
-          } else {
-              setGlobalError("An error occurred.")
-          }
+        return
+      }
+      // allauth returns errors as [{ message, code, param }]; bind `password` onto
+      // the field and surface anything else (e.g. an invalid/expired key) globally.
+      const errors = resp.errors ?? []
+      let handled = false
+      for (const e of errors) {
+        if (e.param === 'password') {
+          form.setError('password', { message: e.message })
+        } else {
+          setGlobalError(e.message)
+        }
+        handled = true
+      }
+      if (!handled) {
+        setGlobalError("An error occurred. The reset link may be invalid or expired.")
       }
     }).catch((e) => {
       console.error(e)
@@ -85,7 +91,7 @@ function ResetPassword ({ resetKey, resetKeyResponse }: { resetKey: string, rese
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
-                            {resetKeyResponse.data?.errors?.key?.join(" ") || "The password reset link is invalid or has expired."}
+                            {resetKeyResponse.errors?.map((e: { message: string }) => e.message).join(" ") || "The password reset link is invalid or has expired."}
                         </AlertDescription>
                     </Alert>
                 </CardContent>

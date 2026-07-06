@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { useConfig } from '../auth'
+import { useConfig, appendNext } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,8 @@ import GoogleOneTap from '@/socialaccount/GoogleOneTap'
 export const LoginForm = () => {
   const config = useConfig()
   const hasProviders = (config?.data?.socialaccount?.providers?.length ?? 0) > 0
-  const next = useSearchParams()[0].get("next") || "/home"
+  const nextParam = useSearchParams()[0].get("next")
+  const next = nextParam || "/home"
 
   const { form, onSubmit, globalError } = useLoginForm()
 
@@ -118,7 +119,7 @@ export const LoginForm = () => {
             </div>
             <div className="mt-4">
               <Button asChild variant="outline" className="w-full">
-                <Link to='/account/login/code'>Send me a sign-in code</Link>
+                <Link to={appendNext('/account/login/code', nextParam)}>Send me a sign-in code</Link>
               </Button>
             </div>
           </div>
@@ -128,7 +129,7 @@ export const LoginForm = () => {
       <div className="text-center text-sm">
         <p className="text-muted-foreground">
           Don't have an account?{" "}
-          <Link to="/account/signup" className="underline text-primary underline-offset-4 hover:text-primary/80">
+          <Link to={appendNext('/account/signup', nextParam)} className="underline text-primary underline-offset-4 hover:text-primary/80">
             Sign up
           </Link>
         </p>

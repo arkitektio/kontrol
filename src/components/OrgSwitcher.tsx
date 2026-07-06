@@ -18,11 +18,7 @@ import {
 import { DynamicArkitektLogo } from "@/logos/ArkitektLogo"
 import { CreateOrganizationDialog } from "@/components/CreateOrganizationDialog"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
-import { DEFAULT_BRAND_HUE } from "@/lib/brand"
-
-/** Inline style that re-tints a single Arkitekt logo's cube via `--brand-hue`. */
-const hueStyle = (hue: number | null): React.CSSProperties =>
-  ({ ["--brand-hue"]: String(hue ?? DEFAULT_BRAND_HUE) } as React.CSSProperties)
+import { hueStyle } from "@/lib/brand"
 
 /**
  * Header workspace switcher (shadcn sidebar-07 pattern): shows the active

@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OrganizationSelect } from "@/components/OrganizationSelect";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, Server, Globe } from "lucide-react";
 import { ServiceDeviceCodeFlow } from "./ServiceDeviceCodeFlow";
@@ -240,18 +240,11 @@ export function ServiceConfigurePage() {
                   control={control}
                   name="organization"
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select organization" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {orgData.organizations.map((org) => (
-                          <SelectItem key={org.id} value={org.id}>
-                            {org.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <OrganizationSelect
+                      organizations={orgData.organizations}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    />
                   )}
                 />
               </div>

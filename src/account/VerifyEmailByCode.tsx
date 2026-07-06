@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { verifyEmail } from '../lib/allauth'
 import type { Error as ApiError } from '../lib/allauth'
 import { useConfig } from '../auth'
@@ -31,6 +31,9 @@ export default function VerifyEmailByCode () {
   const byCodeEnabled = config?.data?.account?.email_verification_by_code_enabled
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  // Present when the user reached email verification mid-flow carrying a `next`
+  // (e.g. signup while verifying); land them on it once verified.
+  const next = useSearchParams()[0].get("next")
 
   const form = useForm<VerifyValues>({
     resolver: zodResolver(formSchema),
@@ -65,7 +68,7 @@ export default function VerifyEmailByCode () {
   }
 
   if (done) {
-    return <Navigate to='/account/email' />
+    return <Navigate to={next || '/account/email'} />
   }
 
   return (
