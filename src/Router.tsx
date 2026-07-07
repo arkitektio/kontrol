@@ -68,6 +68,7 @@ const App = lazyDefault(() => import('./apps/App'))
 const Apps = lazyDefault(() => import('./apps/Apps'))
 const Client = lazyDefault(() => import('./clients/Client'))
 const Clients = lazyDefault(() => import('./clients/Clients'))
+const ReportPage = lazyDefault(() => import('./reports/ReportPage'))
 const ConfigurePage = lazyNamed(() => import('./device/ConfigurePage'), 'ConfigurePage')
 const Device = lazyDefault(() => import('./devices/Device'))
 const DeviceGroup = lazyDefault(() => import('./devices/DeviceGroup'))
@@ -425,6 +426,10 @@ function createRouter() {
             {
               path: 'clients/:id',
               element: <AuthenticatedRoute><Client /></AuthenticatedRoute>,
+            },
+            {
+              path: 'clients/:id/report',
+              element: <AuthenticatedRoute><ReportPage /></AuthenticatedRoute>,
             },
             {
               path: 'service-instances',

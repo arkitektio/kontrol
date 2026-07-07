@@ -8818,3 +8818,81 @@ export type GetUsedAliasQueryHookResult = ReturnType<typeof useGetUsedAliasQuery
 export type GetUsedAliasLazyQueryHookResult = ReturnType<typeof useGetUsedAliasLazyQuery>;
 export type GetUsedAliasSuspenseQueryHookResult = ReturnType<typeof useGetUsedAliasSuspenseQuery>;
 export type GetUsedAliasQueryResult = Apollo.QueryResult<GetUsedAliasQuery, GetUsedAliasQueryVariables>;
+// --- Report feature (cherry-picked from local-lok codegen; see graphql/{fragments,queries}/report.graphql) ---
+
+export type ListReportFragment = { __typename?: 'ManagementReport', id: string, functional: boolean, createdAt: any, entries: Array<{ __typename?: 'ManagementReportEntry', key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }> };
+
+export type LatestClientReportQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type LatestClientReportQuery = { __typename?: 'Query', client: { __typename?: 'ManagementClient', id: string, name: string, lastReportedAt?: any | null, latestReport?: { __typename?: 'ManagementReport', id: string, functional: boolean, createdAt: any, entries: Array<{ __typename?: 'ManagementReportEntry', key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }> } | null, lastHealthyReport?: { __typename?: 'ManagementReport', id: string, functional: boolean, createdAt: any, entries: Array<{ __typename?: 'ManagementReportEntry', key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }> } | null } };
+
+export const ListReportFragmentDoc = gql`
+    fragment ListReport on ManagementReport {
+  id
+  functional
+  createdAt
+  entries {
+    key
+    valid
+    reason
+    alias {
+      ...ListInstanceAlias
+    }
+  }
+}
+    ${ListInstanceAliasFragmentDoc}`;
+
+export const LatestClientReportDocument = gql`
+    query LatestClientReport($id: ID!) {
+  client(id: $id) {
+    id
+    name
+    lastReportedAt
+    latestReport {
+      ...ListReport
+    }
+    lastHealthyReport {
+      ...ListReport
+    }
+  }
+}
+    ${ListReportFragmentDoc}`;
+
+/**
+ * __useLatestClientReportQuery__
+ *
+ * To run a query within a React component, call `useLatestClientReportQuery` and pass it any options that fit your needs.
+ * When your component renders, `useLatestClientReportQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useLatestClientReportQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useLatestClientReportQuery(baseOptions: Apollo.QueryHookOptions<LatestClientReportQuery, LatestClientReportQueryVariables> & ({ variables: LatestClientReportQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<LatestClientReportQuery, LatestClientReportQueryVariables>(LatestClientReportDocument, options);
+      }
+export function useLatestClientReportLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<LatestClientReportQuery, LatestClientReportQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<LatestClientReportQuery, LatestClientReportQueryVariables>(LatestClientReportDocument, options);
+        }
+// @ts-ignore
+export function useLatestClientReportSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<LatestClientReportQuery, LatestClientReportQueryVariables>): Apollo.UseSuspenseQueryResult<LatestClientReportQuery, LatestClientReportQueryVariables>;
+export function useLatestClientReportSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LatestClientReportQuery, LatestClientReportQueryVariables>): Apollo.UseSuspenseQueryResult<LatestClientReportQuery | undefined, LatestClientReportQueryVariables>;
+export function useLatestClientReportSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LatestClientReportQuery, LatestClientReportQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<LatestClientReportQuery, LatestClientReportQueryVariables>(LatestClientReportDocument, options);
+        }
+export type LatestClientReportQueryHookResult = ReturnType<typeof useLatestClientReportQuery>;
+export type LatestClientReportLazyQueryHookResult = ReturnType<typeof useLatestClientReportLazyQuery>;
+export type LatestClientReportSuspenseQueryHookResult = ReturnType<typeof useLatestClientReportSuspenseQuery>;
+export type LatestClientReportQueryResult = Apollo.QueryResult<LatestClientReportQuery, LatestClientReportQueryVariables>;

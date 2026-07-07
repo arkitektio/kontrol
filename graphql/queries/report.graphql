@@ -1,0 +1,13 @@
+query LatestClientReport($id: ID!) {
+  client(id: $id) {
+    id
+    name
+    lastReportedAt
+    latestReport {
+      ...ListReport
+    }
+    lastHealthyReport {
+      ...ListReport
+    }
+  }
+}

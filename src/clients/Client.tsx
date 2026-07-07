@@ -1,6 +1,7 @@
 import { ClientLabel } from "@/components/ClientLabel"
 import { clientInitials, clientLabel } from "@/lib/clientLabel"
 import { cn } from "@/lib/utils"
+import { Activity } from "lucide-react"
 import { Link, useParams } from "react-router-dom"
 import { useDetailClientQuery } from "../api/graphql"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
@@ -36,7 +37,12 @@ export default function Client() {
                 <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline">{client.organization.name}</Badge>
                     <span className="text-muted-foreground">by {client.user?.username}</span>
-                    
+                    <Link
+                        to={`/organization/${client.organization.id}/clients/${client.id}/report`}
+                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
+                        <Activity className="h-4 w-4" /> Latest report
+                    </Link>
                 </div>
               </div>
             </CardHeader>

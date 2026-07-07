@@ -1,0 +1,13 @@
+fragment ListReport on ManagementReport {
+  id
+  functional
+  createdAt
+  entries {
+    key
+    valid
+    reason
+    alias {
+      ...ListInstanceAlias
+    }
+  }
+}
