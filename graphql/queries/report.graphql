@@ -3,6 +3,15 @@ query LatestClientReport($id: ID!) {
     id
     name
     lastReportedAt
+    release {
+      version
+      app {
+        identifier
+      }
+    }
+    device {
+      name
+    }
     latestReport {
       ...ListReport
     }

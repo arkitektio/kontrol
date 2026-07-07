@@ -1,4 +1,6 @@
+import { ClientLabel } from "@/components/ClientLabel"
 import { PageHeader } from "@/components/PageHeader"
+import { clientLabel } from "@/lib/clientLabel"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 import { Activity, AlertTriangle, CheckCircle2, HeartPulse } from "lucide-react"
@@ -35,7 +37,7 @@ export default function ReportPage() {
             <div className="flex flex-1 flex-col gap-8 p-6">
                 <PageHeader
                     icon={Activity}
-                    title={`${client.name} — latest report`}
+                    title={<span className="flex items-center gap-2"><ClientLabel client={client} /><span className="font-normal text-muted-foreground">— latest report</span></span>}
                     description="This client has not reported in yet."
                 />
                 <div className="text-sm text-muted-foreground">
@@ -58,7 +60,7 @@ export default function ReportPage() {
         <div className="flex flex-1 flex-col gap-8 p-6">
             <PageHeader
                 icon={Activity}
-                title={`${client.name} — latest report`}
+                title={<span className="flex items-center gap-2"><ClientLabel client={client} /><span className="font-normal text-muted-foreground">— latest report</span></span>}
                 description={`Reported ${timeAgo(report.createdAt)} · ${entries.length} requirement${entries.length === 1 ? "" : "s"} reported`}
             />
 
@@ -102,13 +104,11 @@ export default function ReportPage() {
             )}
 
             {/* Graph-centric view: client → requirement → resolved alias, coloured by reachability */}
-            <div className="h-[60vh] w-full rounded-md border">
+            <div className="h-[440px] w-full rounded-md border">
                 {entries.length > 0 ? (
                     <UsedAliasFlow
                         head={{
-                            label: client.name,
-                            badge: report.functional ? "functional" : "non-functional",
-                            sublabel: `reported ${timeAgo(report.createdAt)}`,
+                            label: clientLabel(client),
                             tone: isFunctional ? "healthy" : "unhealthy",
                         }}
                         entries={entries}

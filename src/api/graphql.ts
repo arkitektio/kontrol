@@ -8827,7 +8827,7 @@ export type LatestClientReportQueryVariables = Exact<{
 }>;
 
 
-export type LatestClientReportQuery = { __typename?: 'Query', client: { __typename?: 'ManagementClient', id: string, name: string, lastReportedAt?: any | null, latestReport?: { __typename?: 'ManagementReport', id: string, functional: boolean, createdAt: any, entries: Array<{ __typename?: 'ManagementReportEntry', key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }> } | null, lastHealthyReport?: { __typename?: 'ManagementReport', id: string, functional: boolean, createdAt: any, entries: Array<{ __typename?: 'ManagementReportEntry', key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }> } | null } };
+export type LatestClientReportQuery = { __typename?: 'Query', client: { __typename?: 'ManagementClient', id: string, name: string, lastReportedAt?: any | null, release: { __typename?: 'ManagementRelease', version: any, app: { __typename?: 'ManagementApp', identifier: any } }, device?: { __typename?: 'ManagementDevice', name?: string | null } | null, latestReport?: { __typename?: 'ManagementReport', id: string, functional: boolean, createdAt: any, entries: Array<{ __typename?: 'ManagementReportEntry', key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }> } | null, lastHealthyReport?: { __typename?: 'ManagementReport', id: string, functional: boolean, createdAt: any, entries: Array<{ __typename?: 'ManagementReportEntry', key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } } | null }> } | null } };
 
 export const ListReportFragmentDoc = gql`
     fragment ListReport on ManagementReport {
@@ -8851,6 +8851,15 @@ export const LatestClientReportDocument = gql`
     id
     name
     lastReportedAt
+    release {
+      version
+      app {
+        identifier
+      }
+    }
+    device {
+      name
+    }
     latestReport {
       ...ListReport
     }
