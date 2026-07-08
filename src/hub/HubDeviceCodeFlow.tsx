@@ -1,15 +1,15 @@
 import { ReactFlow, Position, type Node, type Edge, Handle, type NodeProps, type EdgeProps, BaseEdge, getBezierPath } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { type CompositionDeviceCodeFragment } from '../api/graphql';
+import { type HubDeviceCodeFragment } from '../api/graphql';
 import { useMemo } from 'react';
 import { Server, Layers, Box } from 'lucide-react';
 
-interface CompositionDeviceCodeFlowProps {
-    compositionDeviceCode: CompositionDeviceCodeFragment
+interface HubDeviceCodeFlowProps {
+    hubDeviceCode: HubDeviceCodeFragment
 }
 
-const CompositionNode = ({ data }: NodeProps) => {
-    const manifest = data.manifest as CompositionDeviceCodeFragment['manifest'];
+const HubNode = ({ data }: NodeProps) => {
+    const manifest = data.manifest as HubDeviceCodeFragment['manifest'];
     
     return (
         <div className="group relative flex flex-col px-3 py-2 backdrop-blur-sm border rounded-md shadow-sm transition-all hover:shadow-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20 hover:border-indigo-500/40 min-w-[180px]">
@@ -30,7 +30,7 @@ const CompositionNode = ({ data }: NodeProps) => {
 };
 
 const ServiceInstanceNode = ({ data }: NodeProps) => {
-    const instance = data.instance as NonNullable<CompositionDeviceCodeFragment['manifest']>['instances'][number];
+    const instance = data.instance as NonNullable<HubDeviceCodeFragment['manifest']>['instances'][number];
     
     return (
         <div className="group relative flex flex-col px-3 py-2 backdrop-blur-sm border rounded-md shadow-sm transition-all hover:shadow-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20 hover:border-purple-500/40 min-w-[160px]">
@@ -59,7 +59,7 @@ const ServiceInstanceNode = ({ data }: NodeProps) => {
 };
 
 const ClientNode = ({ data }: NodeProps) => {
-    const client = data.client as NonNullable<CompositionDeviceCodeFragment['manifest']>['clients'][number];
+    const client = data.client as NonNullable<HubDeviceCodeFragment['manifest']>['clients'][number];
     
     return (
         <div className="group relative flex flex-col items-start justify-center px-3 py-2 bg-blue-500/5 backdrop-blur-sm border border-blue-500/10 rounded-md shadow-sm transition-all hover:border-blue-500/30 hover:shadow-md min-w-[150px]">
@@ -105,7 +105,7 @@ const CustomEdge = ({ sourceX, sourceY, targetX, targetY, sourcePosition, target
 };
 
 const nodeTypes = {
-    composition: CompositionNode,
+    hub: HubNode,
     serviceInstance: ServiceInstanceNode,
     client: ClientNode,
 };
@@ -114,20 +114,20 @@ const edgeTypes = {
     custom: CustomEdge,
 };
 
-export const CompositionDeviceCodeFlow = ({ compositionDeviceCode }: CompositionDeviceCodeFlowProps) => {
+export const HubDeviceCodeFlow = ({ hubDeviceCode }: HubDeviceCodeFlowProps) => {
     const { nodes, edges } = useMemo(() => {
-        const instances = compositionDeviceCode.manifest?.instances || [];
-        const clients = compositionDeviceCode.manifest?.clients || [];
+        const instances = hubDeviceCode.manifest?.instances || [];
+        const clients = hubDeviceCode.manifest?.clients || [];
         const totalItems = instances.length + clients.length;
         const totalHeight = Math.max(totalItems * 80, 100);
         const centerY = totalHeight / 2 - 25;
 
-        // Composition node
-        const compositionNode: Node = {
-            id: 'composition',
+        // Hub node
+        const hubNode: Node = {
+            id: 'hub',
             position: { x: 0, y: centerY },
-            data: { manifest: compositionDeviceCode.manifest },
-            type: 'composition',
+            data: { manifest: hubDeviceCode.manifest },
+            type: 'hub',
         };
 
         // Service instance nodes
@@ -146,10 +146,10 @@ export const CompositionDeviceCodeFlow = ({ compositionDeviceCode }: Composition
             type: 'client',
         }));
 
-        // Edges from composition to instances
+        // Edges from hub to instances
         const instanceEdges: Edge[] = instances.map((_, index) => ({
-            id: `composition-instance-${index}`,
-            source: 'composition',
+            id: `hub-instance-${index}`,
+            source: 'hub',
             target: `instance-${index}`,
             type: 'custom',
         }));
@@ -157,16 +157,16 @@ export const CompositionDeviceCodeFlow = ({ compositionDeviceCode }: Composition
         // Edges from instances to clients (simplified - connecting first instance to all clients)
         const clientEdges: Edge[] = clients.map((_, index) => ({
             id: `instance-client-${index}`,
-            source: instances.length > 0 ? 'instance-0' : 'composition',
+            source: instances.length > 0 ? 'instance-0' : 'hub',
             target: `client-${index}`,
             type: 'custom',
         }));
 
         return {
-            nodes: [compositionNode, ...serviceInstanceNodes, ...clientNodes],
+            nodes: [hubNode, ...serviceInstanceNodes, ...clientNodes],
             edges: [...instanceEdges, ...clientEdges],
         };
-    }, [compositionDeviceCode]);
+    }, [hubDeviceCode]);
 
     return (
         <div className="h-[300px] w-full border rounded-md bg-muted/30">

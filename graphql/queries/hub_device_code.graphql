@@ -1,0 +1,6 @@
+query HubDeviceCodeByCode($code: String!) {
+  hubDeviceCodeByCode(code: $code) {
+    ...HubDeviceCode
+  }
+}
+

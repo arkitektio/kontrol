@@ -1,7 +1,0 @@
-fragment CompositionDeviceCode on ManagementCompositionDeviceCode {
-  id
-  code 
-  manifest {
-    ...CompositionManifest
-  }
-}

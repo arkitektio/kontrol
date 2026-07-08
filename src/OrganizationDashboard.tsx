@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom"
 import {
   useSidebarOrganizationQuery,
-  useCompositionsQuery,
+  useHubsQuery,
   useClientsQuery,
   Ordering,
 } from "./api/graphql"
@@ -32,7 +32,7 @@ export default function OrganizationDashboard() {
     skip: !orgId,
   })
 
-  const { data: compositionsData } = useCompositionsQuery({
+  const { data: hubsData } = useHubsQuery({
     variables: { filters: { organization: orgId || undefined } },
     skip: !orgId,
   })
@@ -54,10 +54,10 @@ export default function OrganizationDashboard() {
   const org = data.organization
   const latestClients = org.latestClients || []
   const latestServices = org.latestServices || []
-  const compositions = compositionsData?.compositions || []
+  const hubs = hubsData?.hubs || []
   const unhealthyClients = unhealthyData?.clients || []
 
-  const hasCompositions = compositions.length > 0
+  const hasHubs = hubs.length > 0
   const hasClients = latestClients.length > 0
   const hasServices = latestServices.length > 0
   const hasUnhealthy = unhealthyClients.length > 0
@@ -163,29 +163,29 @@ export default function OrganizationDashboard() {
         <Card className={`lg:col-span-2`}>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-2">
-              <Layers className="h-4 w-4" /> {compositions.length === 1 ? "Hub" : "Hubs"}
+              <Layers className="h-4 w-4" /> {hubs.length === 1 ? "Hub" : "Hubs"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {hasCompositions ? (
+            {hasHubs ? (
               <div className="flex flex-col gap-2">
                 {/* One hub per org is the norm, so just list the hub(s) — no count. */}
-                {compositions.slice(0, 4).map(hub => (
+                {hubs.slice(0, 4).map(hub => (
                   <Link
                     key={hub.id}
-                    to={`/organization/${orgId}/compositions/${hub.id}`}
+                    to={`/organization/${orgId}/hubs/${hub.id}`}
                     className="flex items-center gap-2 font-medium hover:underline"
                   >
                     <Layers className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">{hub.name}</span>
                   </Link>
                 ))}
-                {compositions.length > 4 && (
+                {hubs.length > 4 && (
                   <Link
-                    to={`/organization/${orgId}/compositions`}
+                    to={`/organization/${orgId}/hubs`}
                     className="text-xs text-muted-foreground hover:underline"
                   >
-                    +{compositions.length - 4} more
+                    +{hubs.length - 4} more
                   </Link>
                 )}
               </div>
@@ -205,7 +205,7 @@ export default function OrganizationDashboard() {
         </Card>
 
         {/* Services — recent preview tile */}
-        {hasCompositions && (
+        {hasHubs && (
           <Card className="lg:col-span-3">
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <CardTitle className="text-lg">Services</CardTitle>
@@ -232,7 +232,7 @@ export default function OrganizationDashboard() {
         )}
 
         {/* Clients — recent preview tile */}
-        {hasCompositions && (
+        {hasHubs && (
           <Card className="lg:col-span-3">
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <CardTitle className="text-lg">Clients</CardTitle>

@@ -1,0 +1,7 @@
+fragment HubDeviceCode on ManagementHubDeviceCode {
+  id
+  code 
+  manifest {
+    ...HubManifest
+  }
+}

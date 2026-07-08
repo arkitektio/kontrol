@@ -1,0 +1,8 @@
+fragment MeshDeviceCode on ManagementMeshDeviceCode {
+  id
+  code
+  requestedMachineName
+  machineName
+  description
+  denied
+}

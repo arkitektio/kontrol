@@ -27,7 +27,7 @@ fragment ServiceManifest on ManagementStagingServiceManifest {
 }
 
 
-fragment CompositionManifest on ManagementCompositionManifest {
+fragment HubManifest on ManagementHubManifest {
   identifier
   instances {
     manifest {
@@ -35,6 +35,17 @@ fragment CompositionManifest on ManagementCompositionManifest {
     }
     description
     identifier
+    aliases {
+      id
+      name
+      kind
+      scope
+      ssl
+      host
+      port
+      path
+      public
+    }
   }
   clients {
     manifest {

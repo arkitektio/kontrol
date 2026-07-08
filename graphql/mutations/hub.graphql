@@ -1,0 +1,10 @@
+
+mutation UpdateHub($input: UpdateHubInput!) {
+  updateHub(input: $input) {
+    ...Hub
+  }
+}
+
+mutation DeleteHub($input: DeleteHubInput!) {
+  deleteHub(input: $input) 
+}

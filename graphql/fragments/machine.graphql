@@ -8,5 +8,10 @@ fragment Machine on ManagementMachine {
     ephemeral
     lastSeen
     tags
+    magicDnsName
+    os
+    keyExpiry
+    authorized
+    isExternal
 }
 

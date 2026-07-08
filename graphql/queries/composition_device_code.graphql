@@ -1,6 +1,0 @@
-query CompositionDeviceCodeByCode($code: String!) {
-  compositionDeviceCodeByCode(code: $code) {
-    ...CompositionDeviceCode
-  }
-}
-

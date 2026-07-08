@@ -1,15 +1,15 @@
 import { Link, useParams } from "react-router-dom"
-import { useCompositionsQuery, useListKommunityPartnerQuery } from "../api/graphql"
+import { useHubsQuery, useListKommunityPartnerQuery } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { PageHeader } from "../components/PageHeader"
 import { Layers, ArrowRight, Server } from "lucide-react"
 
-export default function Compositions() {
+export default function Hubs() {
   const { orgId } = useParams<{ orgId: string }>()
 
-  const { data, loading, error } = useCompositionsQuery({
+  const { data, loading, error } = useHubsQuery({
     variables: { filters: { organization: orgId || undefined } },
     skip: !orgId
   })
@@ -21,7 +21,7 @@ export default function Compositions() {
   if (loading) return <div className="p-4">Loading...</div>
   if (error) return <div className="p-4">Error: {error.message}</div>
 
-  const compositions = data?.compositions || []
+  const hubs = data?.hubs || []
   const partners = partnersData?.kommunityPartners || []
 
   return (
@@ -32,7 +32,7 @@ export default function Compositions() {
         description="Pre-configured stacks of services and clients for this organization."
       />
 
-      {compositions.length === 0 ? (
+      {hubs.length === 0 ? (
         <div className="space-y-0">
           {/* Hero */}
           <div className="rounded-t-xl border border-b-0 bg-gradient-to-b from-primary/8 to-background px-8 pt-16 pb-10 flex flex-col items-center text-center">
@@ -103,14 +103,14 @@ export default function Compositions() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {compositions.map((composition) => (
-            <Link key={composition.name} to={`/organization/${orgId}/compositions/${composition.id}`}>
+          {hubs.map((hub) => (
+            <Link key={hub.name} to={`/organization/${orgId}/hubs/${hub.id}`}>
               <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <div className="flex items-center gap-2">
                     <Layers className="h-4 w-4 text-muted-foreground" />
                     <CardTitle className="text-sm font-medium">
-                      {composition.name}
+                      {hub.name}
                     </CardTitle>
                   </div>
                 </CardHeader>
@@ -118,25 +118,25 @@ export default function Compositions() {
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">
-                        {composition.instances.length} {composition.instances.length === 1 ? 'Service' : 'Services'}
+                        {hub.instances.length} {hub.instances.length === 1 ? 'Service' : 'Services'}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        {composition.clients.length} {composition.clients.length === 1 ? 'Client' : 'Clients'}
+                        {hub.clients.length} {hub.clients.length === 1 ? 'Client' : 'Clients'}
                       </Badge>
                     </div>
 
-                    {composition.instances.length > 0 && (
+                    {hub.instances.length > 0 && (
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Services:</p>
                         <div className="flex flex-col gap-1">
-                          {composition.instances.slice(0, 3).map((instance, idx) => (
+                          {hub.instances.slice(0, 3).map((instance, idx) => (
                             <p key={idx} className="text-xs font-medium truncate">
                               • {instance.identifier}
                             </p>
                           ))}
-                          {composition.instances.length > 3 && (
+                          {hub.instances.length > 3 && (
                             <p className="text-xs text-muted-foreground">
-                              +{composition.instances.length - 3} more
+                              +{hub.instances.length - 3} more
                             </p>
                           )}
                         </div>

@@ -57,9 +57,9 @@ export default function KommunityPartner() {
     ConnectKommunityPartnerMutation,
     ConnectKommunityPartnerMutationVariables
   >(ConnectKommunityPartnerDocument, {
-    // Reload the hub list so the new composition shows up (and the sidebar's
+    // Reload the hub list so the new hub shows up (and the sidebar's
     // "Connect a hub" call-to-action clears) before we navigate to it.
-    refetchQueries: ["Compositions"],
+    refetchQueries: ["Hubs"],
     awaitRefetchQueries: true,
   });
 
@@ -104,15 +104,15 @@ export default function KommunityPartner() {
         },
       });
 
-      const composition = result.data?.connectKommunityPartner;
-      if (!composition) {
+      const hub = result.data?.connectKommunityPartner;
+      if (!hub) {
         return;
       }
 
       toast.success(
-        `Connected ${partner.name} to ${organization?.name || composition.organization.name || "your organization"}.`,
+        `Connected ${partner.name} to ${organization?.name || hub.organization.name || "your organization"}.`,
       );
-      navigate(`/organization/${composition.organization.id}/compositions/${composition.id}`);
+      navigate(`/organization/${hub.organization.id}/hubs/${hub.id}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Partner connection failed.";
       setConnectError(message);

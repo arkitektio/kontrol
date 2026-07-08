@@ -49,7 +49,7 @@ export default function Deploy() {
                         <h3 className="text-xl font-bold mb-2">3. Apps resolve their dependencies</h3>
                         <p className="text-muted-foreground mb-4">
                             An App declares which services it needs. Lok binds those requirements to approved Service
-                            Instances — grouped into a <strong>Composition</strong> — so the App connects to real endpoints without hard-coding a single URL.
+                            Instances — grouped into a <strong>Hub</strong> — so the App connects to real endpoints without hard-coding a single URL.
                         </p>
                     </div>
                 </div>

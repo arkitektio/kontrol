@@ -10,6 +10,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -19,17 +20,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import * as z from "zod";
 import { useCreateOrganizationMutation } from "../api/graphql";
 import { DEFAULT_BRAND_HUE } from "@/lib/brand";
+import { SLUG_REGEX, slugifyName } from "@/lib/slug";
 
 const formSchema = z.object({
   name: z.string().min(1, "Organization name is required"),
+  slug: z
+    .string()
+    .min(1, "Handle is required")
+    .regex(
+      SLUG_REGEX,
+      "Lowercase letters, numbers and single hyphens only (e.g. 'my-organization').",
+    ),
   description: z.string().optional(),
   brandHue: z.number().min(0).max(360),
 });
+
+/** Pull a suggested handle out of a backend rejection like `Try 'the-real-acme'.` */
+const extractSuggestedSlug = (message: string): string | null => {
+  const match = message.match(/Try '([a-z0-9-]+)'/);
+  return match ? match[1] : null;
+};
 
 const HUE_GRADIENT =
   "linear-gradient(to right, hsl(0 70% 50%), hsl(60 70% 50%), hsl(120 70% 50%), hsl(180 70% 50%), hsl(240 70% 50%), hsl(300 70% 50%), hsl(360 70% 50%))";
@@ -56,27 +73,54 @@ export const CreateOrganizationDialog = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      slug: "",
       description: "",
       brandHue: DEFAULT_BRAND_HUE,
     },
   });
+
+  // Auto-derive the handle from the name while the user hasn't touched it, so the
+  // slug stays a clean preview of the name. Once they edit the handle directly we
+  // stop syncing and leave their value alone.
+  const slugDirty = useRef(false);
+  const name = form.watch("name");
+  useEffect(() => {
+    if (!slugDirty.current) {
+      form.setValue("slug", slugifyName(name), { shouldValidate: true });
+    }
+  }, [name, form]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     createOrganization({
       variables: {
         input: {
           name: values.name,
+          slug: values.slug,
           description: values.description || undefined,
           brandHue: values.brandHue,
         },
       },
     }).then((result) => {
       onOpenChange(false);
+      slugDirty.current = false;
       form.reset();
       const newOrg = result.data?.createOrganization;
-      if (newOrg) navigate(`/organization/${newOrg.id}`);
+      if (newOrg) {
+        toast.success("Organization created");
+        navigate(`/organization/${newOrg.id}`);
+      }
     }).catch((error) => {
-      console.error("Failed to create organization:", error);
+      const message: string =
+        error?.message ?? "Failed to create organization.";
+      // A taken handle carries a suggested alternative — prefill it (editable) so
+      // the user can tweak and resubmit.
+      const suggestion = extractSuggestedSlug(message);
+      if (suggestion) {
+        slugDirty.current = true;
+        form.setValue("slug", suggestion, { shouldValidate: true });
+        form.setError("slug", { type: "server", message });
+      }
+      toast.error(message);
     });
   };
 
@@ -100,6 +144,29 @@ export const CreateOrganizationDialog = ({
                   <FormControl>
                     <Input placeholder="My Organization" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Handle</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="my-organization"
+                      {...field}
+                      onChange={(e) => {
+                        slugDirty.current = true;
+                        field.onChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Your organization&apos;s URL handle: @{field.value || "…"}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

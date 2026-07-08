@@ -1,0 +1,12 @@
+query Hubs($filters: ManagementHubFilter, $ordering: [ManagementHubOrdering!], $pagination: OffsetPaginationInput) {
+  hubs(filters: $filters, ordering: $ordering, pagination: $pagination) {
+    ...ListHub
+  }
+}
+
+
+query GetHub($id: ID!) {
+  hub(id: $id) {
+    ...Hub
+  }
+}

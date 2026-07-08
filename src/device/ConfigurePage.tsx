@@ -3,7 +3,7 @@ import {
   useDeviceCodeByCodeQuery,
   useAcceptDeviceCodeMutation,
   useDeclineDeviceCodeMutation,
-  useCompositionsQuery,
+  useHubsQuery,
   useMeQuery,
   useValidateDeviceCodeQuery,
 } from "@/api/graphql";
@@ -24,7 +24,7 @@ import { useActiveOrganization } from "@/hooks/useActiveOrganization";
 import { BRAND_HUE_KEY, DEFAULT_BRAND_HUE } from "@/lib/brand";
 
 interface ConfigureFormData {
-  composition: string;
+  hub: string;
 }
 
 const KIND_ICON = { development: Smartphone, desktop: Monitor, website: Globe } as const;
@@ -42,20 +42,20 @@ function WorkspaceRow({ org, hub }: { org: string; hub: string }) {
 export function ConfigurePage() {
   const { deviceCode: code } = useParams<{ deviceCode: string }>();
   const { control, watch, setValue } = useForm<ConfigureFormData>();
-  const selectedComposition = watch("composition");
+  const selectedHub = watch("hub");
 
   const { data: deviceCodeData, loading, error } = useDeviceCodeByCodeQuery({
     variables: { code: code || "" },
     skip: !code,
   });
-  const { data: compData } = useCompositionsQuery();
+  const { data: compData } = useHubsQuery();
   const { data: meData } = useMeQuery();
   const { data: validationData, loading: validating } = useValidateDeviceCodeQuery({
     variables: {
       deviceCode: deviceCodeData?.deviceCodeByCode?.id || "",
-      composition: selectedComposition,
+      hub: selectedHub,
     },
-    skip: !deviceCodeData?.deviceCodeByCode?.id || !selectedComposition,
+    skip: !deviceCodeData?.deviceCodeByCode?.id || !selectedHub,
   });
 
   const [acceptDeviceCode] = useAcceptDeviceCodeMutation();
@@ -69,16 +69,16 @@ export function ConfigurePage() {
   const { effectiveHueForOrg } = useActiveOrganization();
 
   useEffect(() => {
-    if (compData?.compositions?.length && !selectedComposition) {
-      setValue("composition", compData.compositions[0].id);
+    if (compData?.hubs?.length && !selectedHub) {
+      setValue("hub", compData.hubs[0].id);
     }
-  }, [compData, selectedComposition, setValue]);
+  }, [compData, selectedHub, setValue]);
 
   // The workspace lives in an organization; tint the whole page with that org's
   // membership brand hue (the member's personal hue → the org default → the
   // neutral brand hue) so the authorization screen wears the workspace's colours.
   const selectedComp =
-    compData?.compositions?.find((c) => c.id === selectedComposition) ?? null;
+    compData?.hubs?.find((c) => c.id === selectedHub) ?? null;
   const activeHue = selectedComp
     ? effectiveHueForOrg(selectedComp.organization.id) ?? DEFAULT_BRAND_HUE
     : null;
@@ -120,7 +120,7 @@ export function ConfigurePage() {
   const mappingByKey = Object.fromEntries(
     (validationData?.validateDeviceCode?.mappings ?? []).map((m) => [m.key, m.serviceInstance ?? null])
   );
-  const hasValidation = !!validationData && !!selectedComposition && !validating;
+  const hasValidation = !!validationData && !!selectedHub && !validating;
   const canAllow = hasValidation && validationData!.validateDeviceCode.valid;
 
   // Devices are keyed per organization. `existingDevice` is only known once validation
@@ -138,13 +138,13 @@ export function ConfigurePage() {
     });
 
   const onAllow = async () => {
-    if (!selectedComposition) return;
+    if (!selectedHub) return;
     try {
       const result = await acceptDeviceCode({
         variables: {
           input: {
             deviceCode: deviceCode.id,
-            composition: selectedComposition,
+            hub: selectedHub,
             declinedRequirements: Array.from(declinedRequirements),
             // Only send a name when a new device will actually be created; for an
             // existing device the backend ignores it, so don't imply otherwise.
@@ -377,12 +377,12 @@ export function ConfigurePage() {
 
             {/* Where to assign + actions */}
             <div className="space-y-4 border-t pt-5">
-              {compData?.compositions?.length ? (
+              {compData?.hubs?.length ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Assign to hub</p>
                   <Controller
                     control={control}
-                    name="composition"
+                    name="hub"
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger className="h-auto w-full py-2" aria-label="Hub">
@@ -396,7 +396,7 @@ export function ConfigurePage() {
                           )}
                         </SelectTrigger>
                         <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
-                          {compData.compositions.map((c) => (
+                          {compData.hubs.map((c) => (
                             <SelectItem key={c.id} value={c.id} className="py-2">
                               <WorkspaceRow
                                 org={c.organization.name || "Organization"}

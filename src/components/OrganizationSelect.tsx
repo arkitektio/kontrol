@@ -89,7 +89,7 @@ export function OrganizationSelect({
           <span className="text-muted-foreground">{placeholder}</span>
         )}
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
         {organizations.map((org) => (
           <SelectItem key={org.id} value={org.id} className="py-2">
             <OrgRow org={org} hue={hueFor(org)} />

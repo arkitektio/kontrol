@@ -3,7 +3,7 @@ fragment ListRedeemToken on ManagementRedeemToken {
   token
   createdAt
   expiresAt
-  composition {
+  hub {
     id
     name
     organization {

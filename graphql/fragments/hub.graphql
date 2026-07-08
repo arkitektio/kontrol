@@ -1,4 +1,4 @@
-fragment ListComposition  on ManagementComposition {
+fragment ListHub  on ManagementHub {
   id
   name 
   organization {
@@ -13,7 +13,7 @@ fragment ListComposition  on ManagementComposition {
   }
 }
 
-fragment Composition on ManagementComposition {
+fragment Hub on ManagementHub {
   id
   name 
   organization {

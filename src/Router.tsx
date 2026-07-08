@@ -107,14 +107,15 @@ const Releases = lazyDefault(() => import('./releases/Releases'))
 const ServiceRelease = lazyDefault(() => import('./service-releases/ServiceRelease'))
 const ServiceReleases = lazyDefault(() => import('./service-releases/ServiceReleases'))
 const ServiceConfigurePage = lazyNamed(() => import('./service/ServiceConfigurePage'), 'ServiceConfigurePage')
-const CompositionConfigurePage = lazyNamed(() => import('./composition/CompositionConfigurePage'), 'CompositionConfigurePage')
-const Compositions = lazyDefault(() => import('./compositions/Compositions'))
-const ConnectHub = lazyDefault(() => import('./compositions/ConnectHub'))
-const Composition = lazyDefault(() => import('./compositions/Composition'))
-const HubOverview = lazyDefault(() => import('./compositions/hub/HubOverview'))
-const HubServices = lazyDefault(() => import('./compositions/hub/HubServices'))
-const HubClients = lazyDefault(() => import('./compositions/hub/HubClients'))
-const HubRedeemTokens = lazyDefault(() => import('./compositions/hub/HubRedeemTokens'))
+const HubConfigurePage = lazyNamed(() => import('./hub/HubConfigurePage'), 'HubConfigurePage')
+const MeshConfigurePage = lazyNamed(() => import('./mesh/MeshConfigurePage'), 'MeshConfigurePage')
+const Hubs = lazyDefault(() => import('./hubs/Hubs'))
+const ConnectHub = lazyDefault(() => import('./hubs/ConnectHub'))
+const Hub = lazyDefault(() => import('./hubs/Hub'))
+const HubOverview = lazyDefault(() => import('./hubs/hub/HubOverview'))
+const HubServices = lazyDefault(() => import('./hubs/hub/HubServices'))
+const HubClients = lazyDefault(() => import('./hubs/hub/HubClients'))
+const HubRedeemTokens = lazyDefault(() => import('./hubs/hub/HubRedeemTokens'))
 const Service = lazyDefault(() => import('./services/Service'))
 const ServiceInstance = lazyDefault(() => import('./services/ServiceInstance'))
 const ServiceInstanceMapping = lazyDefault(() => import('./services/ServiceInstanceMapping'))
@@ -360,8 +361,12 @@ function createRouter() {
               element: <AuthenticatedRoute><ServiceConfigurePage /></AuthenticatedRoute>,
             },
             {
-              path: '/compositionconfigure/:compositionCode',
-              element: <AuthenticatedRoute><CompositionConfigurePage /></AuthenticatedRoute>,
+              path: '/hubconfigure/:hubCode',
+              element: <AuthenticatedRoute><HubConfigurePage /></AuthenticatedRoute>,
+            },
+            {
+              path: '/meshconfigure/:meshCode',
+              element: <AuthenticatedRoute><MeshConfigurePage /></AuthenticatedRoute>,
             },
             {
               // Public/preview-capable: anonymous visitors can see a public invite
@@ -448,16 +453,16 @@ function createRouter() {
               element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>,
             },
             {
-              path: 'compositions',
-              element: <AuthenticatedRoute><Compositions /></AuthenticatedRoute>,
+              path: 'hubs',
+              element: <AuthenticatedRoute><Hubs /></AuthenticatedRoute>,
             },
             {
               path: 'connect-hub',
               element: <AuthenticatedRoute><ConnectHub /></AuthenticatedRoute>,
             },
             {
-              path: 'compositions/:name',
-              element: <AuthenticatedRoute><Composition /></AuthenticatedRoute>,
+              path: 'hubs/:name',
+              element: <AuthenticatedRoute><Hub /></AuthenticatedRoute>,
               children: [
                 {
                   index: true,

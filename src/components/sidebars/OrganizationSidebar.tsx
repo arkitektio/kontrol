@@ -1,7 +1,7 @@
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroupLabel } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Link, useLocation } from "react-router-dom"
-import { useSidebarOrganizationQuery, useCompositionsQuery } from "@/api/graphql"
+import { useSidebarOrganizationQuery, useHubsQuery } from "@/api/graphql"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug, Tags } from "lucide-react"
 
@@ -14,11 +14,11 @@ export function OrganizationSidebar() {
         skip: !activeOrgId,
     })
 
-    const { data: compData } = useCompositionsQuery({
+    const { data: compData } = useHubsQuery({
         variables: { filters: { organization: activeOrgId || undefined } },
         skip: !activeOrgId,
     })
-    const hubs = compData?.compositions ?? []
+    const hubs = compData?.hubs ?? []
 
     const org = data?.organization
 
@@ -55,7 +55,7 @@ export function OrganizationSidebar() {
     ]
 
     const resourceItems = [
-        { to: `${base}/compositions`, label: "Hubs", icon: Layers },
+        { to: `${base}/hubs`, label: "Hubs", icon: Layers },
         { to: `${base}/mesh`, label: "Mesh", icon: Network },
         { to: `${base}/devices`, label: "Devices", icon: Smartphone, exact: true },
         { to: `${base}/devices/groups`, label: "Device Groups", icon: Boxes },
@@ -124,7 +124,7 @@ export function OrganizationSidebar() {
         )}
 
         {hubs.map((hub, index) => {
-          const hubPath = `${base}/compositions/${hub.id}`
+          const hubPath = `${base}/hubs/${hub.id}`
           const hubIsActive = location.pathname === hubPath || location.pathname.startsWith(`${hubPath}/`)
           const hubLinks = [
             { label: "Overview", to: hubPath, exact: true, icon: LayoutDashboard },

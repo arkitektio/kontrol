@@ -3,7 +3,7 @@ import { Check, Copy } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { useCompositionsQuery } from "@/api/graphql"
+import { useHubsQuery } from "@/api/graphql"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -23,7 +23,7 @@ const CREATE_REDEEM_TOKEN_MUTATION = gql`
       token
       createdAt
       expiresAt
-      composition {
+      hub {
         id
         name
         organization {
@@ -48,7 +48,7 @@ type CreatedRedeemToken = {
   token: string
   createdAt: string
   expiresAt?: string | null
-  composition: {
+  hub: {
     id: string
     name: string
     organization: {
@@ -72,7 +72,7 @@ type CreateRedeemTokenData = {
 
 type CreateRedeemTokenVars = {
   input: {
-    composition: string
+    hub: string
     expiresInDays?: number | null
   }
 }
@@ -82,8 +82,8 @@ interface CreateRedeemTokenDialogProps {
   onOpenChange: (open: boolean) => void
   organizationId: string
   // When provided, the token is created for this hub and the picker is hidden.
-  compositionId?: string
-  compositionName?: string
+  hubId?: string
+  hubName?: string
   onCreated?: () => void
 }
 
@@ -91,20 +91,20 @@ export function CreateRedeemTokenDialog({
   open,
   onOpenChange,
   organizationId,
-  compositionId,
-  compositionName,
+  hubId,
+  hubName,
   onCreated,
 }: CreateRedeemTokenDialogProps) {
-  const [selectedCompositionId, setSelectedCompositionId] = useState("")
+  const [selectedHubId, setSelectedHubId] = useState("")
   const [expiresInDays, setExpiresInDays] = useState("7")
   const [createdToken, setCreatedToken] = useState<CreatedRedeemToken | null>(null)
   const [createError, setCreateError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
   // A pre-scoped hub wins; otherwise the user picks from the org's hubs.
-  const effectiveCompositionId = compositionId || selectedCompositionId
+  const effectiveHubId = hubId || selectedHubId
 
-  const { data, loading: loadingCompositions, error: compositionsError } = useCompositionsQuery({
+  const { data, loading: loadingHubs, error: hubsError } = useHubsQuery({
     variables: {
       filters: {
         organization: organizationId,
@@ -113,23 +113,23 @@ export function CreateRedeemTokenDialog({
         limit: 10,
       },
     },
-    skip: !open || !organizationId || !!compositionId,
+    skip: !open || !organizationId || !!hubId,
   })
 
   const [createRedeemToken, { loading: creating }] = useMutation<CreateRedeemTokenData, CreateRedeemTokenVars>(
     CREATE_REDEEM_TOKEN_MUTATION,
   )
 
-  const compositions = data?.compositions ?? []
+  const hubs = data?.hubs ?? []
 
   useEffect(() => {
-    if (open && !selectedCompositionId && compositions.length > 0) {
-      setSelectedCompositionId(compositions[0].id)
+    if (open && !selectedHubId && hubs.length > 0) {
+      setSelectedHubId(hubs[0].id)
     }
-  }, [compositions, open, selectedCompositionId])
+  }, [hubs, open, selectedHubId])
 
   const resetState = () => {
-    setSelectedCompositionId("")
+    setSelectedHubId("")
     setExpiresInDays("7")
     setCreatedToken(null)
     setCreateError(null)
@@ -144,7 +144,7 @@ export function CreateRedeemTokenDialog({
   }
 
   const handleCreate = async () => {
-    if (!effectiveCompositionId) {
+    if (!effectiveHubId) {
       setCreateError("Please select a hub")
       return
     }
@@ -156,7 +156,7 @@ export function CreateRedeemTokenDialog({
       const result = await createRedeemToken({
         variables: {
           input: {
-            composition: effectiveCompositionId,
+            hub: effectiveHubId,
             expiresInDays: expiresValue,
           },
         },
@@ -193,7 +193,7 @@ export function CreateRedeemTokenDialog({
           <DialogDescription>
             {createdToken
               ? "Copy this token and use it when redeeming a client."
-              : compositionId
+              : hubId
                 ? "Create a redeem token for this hub."
                 : "Create a redeem token for one of this organization's hubs."}
           </DialogDescription>
@@ -211,7 +211,7 @@ export function CreateRedeemTokenDialog({
               </div>
             </div>
             <div className="rounded-md border p-3 text-sm text-muted-foreground">
-              <div>Hub: {createdToken.composition.name}</div>
+              <div>Hub: {createdToken.hub.name}</div>
               <div>
                 Expires: {createdToken.expiresAt ? new Date(createdToken.expiresAt).toLocaleString() : "Never"}
               </div>
@@ -224,40 +224,40 @@ export function CreateRedeemTokenDialog({
           </div>
         ) : (
           <div className="space-y-4">
-            {compositionId ? (
+            {hubId ? (
               <div className="grid gap-2">
                 <Label>Hub</Label>
                 <div className="rounded-md border px-3 py-2 text-sm">
-                  {compositionName || "This hub"}
+                  {hubName || "This hub"}
                 </div>
               </div>
             ) : (
               <div className="grid gap-2">
-                <Label htmlFor="composition">Hub</Label>
+                <Label htmlFor="hub">Hub</Label>
                 <select
-                  id="composition"
+                  id="hub"
                   className="border-input bg-background ring-offset-background focus-visible:ring-ring/50 flex h-9 w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                  value={selectedCompositionId}
-                  disabled={loadingCompositions || compositions.length === 0}
-                  onChange={(event) => setSelectedCompositionId(event.target.value)}
+                  value={selectedHubId}
+                  disabled={loadingHubs || hubs.length === 0}
+                  onChange={(event) => setSelectedHubId(event.target.value)}
                 >
                   <option value="" disabled>
-                    {loadingCompositions
+                    {loadingHubs
                       ? "Loading hubs..."
-                      : compositions.length === 0
+                      : hubs.length === 0
                         ? "No hubs available"
                         : "Select a hub"}
                   </option>
-                    {compositions.map((composition) => (
-                      <option key={composition.id} value={composition.id}>
-                        {composition.name}
+                    {hubs.map((hub) => (
+                      <option key={hub.id} value={hub.id}>
+                        {hub.name}
                       </option>
                     ))}
                 </select>
-                {compositionsError ? (
-                  <p className="text-sm text-destructive">Failed to load hubs: {compositionsError.message}</p>
+                {hubsError ? (
+                  <p className="text-sm text-destructive">Failed to load hubs: {hubsError.message}</p>
                 ) : null}
-                {!loadingCompositions && !compositionsError && compositions.length === 0 ? (
+                {!loadingHubs && !hubsError && hubs.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No hubs were found for this organization.</p>
                 ) : null}
               </div>
@@ -281,7 +281,7 @@ export function CreateRedeemTokenDialog({
               <Button type="button" variant="outline" onClick={() => handleClose(false)}>
                 Cancel
               </Button>
-              <Button type="button" disabled={creating || loadingCompositions} onClick={handleCreate}>
+              <Button type="button" disabled={creating || loadingHubs} onClick={handleCreate}>
                 {creating ? "Creating..." : "Create token"}
               </Button>
             </DialogFooter>

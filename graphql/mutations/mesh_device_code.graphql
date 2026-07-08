@@ -1,0 +1,11 @@
+mutation AcceptMeshDeviceCode($input: AcceptMeshDeviceCodeInput!) {
+  acceptMeshDeviceCode(input: $input) {
+    ...MeshDeviceCode
+  }
+}
+
+mutation DeclineMeshDeviceCode($input: DeclineMeshDeviceCodeInput!) {
+  declineMeshDeviceCode(input: $input) {
+    ...MeshDeviceCode
+  }
+}

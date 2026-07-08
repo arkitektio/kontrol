@@ -14,7 +14,7 @@ export default function HubRedeemTokens() {
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false)
   const [copiedTokenId, setCopiedTokenId] = useState<string | null>(null)
 
-  const filters = { organization: orgId, composition: name }
+  const filters = { organization: orgId, hub: name }
   const { data, loading, error, refetch } = useRedeemTokensQuery({
     variables: { filters, pagination: { limit: 250 } },
     skip: !name,
@@ -79,7 +79,7 @@ export default function HubRedeemTokens() {
         open={tokenDialogOpen}
         onOpenChange={setTokenDialogOpen}
         organizationId={orgId!}
-        compositionId={name!}
+        hubId={name!}
         onCreated={() => refetch()}
       />
     </section>

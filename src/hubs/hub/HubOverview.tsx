@@ -1,9 +1,9 @@
 import { Link, useParams, useNavigate } from "react-router-dom"
 import {
-  useGetCompositionQuery,
-  useDeleteCompositionMutation,
-  useUpdateCompositionMutation,
-  CompositionsDocument,
+  useGetHubQuery,
+  useDeleteHubMutation,
+  useUpdateHubMutation,
+  HubsDocument,
 } from "../../api/graphql"
 import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
@@ -36,32 +36,32 @@ import { useState } from "react"
 export default function HubOverview() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
   const navigate = useNavigate()
-  const { data } = useGetCompositionQuery({ variables: { id: name! }, skip: !name })
-  const composition = data?.composition
+  const { data } = useGetHubQuery({ variables: { id: name! }, skip: !name })
+  const hub = data?.hub
 
-  const [deleteComposition] = useDeleteCompositionMutation({
-    refetchQueries: [{ query: CompositionsDocument, variables: { filters: { organization: orgId || undefined } } }],
+  const [deleteHub] = useDeleteHubMutation({
+    refetchQueries: [{ query: HubsDocument, variables: { filters: { organization: orgId || undefined } } }],
   })
-  const [updateComposition] = useUpdateCompositionMutation()
+  const [updateHub] = useUpdateHubMutation()
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
   const [newName, setNewName] = useState("")
 
-  if (!composition) return null
+  if (!hub) return null
 
-  const base = `/organization/${orgId}/compositions/${name}`
+  const base = `/organization/${orgId}/hubs/${name}`
   const sections = [
     {
       to: `${base}/services`,
       icon: Server,
       label: "Services",
-      count: composition.instances.length,
+      count: hub.instances.length,
       description: "Service instances deployed in this hub.",
     },
     {
       to: `${base}/clients`,
       icon: Box,
       label: "Clients",
-      count: composition.clients.length,
+      count: hub.clients.length,
       description: "Apps and clients connected to this hub.",
     },
     {
@@ -74,21 +74,21 @@ export default function HubOverview() {
 
   const handleDelete = async () => {
     try {
-      await deleteComposition({ variables: { input: { id: composition.id } } })
-      navigate(`/organization/${orgId}/compositions`)
+      await deleteHub({ variables: { input: { id: hub.id } } })
+      navigate(`/organization/${orgId}/hubs`)
     } catch (e) {
-      console.error("Error deleting composition:", e)
+      console.error("Error deleting hub:", e)
     }
   }
 
   const handleUpdate = async () => {
     if (!newName.trim()) return
     try {
-      await updateComposition({ variables: { input: { id: composition.id, name: newName.trim() } } })
+      await updateHub({ variables: { input: { id: hub.id, name: newName.trim() } } })
       setUpdateDialogOpen(false)
-      navigate(`/organization/${orgId}/compositions/${encodeURIComponent(newName.trim())}`)
+      navigate(`/organization/${orgId}/hubs/${encodeURIComponent(newName.trim())}`)
     } catch (e) {
-      console.error("Error updating composition:", e)
+      console.error("Error updating hub:", e)
     }
   }
 
@@ -101,14 +101,14 @@ export default function HubOverview() {
             <Layers className="h-7 w-7" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">{composition.name}</h1>
-            <p className="text-sm text-muted-foreground">{composition.organization.name}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{hub.name}</h1>
+            <p className="text-sm text-muted-foreground">{hub.organization.name}</p>
             <div className="flex gap-2 pt-1">
               <Badge variant="outline">
-                {composition.instances.length} {composition.instances.length === 1 ? "Service" : "Services"}
+                {hub.instances.length} {hub.instances.length === 1 ? "Service" : "Services"}
               </Badge>
               <Badge variant="outline">
-                {composition.clients.length} {composition.clients.length === 1 ? "Client" : "Clients"}
+                {hub.clients.length} {hub.clients.length === 1 ? "Client" : "Clients"}
               </Badge>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function HubOverview() {
         <div className="flex gap-2">
           <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" onClick={() => setNewName(composition.name)}>
+              <Button variant="outline" size="sm" onClick={() => setNewName(hub.name)}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Rename
               </Button>

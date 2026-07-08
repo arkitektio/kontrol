@@ -1,0 +1,5 @@
+query MeshDeviceCodeByCode($code: String!) {
+  meshDeviceCodeByCode(code: $code) {
+    ...MeshDeviceCode
+  }
+}

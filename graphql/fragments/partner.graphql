@@ -12,7 +12,7 @@ fragment KommunityPartner on ManagementKommunityPartner {
   partnerKind
   kommunityKind
   autoConfigure
-  preconfiguredComposition
+  preconfiguredHub
 }
 
 fragment ListKommunityPartner on ManagementKommunityPartner {

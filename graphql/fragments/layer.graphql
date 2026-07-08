@@ -2,6 +2,8 @@ fragment Layer on ManagementLayer {
   id
   name
   description
+  magicDnsEnabled
+  httpsEnabled
   logo {
     presignedUrl
   }

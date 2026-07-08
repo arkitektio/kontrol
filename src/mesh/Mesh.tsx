@@ -1,15 +1,22 @@
 import { Link, useParams } from "react-router-dom"
-import { useLayersQuery, useDetailLayerQuery, useCreateIonscaleAuthKeyMutation } from "../api/graphql"
+import {
+  useLayersQuery,
+  useDetailLayerQuery,
+  useCreateIonscaleAuthKeyMutation,
+  useUpdateIonscaleLayerMutation,
+} from "../api/graphql"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
 import { PageHeader } from "../components/PageHeader"
-import { Network, Key, Plus, Monitor, Info } from "lucide-react"
+import { Network, Key, Plus, Monitor, Info, Globe, ShieldCheck } from "lucide-react"
 import { useState } from "react"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import { Switch } from "../components/ui/switch"
 import { Checkbox } from "../components/ui/checkbox"
 import { Badge } from "../components/ui/badge"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -48,6 +55,10 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
     refetchQueries: ["DetailLayer"],
   })
 
+  const [updateLayer, { loading: updatingDns }] = useUpdateIonscaleLayerMutation({
+    refetchQueries: ["DetailLayer"],
+  })
+
   const [createKeyDialogOpen, setCreateKeyDialogOpen] = useState(false)
   const [newKeyEphemeral, setNewKeyEphemeral] = useState(false)
   const [newKeyTags, setNewKeyTags] = useState("")
@@ -77,6 +88,24 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
     }
   }
 
+  // Toggling HTTPS/MagicDNS pushes the full desired DNS state to ionscale.
+  // HTTPS certs require MagicDNS (the cert domain *is* the MagicDNS name), so
+  // turning MagicDNS off also turns HTTPS off. The backend enforces this too.
+  const handleDnsChange = async (
+    patch: { magicDns?: boolean; httpsCerts?: boolean },
+  ) => {
+    const magicDns = patch.magicDns ?? mesh.magicDnsEnabled
+    const httpsCerts = patch.magicDns === false ? false : patch.httpsCerts ?? mesh.httpsEnabled
+    try {
+      await updateLayer({
+        variables: { input: { id: mesh.id, magicDns, httpsCerts } },
+      })
+      toast.success("Mesh network settings updated.")
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update network settings.")
+    }
+  }
+
   return (
     <>
       {/* Header */}
@@ -85,6 +114,49 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
         title="Mesh"
         description="The private WireGuard network for this organization. Clients opt in to join it."
       />
+
+      {/* Network settings */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+          <Globe className="h-4 w-4" /> Network settings
+        </h3>
+        <Card className="p-4 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="magic-dns" className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-muted-foreground" /> MagicDNS
+              </Label>
+              <p className="text-xs text-muted-foreground max-w-md">
+                Machines on this mesh reach each other by name instead of raw
+                Tailscale IPs.
+              </p>
+            </div>
+            <Switch
+              id="magic-dns"
+              checked={mesh.magicDnsEnabled}
+              disabled={updatingDns}
+              onCheckedChange={(checked) => handleDnsChange({ magicDns: checked })}
+            />
+          </div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="https-certs" className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" /> HTTPS certificates
+              </Label>
+              <p className="text-xs text-muted-foreground max-w-md">
+                Provision TLS certificates for services on the mesh. Requires
+                MagicDNS.
+              </p>
+            </div>
+            <Switch
+              id="https-certs"
+              checked={mesh.httpsEnabled}
+              disabled={updatingDns || !mesh.magicDnsEnabled}
+              onCheckedChange={(checked) => handleDnsChange({ httpsCerts: checked })}
+            />
+          </div>
+        </Card>
+      </section>
 
       {/* Machines */}
       <section className="space-y-3">
@@ -97,6 +169,11 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
             <Link key={machine.id} to={`/organization/${orgId}/mesh/machines/${machine.id}`} className="block">
               <Card className="p-4 hover:bg-muted/50 transition-colors">
                 <div className="font-medium truncate">{machine.name}</div>
+                {machine.magicDnsName && (
+                  <div className="text-xs font-mono text-muted-foreground truncate" title={machine.magicDnsName}>
+                    {machine.magicDnsName}
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground">{machine.ipv4}</div>
                 <div className="text-xs text-muted-foreground">{machine.ipv6}</div>
               </Card>
