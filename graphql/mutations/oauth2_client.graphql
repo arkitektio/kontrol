@@ -1,4 +1,0 @@
-mutation AcceptAuthorizeCode($input: AcceptAuthorizeCodeInput!) {
-  acceptAuthorizeCode(input: $input) 
-}
-

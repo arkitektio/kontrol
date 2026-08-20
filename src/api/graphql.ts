@@ -30,15 +30,6 @@ export type Scalars = {
   _Any: { input: any; output: any; }
 };
 
-export type AcceptAuthorizeCodeInput = {
-  clientId: Scalars['String']['input'];
-  nonce?: InputMaybe<Scalars['String']['input']>;
-  organization: Scalars['String']['input'];
-  redirectUri: Scalars['String']['input'];
-  scope: Scalars['String']['input'];
-  state: Scalars['String']['input'];
-};
-
 export type AcceptDeviceCodeInput = {
   declinedRequirements?: Array<Scalars['String']['input']>;
   deviceCode: Scalars['ID']['input'];
@@ -65,17 +56,12 @@ export type AcceptMeshDeviceCodeInput = {
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
-export type AcceptServiceDeviceCodeInput = {
-  deviceCode: Scalars['ID']['input'];
-  organization: Scalars['ID']['input'];
-};
-
 export type AddDeviceToGroupInput = {
   device: Scalars['ID']['input'];
   deviceGroup: Scalars['ID']['input'];
 };
 
-/** App(id, name, identifier, logo) */
+/** App(id, name, identifier, organization, logo) */
 export type AppFilter = {
   AND?: InputMaybe<AppFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -171,18 +157,14 @@ export type CreateRoleSetInput = {
   roles?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
-export type DeclineAuthorizeCodeInput = {
-  clientId: Scalars['String']['input'];
-  redirectUri: Scalars['String']['input'];
-  state: Scalars['String']['input'];
-};
-
 export type DeclineDeviceCodeInput = {
+  /** The code the device displayed. Proves the caller was actually shown this enrolment; without it, a guessed id is enough to deny someone else's. Optional only until clients are updated to send it. */
   code?: InputMaybe<Scalars['String']['input']>;
   deviceCode: Scalars['ID']['input'];
 };
 
 export type DeclineHubDeviceCodeInput = {
+  /** The code the device displayed. Proves the caller was actually shown this enrolment; without it, a guessed id is enough to deny someone else's. Optional only until clients are updated to send it. */
   code?: InputMaybe<Scalars['String']['input']>;
   deviceCode: Scalars['ID']['input'];
 };
@@ -192,11 +174,7 @@ export type DeclineInviteInput = {
 };
 
 export type DeclineMeshDeviceCodeInput = {
-  code?: InputMaybe<Scalars['String']['input']>;
-  deviceCode: Scalars['ID']['input'];
-};
-
-export type DeclineServiceDeviceCodeInput = {
+  /** The code the machine displayed. Proves the caller was actually shown this join request; without it, a guessed id is enough to deny someone else's. Optional only until clients are updated to send it. */
   code?: InputMaybe<Scalars['String']['input']>;
   deviceCode: Scalars['ID']['input'];
 };
@@ -328,11 +306,9 @@ export type ManagementClient = {
   role: Scalars['String']['output'];
   /** The scopes that are granted to this client. */
   scopes: Array<ManagementScope>;
-  /** The configuration of the client. This is the configuration that will be sent to the client. It should never contain sensitive information. */
-  token: Scalars['String']['output'];
   /** The aliases that are used by this client. */
   usedAliases: Array<ManagementUsedAlias>;
-  /** If the client is a DEVELOPMENT client, which requires no further authentication, this is the user that is authenticated with the client. */
+  /** The user this client acts for (derived from its membership). */
   user?: Maybe<ManagementUser>;
 };
 
@@ -387,7 +363,24 @@ export type ManagementClientUsedAliasesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Client(id, hub, functional, name, release, oauth2_client, kind, role, user, organization, membership, redirect_uris, public, token, node, public_sources, tenant, created_at, requirements_hash, statuses, logo, last_reported_at, last_healthy_report, manifest) */
+/**
+ * The one client model: every OAuth2 principal is a row here.
+ *
+ * Kinds of rows and their lifecycle:
+ *
+ * - **App clients** (`development`/`website`/`desktop`): the row is created by
+ *   dynamic registration at ``/o/app-authorization/`` with identity fields
+ *   only; human approval *binds* it (membership, organization, release, hub,
+ *   mappings, scope). ``membership`` null == not yet approved.
+ * - **Hub identities** (`hub`): same lifecycle via ``/o/hub-authorization/``;
+ *   the created ``Hub`` links back via ``Hub.client`` (reverse:
+ *   ``client.hub_identity``).
+ * - **Relying parties** (`relying_party`): confidential OIDC clients
+ *   provisioned from config by ``ensureopenid``; global (no organization).
+ *
+ * Implements authlib's ``ClientMixin`` directly — there is no separate
+ * OAuth2 client table anymore.
+ */
 export type ManagementClientFilter = {
   AND?: InputMaybe<ManagementClientFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -456,19 +449,19 @@ export type ManagementDeviceServiceInstancesArgs = {
 /** A DeviceCode is used for the device code flow for client authentication. */
 export type ManagementDeviceCode = {
   __typename?: 'ManagementDeviceCode';
+  /** The (bound) client this code was accepted into. Null while pending — the staged registration exists but is not approved yet. */
   client?: Maybe<ManagementClient>;
   code: Scalars['String']['output'];
   createdAt: Scalars['DateTime']['output'];
   denied: Scalars['Boolean']['output'];
   expiresAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
-  /** The kind of staging client */
+  /** The requested client kind (written onto the staged client at registration) */
   stagingKind: Scalars['String']['output'];
   /** The staging manifest for this device code */
   stagingManifest?: Maybe<ManagementStagingManifest>;
   /** Whether this device code is for a public client */
   stagingPublic: Scalars['Boolean']['output'];
-  user?: Maybe<ManagementUser>;
 };
 
 /** Device(id, node_id, name, organization) */
@@ -634,23 +627,21 @@ export type ManagementHubInstancesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** A HubDeviceCode is used for the device code flow for hubs. */
+/** A HubDeviceCode is a hub-kind staged authorization (unified DeviceCode model). */
 export type ManagementHubDeviceCode = {
   __typename?: 'ManagementHubDeviceCode';
   code: Scalars['String']['output'];
-  /** @deprecated Renamed to `hub`. Use `hub` instead. */
-  composition?: Maybe<ManagementHub>;
   createdAt: Scalars['DateTime']['output'];
   denied: Scalars['Boolean']['output'];
   expiresAt: Scalars['DateTime']['output'];
+  /** The hub this code was accepted into. Null while pending. */
   hub?: Maybe<ManagementHub>;
   id: Scalars['ID']['output'];
   /** The hub manifest for this device code */
   manifest?: Maybe<ManagementHubManifest>;
-  user?: Maybe<ManagementUser>;
 };
 
-/** Hub(id, name, organization, identifier, description, creator, token, auth_key) */
+/** Hub(id, name, organization, identifier, description, creator, client, token, auth_key) */
 export type ManagementHubFilter = {
   AND?: InputMaybe<ManagementHubFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1038,16 +1029,15 @@ export type ManagementMeshDeviceCode = {
   user?: Maybe<ManagementUser>;
 };
 
-/** An Organization is a group of users that can work together on a project. */
+/** The OAuth2 identity view of a (unified) client — what the consent page needs to display. */
 export type ManagementOAuth2Client = {
   __typename?: 'ManagementOAuth2Client';
-  authorizationGrantType: Scalars['String']['output'];
   clientId: Scalars['String']['output'];
-  clientType: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  /** What kind of principal this client is. */
+  kind: Scalars['String']['output'];
   name: Scalars['String']['output'];
   redirectUris: Scalars['String']['output'];
-  skipAuthorization: Scalars['Boolean']['output'];
 };
 
 /**
@@ -1236,11 +1226,6 @@ export type ManagementRedeemToken = {
   __typename?: 'ManagementRedeemToken';
   /** The client that this redeem token belongs to. */
   client?: Maybe<ManagementClient>;
-  /**
-   * Deprecated alias for `hub`.
-   * @deprecated Renamed to `hub`. Use `hub` instead.
-   */
-  composition: ManagementHub;
   createdAt: Scalars['DateTime']['output'];
   expiresAt?: Maybe<Scalars['DateTime']['output']>;
   /** The hub that this redeem token grants access to. */
@@ -1526,22 +1511,6 @@ export type ManagementServiceReleasesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** A ServiceDeviceCode is used for the device code flow for service instances. */
-export type ManagementServiceDeviceCode = {
-  __typename?: 'ManagementServiceDeviceCode';
-  code: Scalars['String']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  denied: Scalars['Boolean']['output'];
-  expiresAt: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
-  instance?: Maybe<ManagementServiceInstance>;
-  /** The staging aliases for this service device code */
-  stagingAliases?: Maybe<Array<StagingAlias>>;
-  /** The staging manifest for this service device code */
-  stagingManifest?: Maybe<ManagementStagingServiceManifest>;
-  user?: Maybe<ManagementUser>;
-};
-
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstance = {
   __typename?: 'ManagementServiceInstance';
@@ -1814,6 +1783,7 @@ export type ManagementUser = {
   avatar?: Maybe<Scalars['String']['output']>;
   /** The communication channels that the user has */
   comChannels: Array<ManagementComChannel>;
+  /** The user's email address. Only returned to authenticated callers. */
   email?: Maybe<Scalars['String']['output']>;
   firstName?: Maybe<Scalars['String']['output']>;
   /** The groups this user belongs to. A user will get all permissions granted to each of their groups. */
@@ -1892,14 +1862,10 @@ export type ManagementUserOrdering =
 
 export type Mutation = {
   __typename?: 'Mutation';
-  acceptAuthorizeCode: Scalars['String']['output'];
-  /** @deprecated Renamed to `acceptHubDeviceCode`. Use `acceptHubDeviceCode` instead. */
-  acceptCompositionDeviceCode: ManagementHub;
   acceptDeviceCode: ManagementClient;
   acceptHubDeviceCode: ManagementHub;
   acceptInvite: ManagementMembership;
   acceptMeshDeviceCode: ManagementMeshDeviceCode;
-  acceptServiceDeviceCode: ManagementServiceInstance;
   addDeviceToGroup: ManagementDevice;
   approveRoleRequest: ManagementRoleRequest;
   cancelInvite: ManagementInvite;
@@ -1917,19 +1883,13 @@ export type Mutation = {
   createProfile: ManagementProfile;
   createRedeemToken: ManagementRedeemToken;
   createRoleSet: ManagementRoleSet;
-  declineAuthorizeCode: Scalars['String']['output'];
-  /** @deprecated Renamed to `declineHubDeviceCode`. Use `declineHubDeviceCode` instead. */
-  declineCompositionDeviceCode: ManagementHubDeviceCode;
   declineDeviceCode: ManagementDeviceCode;
   declineHubDeviceCode: ManagementHubDeviceCode;
   /** Decline an invite to join an organization. */
   declineInvite: ManagementInvite;
   declineMeshDeviceCode: ManagementMeshDeviceCode;
   declineRoleRequest: ManagementRoleRequest;
-  declineServiceDeviceCode: ManagementServiceDeviceCode;
   deleteAlias: Scalars['ID']['output'];
-  /** @deprecated Renamed to `deleteHub`. Use `deleteHub` instead. */
-  deleteComposition: Scalars['ID']['output'];
   deleteDevice: Scalars['ID']['output'];
   deleteDeviceGroup: Scalars['ID']['output'];
   deleteHub: Scalars['ID']['output'];
@@ -1942,10 +1902,10 @@ export type Mutation = {
   removeDeviceFromGroup: ManagementDevice;
   requestMediaUpload: PresignedPostCredentials;
   requestRole: ManagementRoleRequest;
+  revokeClientSessions: ManagementClient;
+  revokeOrganizationSessions: Scalars['Int']['output'];
   setMembershipBrandHue: ManagementMembership;
   updateAlias: ManagementInstanceAlias;
-  /** @deprecated Renamed to `updateHub`. Use `updateHub` instead. */
-  updateComposition: ManagementHub;
   updateDevice: ManagementDevice;
   updateHub: ManagementHub;
   updateIonscaleLayer: ManagementLayer;
@@ -1954,16 +1914,6 @@ export type Mutation = {
   updateOrganizationProfile: ManagementOrganizationProfile;
   updateProfile: ManagementProfile;
   updateRoleSet: ManagementRoleSet;
-};
-
-
-export type MutationAcceptAuthorizeCodeArgs = {
-  input: AcceptAuthorizeCodeInput;
-};
-
-
-export type MutationAcceptCompositionDeviceCodeArgs = {
-  input: AcceptHubDeviceCodeInput;
 };
 
 
@@ -1984,11 +1934,6 @@ export type MutationAcceptInviteArgs = {
 
 export type MutationAcceptMeshDeviceCodeArgs = {
   input: AcceptMeshDeviceCodeInput;
-};
-
-
-export type MutationAcceptServiceDeviceCodeArgs = {
-  input: AcceptServiceDeviceCodeInput;
 };
 
 
@@ -2078,16 +2023,6 @@ export type MutationCreateRoleSetArgs = {
 };
 
 
-export type MutationDeclineAuthorizeCodeArgs = {
-  input: DeclineAuthorizeCodeInput;
-};
-
-
-export type MutationDeclineCompositionDeviceCodeArgs = {
-  input: DeclineHubDeviceCodeInput;
-};
-
-
 export type MutationDeclineDeviceCodeArgs = {
   input: DeclineDeviceCodeInput;
 };
@@ -2113,18 +2048,8 @@ export type MutationDeclineRoleRequestArgs = {
 };
 
 
-export type MutationDeclineServiceDeviceCodeArgs = {
-  input: DeclineServiceDeviceCodeInput;
-};
-
-
 export type MutationDeleteAliasArgs = {
   input: DeleteAliasInput;
-};
-
-
-export type MutationDeleteCompositionArgs = {
-  input: DeleteHubInput;
 };
 
 
@@ -2188,6 +2113,16 @@ export type MutationRequestRoleArgs = {
 };
 
 
+export type MutationRevokeClientSessionsArgs = {
+  input: RevokeClientSessionsInput;
+};
+
+
+export type MutationRevokeOrganizationSessionsArgs = {
+  input: RevokeOrganizationSessionsInput;
+};
+
+
 export type MutationSetMembershipBrandHueArgs = {
   input: SetMembershipBrandHueInput;
 };
@@ -2195,11 +2130,6 @@ export type MutationSetMembershipBrandHueArgs = {
 
 export type MutationUpdateAliasArgs = {
   input: UpdateAliasInput;
-};
-
-
-export type MutationUpdateCompositionArgs = {
-  input: UpdateHubInput;
 };
 
 
@@ -2296,14 +2226,6 @@ export type Query = {
   apps: Array<ManagementApp>;
   client: ManagementClient;
   clients: Array<ManagementClient>;
-  /** @deprecated Renamed to `hub`. Use `hub` instead. */
-  composition: ManagementHub;
-  /** @deprecated Renamed to `hubDeviceCode`. Use `hubDeviceCode` instead. */
-  compositionDeviceCode: ManagementHubDeviceCode;
-  /** @deprecated Renamed to `hubDeviceCodeByCode`. Use `hubDeviceCodeByCode` instead. */
-  compositionDeviceCodeByCode: ManagementHubDeviceCode;
-  /** @deprecated Renamed to `hubs`. Use `hubs` instead. */
-  compositions: Array<ManagementHub>;
   device: ManagementDevice;
   deviceCode: ManagementDeviceCode;
   deviceCodeByCode: ManagementDeviceCode;
@@ -2346,8 +2268,6 @@ export type Query = {
   scope: ManagementScope;
   scopes: Array<ManagementScope>;
   service: ManagementService;
-  serviceDeviceCode: ManagementServiceDeviceCode;
-  serviceDeviceCodeByCode: ManagementServiceDeviceCode;
   serviceInstance: ManagementServiceInstance;
   serviceInstanceMapping: ManagementServiceInstanceMapping;
   serviceInstanceMappings: Array<ManagementServiceInstanceMapping>;
@@ -2383,28 +2303,6 @@ export type QueryClientArgs = {
 export type QueryClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
   ordering?: Array<ManagementClientOrdering>;
-  pagination?: InputMaybe<OffsetPaginationInput>;
-};
-
-
-export type QueryCompositionArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-export type QueryCompositionDeviceCodeArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-export type QueryCompositionDeviceCodeByCodeArgs = {
-  code: Scalars['String']['input'];
-};
-
-
-export type QueryCompositionsArgs = {
-  filters?: InputMaybe<ManagementHubFilter>;
-  ordering?: Array<ManagementHubOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2646,16 +2544,6 @@ export type QueryServiceArgs = {
 };
 
 
-export type QueryServiceDeviceCodeArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-export type QueryServiceDeviceCodeByCodeArgs = {
-  code: Scalars['String']['input'];
-};
-
-
 export type QueryServiceInstanceArgs = {
   id: Scalars['ID']['input'];
 };
@@ -2740,7 +2628,15 @@ export type ResolveRoleRequestInput = {
   id: Scalars['ID']['input'];
 };
 
-/** Service(id, name, identifier, logo, description) */
+export type RevokeClientSessionsInput = {
+  client: Scalars['ID']['input'];
+};
+
+export type RevokeOrganizationSessionsInput = {
+  organization: Scalars['ID']['input'];
+};
+
+/** Service(id, name, identifier, organization, logo, description) */
 export type ServiceFilter = {
   AND?: InputMaybe<ServiceFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3028,8 +2924,6 @@ export type ListServiceFragment = { __typename?: 'ManagementService', identifier
 
 export type ServiceFragment = { __typename?: 'ManagementService', identifier: any, id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, releases: Array<{ __typename?: 'ManagementServiceRelease', id: string, version: string, instances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> }> };
 
-export type ServiceDeviceCodeFragment = { __typename?: 'ManagementServiceDeviceCode', id: string, code: string, stagingAliases?: Array<{ __typename?: 'StagingAlias', host?: string | null, port?: number | null }> | null, stagingManifest?: { __typename?: 'ManagementStagingServiceManifest', identifier: string, version: string, logo?: string | null, description?: string | null, roles?: Array<{ __typename?: 'StagingRole', key: string, description?: string | null }> | null, scopes?: Array<{ __typename?: 'StagingScope', key: string, description?: string | null }> | null, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, instance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } | null };
-
 export type ServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', identifier: string, id: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, organization: { __typename?: 'ManagementOrganization', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } | null } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, scopes: Array<{ __typename?: 'ManagementScope', id: string, identifier: string, description: string }> };
 
 export type ListServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } };
@@ -3309,13 +3203,6 @@ export type DeclineMeshDeviceCodeMutationVariables = Exact<{
 
 export type DeclineMeshDeviceCodeMutation = { __typename?: 'Mutation', declineMeshDeviceCode: { __typename?: 'ManagementMeshDeviceCode', id: string, code: string, requestedMachineName?: string | null, machineName?: string | null, description?: string | null, denied: boolean } };
 
-export type AcceptAuthorizeCodeMutationVariables = Exact<{
-  input: AcceptAuthorizeCodeInput;
-}>;
-
-
-export type AcceptAuthorizeCodeMutation = { __typename?: 'Mutation', acceptAuthorizeCode: string };
-
 export type CreateOrganizationMutationVariables = Exact<{
   input: CreateOrganizationInput;
 }>;
@@ -3442,20 +3329,6 @@ export type DeleteRoleSetMutationVariables = Exact<{
 
 
 export type DeleteRoleSetMutation = { __typename?: 'Mutation', deleteRoleSet: string };
-
-export type AcceptServiceDeviceCodeMutationVariables = Exact<{
-  input: AcceptServiceDeviceCodeInput;
-}>;
-
-
-export type AcceptServiceDeviceCodeMutation = { __typename?: 'Mutation', acceptServiceDeviceCode: { __typename?: 'ManagementServiceInstance', identifier: string, id: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, organization: { __typename?: 'ManagementOrganization', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, lastReportedAt?: any | null, organization: { __typename?: 'ManagementOrganization', id: string }, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, manifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, requirements: Array<{ __typename?: 'ManagementStagingRequirement', key: string, description?: string | null }> } | null } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, scopes: Array<{ __typename?: 'ManagementScope', id: string, identifier: string, description: string }> } };
-
-export type DeclineServiceDeviceCodeMutationVariables = Exact<{
-  input: DeclineServiceDeviceCodeInput;
-}>;
-
-
-export type DeclineServiceDeviceCodeMutation = { __typename?: 'Mutation', declineServiceDeviceCode: { __typename?: 'ManagementServiceDeviceCode', id: string, code: string, stagingAliases?: Array<{ __typename?: 'StagingAlias', host?: string | null, port?: number | null }> | null, stagingManifest?: { __typename?: 'ManagementStagingServiceManifest', identifier: string, version: string, logo?: string | null, description?: string | null, roles?: Array<{ __typename?: 'StagingRole', key: string, description?: string | null }> | null, scopes?: Array<{ __typename?: 'StagingScope', key: string, description?: string | null }> | null, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, instance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } | null } };
 
 export type RequestMediaUploadMutationVariables = Exact<{
   key: Scalars['String']['input'];
@@ -3795,13 +3668,6 @@ export type DeteilScopeQueryVariables = Exact<{
 
 
 export type DeteilScopeQuery = { __typename?: 'Query', scope: { __typename?: 'ManagementScope', id: string, description: string, identifier: string, creatingInstance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } } | null, organization: { __typename?: 'ManagementOrganization', id: string }, usedBy: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } };
-
-export type ServiceDeviceCodeByCodeQueryVariables = Exact<{
-  code: Scalars['String']['input'];
-}>;
-
-
-export type ServiceDeviceCodeByCodeQuery = { __typename?: 'Query', serviceDeviceCodeByCode: { __typename?: 'ManagementServiceDeviceCode', id: string, code: string, stagingAliases?: Array<{ __typename?: 'StagingAlias', host?: string | null, port?: number | null }> | null, stagingManifest?: { __typename?: 'ManagementStagingServiceManifest', identifier: string, version: string, logo?: string | null, description?: string | null, roles?: Array<{ __typename?: 'StagingRole', key: string, description?: string | null }> | null, scopes?: Array<{ __typename?: 'StagingScope', key: string, description?: string | null }> | null, publicSources?: Array<{ __typename?: 'ManagementStagingPublicSource', kind: string, url: string }> | null } | null, instance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } | null } };
 
 export type ListServiceInstancesQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -4837,46 +4703,6 @@ export const ListServiceFragmentDoc = gql`
   }
 }
     ${ListServiceReleaseFragmentDoc}`;
-export const ServiceDeviceCodeFragmentDoc = gql`
-    fragment ServiceDeviceCode on ManagementServiceDeviceCode {
-  id
-  code
-  stagingAliases {
-    host
-    port
-  }
-  stagingManifest {
-    identifier
-    version
-    logo
-    description
-    roles {
-      key
-      description
-    }
-    scopes {
-      key
-      description
-    }
-    publicSources {
-      kind
-      url
-    }
-  }
-  instance {
-    id
-    identifier
-    release {
-      id
-      service {
-        id
-        identifier
-      }
-      version
-    }
-  }
-}
-    `;
 export const ProfileFragmentDoc = gql`
     fragment Profile on ManagementProfile {
   id
@@ -6114,37 +5940,6 @@ export function useDeclineMeshDeviceCodeMutation(baseOptions?: Apollo.MutationHo
 export type DeclineMeshDeviceCodeMutationHookResult = ReturnType<typeof useDeclineMeshDeviceCodeMutation>;
 export type DeclineMeshDeviceCodeMutationResult = Apollo.MutationResult<DeclineMeshDeviceCodeMutation>;
 export type DeclineMeshDeviceCodeMutationOptions = Apollo.BaseMutationOptions<DeclineMeshDeviceCodeMutation, DeclineMeshDeviceCodeMutationVariables>;
-export const AcceptAuthorizeCodeDocument = gql`
-    mutation AcceptAuthorizeCode($input: AcceptAuthorizeCodeInput!) {
-  acceptAuthorizeCode(input: $input)
-}
-    `;
-export type AcceptAuthorizeCodeMutationFn = Apollo.MutationFunction<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>;
-
-/**
- * __useAcceptAuthorizeCodeMutation__
- *
- * To run a mutation, you first call `useAcceptAuthorizeCodeMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useAcceptAuthorizeCodeMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [acceptAuthorizeCodeMutation, { data, loading, error }] = useAcceptAuthorizeCodeMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useAcceptAuthorizeCodeMutation(baseOptions?: Apollo.MutationHookOptions<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>(AcceptAuthorizeCodeDocument, options);
-      }
-export type AcceptAuthorizeCodeMutationHookResult = ReturnType<typeof useAcceptAuthorizeCodeMutation>;
-export type AcceptAuthorizeCodeMutationResult = Apollo.MutationResult<AcceptAuthorizeCodeMutation>;
-export type AcceptAuthorizeCodeMutationOptions = Apollo.BaseMutationOptions<AcceptAuthorizeCodeMutation, AcceptAuthorizeCodeMutationVariables>;
 export const CreateOrganizationDocument = gql`
     mutation CreateOrganization($input: CreateOrganizationInput!) {
   createOrganization(input: $input) {
@@ -6733,72 +6528,6 @@ export function useDeleteRoleSetMutation(baseOptions?: Apollo.MutationHookOption
 export type DeleteRoleSetMutationHookResult = ReturnType<typeof useDeleteRoleSetMutation>;
 export type DeleteRoleSetMutationResult = Apollo.MutationResult<DeleteRoleSetMutation>;
 export type DeleteRoleSetMutationOptions = Apollo.BaseMutationOptions<DeleteRoleSetMutation, DeleteRoleSetMutationVariables>;
-export const AcceptServiceDeviceCodeDocument = gql`
-    mutation AcceptServiceDeviceCode($input: AcceptServiceDeviceCodeInput!) {
-  acceptServiceDeviceCode(input: $input) {
-    ...ServiceInstance
-  }
-}
-    ${ServiceInstanceFragmentDoc}`;
-export type AcceptServiceDeviceCodeMutationFn = Apollo.MutationFunction<AcceptServiceDeviceCodeMutation, AcceptServiceDeviceCodeMutationVariables>;
-
-/**
- * __useAcceptServiceDeviceCodeMutation__
- *
- * To run a mutation, you first call `useAcceptServiceDeviceCodeMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useAcceptServiceDeviceCodeMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [acceptServiceDeviceCodeMutation, { data, loading, error }] = useAcceptServiceDeviceCodeMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useAcceptServiceDeviceCodeMutation(baseOptions?: Apollo.MutationHookOptions<AcceptServiceDeviceCodeMutation, AcceptServiceDeviceCodeMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<AcceptServiceDeviceCodeMutation, AcceptServiceDeviceCodeMutationVariables>(AcceptServiceDeviceCodeDocument, options);
-      }
-export type AcceptServiceDeviceCodeMutationHookResult = ReturnType<typeof useAcceptServiceDeviceCodeMutation>;
-export type AcceptServiceDeviceCodeMutationResult = Apollo.MutationResult<AcceptServiceDeviceCodeMutation>;
-export type AcceptServiceDeviceCodeMutationOptions = Apollo.BaseMutationOptions<AcceptServiceDeviceCodeMutation, AcceptServiceDeviceCodeMutationVariables>;
-export const DeclineServiceDeviceCodeDocument = gql`
-    mutation DeclineServiceDeviceCode($input: DeclineServiceDeviceCodeInput!) {
-  declineServiceDeviceCode(input: $input) {
-    ...ServiceDeviceCode
-  }
-}
-    ${ServiceDeviceCodeFragmentDoc}`;
-export type DeclineServiceDeviceCodeMutationFn = Apollo.MutationFunction<DeclineServiceDeviceCodeMutation, DeclineServiceDeviceCodeMutationVariables>;
-
-/**
- * __useDeclineServiceDeviceCodeMutation__
- *
- * To run a mutation, you first call `useDeclineServiceDeviceCodeMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useDeclineServiceDeviceCodeMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [declineServiceDeviceCodeMutation, { data, loading, error }] = useDeclineServiceDeviceCodeMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useDeclineServiceDeviceCodeMutation(baseOptions?: Apollo.MutationHookOptions<DeclineServiceDeviceCodeMutation, DeclineServiceDeviceCodeMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<DeclineServiceDeviceCodeMutation, DeclineServiceDeviceCodeMutationVariables>(DeclineServiceDeviceCodeDocument, options);
-      }
-export type DeclineServiceDeviceCodeMutationHookResult = ReturnType<typeof useDeclineServiceDeviceCodeMutation>;
-export type DeclineServiceDeviceCodeMutationResult = Apollo.MutationResult<DeclineServiceDeviceCodeMutation>;
-export type DeclineServiceDeviceCodeMutationOptions = Apollo.BaseMutationOptions<DeclineServiceDeviceCodeMutation, DeclineServiceDeviceCodeMutationVariables>;
 export const RequestMediaUploadDocument = gql`
     mutation RequestMediaUpload($key: String!, $datalayer: String!) {
   requestMediaUpload(input: {key: $key, datalayer: $datalayer}) {
@@ -8756,49 +8485,6 @@ export type DeteilScopeQueryHookResult = ReturnType<typeof useDeteilScopeQuery>;
 export type DeteilScopeLazyQueryHookResult = ReturnType<typeof useDeteilScopeLazyQuery>;
 export type DeteilScopeSuspenseQueryHookResult = ReturnType<typeof useDeteilScopeSuspenseQuery>;
 export type DeteilScopeQueryResult = Apollo.QueryResult<DeteilScopeQuery, DeteilScopeQueryVariables>;
-export const ServiceDeviceCodeByCodeDocument = gql`
-    query ServiceDeviceCodeByCode($code: String!) {
-  serviceDeviceCodeByCode(code: $code) {
-    ...ServiceDeviceCode
-  }
-}
-    ${ServiceDeviceCodeFragmentDoc}`;
-
-/**
- * __useServiceDeviceCodeByCodeQuery__
- *
- * To run a query within a React component, call `useServiceDeviceCodeByCodeQuery` and pass it any options that fit your needs.
- * When your component renders, `useServiceDeviceCodeByCodeQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useServiceDeviceCodeByCodeQuery({
- *   variables: {
- *      code: // value for 'code'
- *   },
- * });
- */
-export function useServiceDeviceCodeByCodeQuery(baseOptions: Apollo.QueryHookOptions<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables> & ({ variables: ServiceDeviceCodeByCodeQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>(ServiceDeviceCodeByCodeDocument, options);
-      }
-export function useServiceDeviceCodeByCodeLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>(ServiceDeviceCodeByCodeDocument, options);
-        }
-// @ts-ignore
-export function useServiceDeviceCodeByCodeSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>): Apollo.UseSuspenseQueryResult<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>;
-export function useServiceDeviceCodeByCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>): Apollo.UseSuspenseQueryResult<ServiceDeviceCodeByCodeQuery | undefined, ServiceDeviceCodeByCodeQueryVariables>;
-export function useServiceDeviceCodeByCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>(ServiceDeviceCodeByCodeDocument, options);
-        }
-export type ServiceDeviceCodeByCodeQueryHookResult = ReturnType<typeof useServiceDeviceCodeByCodeQuery>;
-export type ServiceDeviceCodeByCodeLazyQueryHookResult = ReturnType<typeof useServiceDeviceCodeByCodeLazyQuery>;
-export type ServiceDeviceCodeByCodeSuspenseQueryHookResult = ReturnType<typeof useServiceDeviceCodeByCodeSuspenseQuery>;
-export type ServiceDeviceCodeByCodeQueryResult = Apollo.QueryResult<ServiceDeviceCodeByCodeQuery, ServiceDeviceCodeByCodeQueryVariables>;
 export const ListServiceInstancesDocument = gql`
     query ListServiceInstances($pagination: OffsetPaginationInput, $filters: ManagementServiceInstanceFilter, $ordering: [ManagementServiceInstanceOrdering!]) {
   serviceInstances(

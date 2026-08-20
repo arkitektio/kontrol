@@ -1,6 +1,0 @@
-query ServiceDeviceCodeByCode($code: String!) {
-  serviceDeviceCodeByCode(code: $code) {
-    ...ServiceDeviceCode
-  }
-}
-
