@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAcceptAuthorizeCodeMutation, useGetOauth2ClientByClientIdQuery, useListOrganizationsQuery, useMeQuery } from "@/api/graphql";
+import { useGetOauth2ClientByClientIdQuery, useListOrganizationsQuery, useMeQuery } from "@/api/graphql";
+import { getCSRFToken } from "@/lib/django";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,17 +41,51 @@ export default function Authorize() {
     skip: !clientId,
   });
 
-  const [acceptAuthorize] = useAcceptAuthorizeCodeMutation();
-
   // Preset the organization once the list loads. `defaultValues` can't do this
   // because orgData is still loading at mount — without this the form submits an
-  // empty organization and the (required) mutation input is rejected.
+  // empty organization and the consent POST is rejected.
   useEffect(() => {
-    const firstOrg = orgData?.organizations.at(0)?.id;
+    const firstOrg = orgData?.organizations.at(0)?.slug;
     if (firstOrg && !selectedOrganization) {
       setValue("organization", firstOrg);
     }
   }, [orgData, selectedOrganization, setValue]);
+
+  // The consent decision is a real (full-page) form POST to lok's standard
+  // authorization endpoint, so the browser follows the resulting 302 to the
+  // relying party. All original authorize parameters are passed through —
+  // including PKCE — plus the chosen organization: the granted subject is the
+  // user's membership in it.
+  const submitDecision = (allow: boolean, organization?: string) => {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/lok/o/authorize/";
+    const params: Record<string, string> = {
+      csrfmiddlewaretoken: getCSRFToken() || "",
+      allow: allow ? "true" : "false",
+      response_type: searchParams.get("response_type") || "code",
+      client_id: clientId || "",
+      redirect_uri: redirectUri || "",
+      scope: scope || "openid",
+    };
+    if (state) params["state"] = state;
+    if (nonce) params["nonce"] = nonce;
+    if (organization) params["organization"] = organization;
+    const codeChallenge = searchParams.get("code_challenge");
+    if (codeChallenge) {
+      params["code_challenge"] = codeChallenge;
+      params["code_challenge_method"] = searchParams.get("code_challenge_method") || "S256";
+    }
+    for (const [name, value] of Object.entries(params)) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    }
+    document.body.appendChild(form);
+    form.submit();
+  };
 
   if (!clientId || !redirectUri) {
     return (
@@ -76,25 +111,7 @@ export default function Authorize() {
         return;
     }
     try {
-        const result = await acceptAuthorize({
-            variables: {
-                input: {
-                    clientId: clientId,
-                    redirectUri: redirectUri,
-                    scope: scope || "",
-                    state: state || "",
-                    nonce: nonce || undefined,
-                    organization: data.organization,
-                }
-            }
-        });
-
-        const redirect = result.data?.acceptAuthorizeCode;
-        if (redirect) {
-            window.location.href = redirect;
-        } else {
-            setGlobalError("Authorization did not return a redirect. Please try again.");
-        }
+        submitDecision(true, data.organization);
     } catch (e) {
         console.error(e);
         setGlobalError(e instanceof Error ? e.message : "Failed to authorize the request.");
@@ -161,7 +178,7 @@ export default function Authorize() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {orgData?.organizations?.map(org => (
-                                            <SelectItem key={org.id} value={org.id}>
+                                            <SelectItem key={org.id} value={org.slug}>
                                                  <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarFallback>{org.name.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -184,7 +201,7 @@ export default function Authorize() {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-between border-t bg-muted/50 px-6 py-4">
-                <Button variant="ghost" type="button" onClick={() => window.history.back()}>Cancel</Button>
+                <Button variant="ghost" type="button" onClick={() => submitDecision(false)}>Deny</Button>
                 <Button type="submit" disabled={isLoading || isSubmitting || !selectedOrganization}>
                     {isSubmitting ? "Authorizing..." : "Authorize Access"}
                 </Button>

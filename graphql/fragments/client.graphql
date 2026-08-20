@@ -1,6 +1,5 @@
 fragment DetailClient on ManagementClient {
   id
-  token
   name
   user {
     id

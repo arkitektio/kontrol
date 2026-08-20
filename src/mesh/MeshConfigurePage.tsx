@@ -108,7 +108,7 @@ export function MeshConfigurePage() {
   const onCancel = async () => {
     try {
       await declineMeshDeviceCode({
-        variables: { input: { deviceCode: meshDeviceCode.id } },
+        variables: { input: { deviceCode: meshDeviceCode.id, code } },
       });
       setAuthorized(false);
       setSubmitted(true);

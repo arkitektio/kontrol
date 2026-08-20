@@ -172,7 +172,7 @@ export function ConfigurePage() {
 
   const onDeny = async () => {
     try {
-      await declineDeviceCode({ variables: { input: { deviceCode: deviceCode.id } } });
+      await declineDeviceCode({ variables: { input: { deviceCode: deviceCode.id, code } } });
     } finally {
       setAuthorized(false);
       setSubmitted(true);

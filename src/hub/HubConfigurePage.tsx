@@ -121,7 +121,8 @@ export function HubConfigurePage() {
       await declineHubDeviceCode({
         variables: {
           input: {
-            deviceCode: hubDeviceCode.id
+            deviceCode: hubDeviceCode.id,
+            code
           }
         }
       });

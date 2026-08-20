@@ -106,7 +106,6 @@ const Release = lazyDefault(() => import('./releases/Release'))
 const Releases = lazyDefault(() => import('./releases/Releases'))
 const ServiceRelease = lazyDefault(() => import('./service-releases/ServiceRelease'))
 const ServiceReleases = lazyDefault(() => import('./service-releases/ServiceReleases'))
-const ServiceConfigurePage = lazyNamed(() => import('./service/ServiceConfigurePage'), 'ServiceConfigurePage')
 const HubConfigurePage = lazyNamed(() => import('./hub/HubConfigurePage'), 'HubConfigurePage')
 const MeshConfigurePage = lazyNamed(() => import('./mesh/MeshConfigurePage'), 'MeshConfigurePage')
 const Hubs = lazyDefault(() => import('./hubs/Hubs'))
@@ -355,10 +354,6 @@ function createRouter() {
             {
               path: '/configure/:deviceCode',
               element: <AuthenticatedRoute><ConfigurePage /></AuthenticatedRoute>,
-            },
-            {
-              path: '/serviceconfigure/:serviceCode',
-              element: <AuthenticatedRoute><ServiceConfigurePage /></AuthenticatedRoute>,
             },
             {
               path: '/hubconfigure/:hubCode',
