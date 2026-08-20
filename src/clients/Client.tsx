@@ -35,10 +35,10 @@ export default function Client() {
                 <CardTitle className="text-2xl flex flex-row items-center gap-2"><ClientLabel client={client} />{}
 </CardTitle>
                 <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline">{client.organization.name}</Badge>
+                    <Badge variant="outline">{client.organization?.name ?? "Unbound"}</Badge>
                     <span className="text-muted-foreground">by {client.user?.username}</span>
                     <Link
-                        to={`/organization/${client.organization.id}/clients/${client.id}/report`}
+                        to={`/organization/${client.organization?.id}/clients/${client.id}/report`}
                         className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                         <Activity className="h-4 w-4" /> Latest report
@@ -81,7 +81,7 @@ export default function Client() {
                         {client.scopes?.map(scope => (
                             <div key={scope.id} className="p-2 border rounded-md">
                                 <div className="font-medium"></div>
-                                 <Link to={`/organization/${client.organization.id}/scopes/${scope.id}`}>{scope.identifier}
+                                 <Link to={`/organization/${client.organization?.id}/scopes/${scope.id}`}>{scope.identifier}
                                 </Link>
                                 <div className="text-xs text-muted-foreground">
                                     {scope.description}

@@ -127,7 +127,7 @@ export function ConfigurePage() {
   // has resolved for the selected workspace; until then we don't know whether accepting
   // would create a new device, so we hold off on prompting for a name.
   const existingDevice = validationData?.validateDeviceCode.existingDevice ?? null;
-  const isNodeManifest = !!manifest?.nodeId;
+  const isNodeManifest = !!manifest?.hasNodeId;
   const willCreateNewDevice = isNodeManifest && hasValidation && !existingDevice;
 
   const toggleRequirement = (key: string) =>
@@ -211,7 +211,7 @@ export function ConfigurePage() {
   const Icon = KIND_ICON[deviceCode.stagingKind as keyof typeof KIND_ICON] ?? Smartphone;
   const githubSource = manifest?.publicSources?.find((s) => s.kind === "github");
   const websiteSource = manifest?.publicSources?.find((s) => s.kind === "website");
-  const appIdentifier = manifest?.identifier ?? deviceCode.client?.release.app.identifier;
+  const appIdentifier = manifest?.identifier ?? deviceCode.client?.release?.app.identifier;
 
   return (
     <div className="w-full max-w-3xl">
@@ -231,7 +231,7 @@ export function ConfigurePage() {
               <div className="min-w-0">
                 <p className="text-lg leading-tight font-semibold break-words">{appIdentifier}</p>
                 <p className="text-muted-foreground text-sm">
-                  Version {manifest?.version ?? deviceCode.client?.release.version}
+                  Version {manifest?.version ?? deviceCode.client?.release?.version}
                 </p>
               </div>
             </div>

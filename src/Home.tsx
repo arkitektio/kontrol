@@ -87,7 +87,7 @@ export default function Home() {
                                             <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
                                             <ClientLabel client={client} className="font-medium text-sm" />
                                         </div>
-                                        <Link to={`/organization/${client.organization.id}/clients/${client.id}`} className="text-xs text-muted-foreground hover:underline">
+                                        <Link to={`/organization/${client.organization?.id}/clients/${client.id}`} className="text-xs text-muted-foreground hover:underline">
                                             View
                                         </Link>
                                     </div>

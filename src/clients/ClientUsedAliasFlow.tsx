@@ -193,7 +193,7 @@ export const UsedAliasFlow = ({ head, entries }: { head: AliasFlowHead; entries:
 
 /** Backwards-compatible wrapper that draws a client's live `usedAliases`. */
 export const ClientUsedAliasFlow = ({ client }: { client: DetailClientFragment }) => {
-    const head: AliasFlowHead = { label: client.release.app.identifier };
+    const head: AliasFlowHead = { label: client.release?.app.identifier ?? client.name };
     const entries: AliasFlowEntry[] = (client.usedAliases ?? []).map((a) => ({
         key: a.key,
         valid: a.valid,
