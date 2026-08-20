@@ -12,7 +12,6 @@ fragment KommunityPartner on ManagementKommunityPartner {
   partnerKind
   kommunityKind
   autoConfigure
-  preconfiguredHub
 }
 
 fragment ListKommunityPartner on ManagementKommunityPartner {

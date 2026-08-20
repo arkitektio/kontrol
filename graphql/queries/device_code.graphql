@@ -4,8 +4,8 @@ query DeviceCodeByCode($code: String!) {
   }
 }
 
-query ValidateDeviceCode($deviceCode: ID!, $hub: ID!) {
-  validateDeviceCode(deviceCode: $deviceCode, hub: $hub) {
+query ValidateDeviceCode($deviceCode: ID!, $hub: ID!, $code: String!) {
+  validateDeviceCode(deviceCode: $deviceCode, hub: $hub, code: $code) {
     valid
     reason
     existingDevice {

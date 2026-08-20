@@ -2,5 +2,4 @@ fragment Oauth2Client on ManagementOAuth2Client {
   id
   name
   clientId
-  redirectUris
 }

@@ -61,7 +61,7 @@ export default function HubRedeemTokens() {
                     <Badge variant={token.client ? "default" : "secondary"} className="text-xs">
                       {token.client ? "Redeemed" : "Pending"}
                     </Badge>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopyToken(token.token)}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => token.token && handleCopyToken(token.token)} disabled={!token.token} title={token.token ? "Copy token" : "Only the creator or an organization admin can see this token"}>
                       {copiedTokenId === token.token ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                     </Button>
                   </div>

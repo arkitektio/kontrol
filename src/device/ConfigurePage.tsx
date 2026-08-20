@@ -54,6 +54,7 @@ export function ConfigurePage() {
     variables: {
       deviceCode: deviceCodeData?.deviceCodeByCode?.id || "",
       hub: selectedHub,
+      code: deviceCodeData?.deviceCodeByCode?.code || "",
     },
     skip: !deviceCodeData?.deviceCodeByCode?.id || !selectedHub,
   });
@@ -144,6 +145,7 @@ export function ConfigurePage() {
         variables: {
           input: {
             deviceCode: deviceCode.id,
+            code: deviceCode.code,
             hub: selectedHub,
             declinedRequirements: Array.from(declinedRequirements),
             // Only send a name when a new device will actually be created; for an

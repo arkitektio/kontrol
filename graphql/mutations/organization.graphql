@@ -17,8 +17,8 @@ mutation DeleteOrganization($input: DeleteOrganizationInput!) {
   deleteOrganization(input: $input) 
 }
 
-mutation ChangeOrganizationOwner($organizationId: ID!, $newOwnerId: ID!) {
-  changeOrganizationOwner(organizationId: $organizationId, newOwnerId: $newOwnerId) {
+mutation ChangeOrganizationOwner($input: ChangeOrganizationOwnerInput!) {
+  changeOrganizationOwner(input: $input) {
     ...Organization
   }
 }

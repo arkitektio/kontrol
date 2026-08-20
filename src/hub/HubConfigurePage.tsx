@@ -100,6 +100,7 @@ export function HubConfigurePage() {
         variables: {
           input: {
             deviceCode: hubDeviceCode.id,
+            code,
             organization: selectedOrganization
           }
         }

@@ -81,9 +81,11 @@ export default function DangerZone() {
     setIsChangingOwner(true)
     try {
       await changeOwner({
-        variables: { 
-          organizationId: org.id,
-          newOwnerId: selectedNewOwner 
+        variables: {
+          input: {
+            organization: org.id,
+            newOwner: selectedNewOwner,
+          },
         }
       })
       setIsChangingOwner(false)

@@ -91,6 +91,7 @@ export function MeshConfigurePage() {
         variables: {
           input: {
             deviceCode: meshDeviceCode.id,
+            code,
             organization: selectedOrganization,
             machineName: machineName || meshDeviceCode.requestedMachineName || null,
           },
