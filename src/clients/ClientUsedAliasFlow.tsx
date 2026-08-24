@@ -1,6 +1,6 @@
 import { ReactFlow, Controls, Position, type Node, type Edge, Handle, type NodeProps, type EdgeProps, BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { type DetailClientFragment } from '../api/graphql';
+import { type DetailClientFragment } from "@/graphql/fragments/client.generated"
 import { useMemo } from 'react';
 
 const REACHABLE = '#22c55e';   // green-500

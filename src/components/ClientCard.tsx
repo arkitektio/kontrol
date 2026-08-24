@@ -1,4 +1,4 @@
-import type { ListClientFragment } from '@/api/graphql';
+import type { ListClientFragment } from "@/graphql/fragments/client.generated"
 import { Card } from './ui/card';
 import { Link } from 'react-router-dom';
 import { ClientLabel } from './ClientLabel';

@@ -2,6 +2,13 @@ fragment ListReport on ManagementReport {
   id
   functional
   createdAt
+  isResolved
+  resolvedAt
+  resolutionNote
+  resolvedBy {
+    id
+    username
+  }
   entries {
     key
     valid
@@ -10,4 +17,12 @@ fragment ListReport on ManagementReport {
       ...ListInstanceAlias
     }
   }
+}
+
+# A report reduced to what a timeline needs — no entries, no alias joins.
+fragment TimelineReport on ManagementReport {
+  id
+  functional
+  createdAt
+  isResolved
 }

@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { useListServiceInstancesQuery, useCreateAliasMutation } from "../api/graphql"
+import { useListServiceInstancesQuery } from "@/graphql/queries/service_instance.generated"
+import { useCreateAliasMutation } from "@/graphql/mutations/alias.generated"
 import {
   Dialog,
   DialogContent,

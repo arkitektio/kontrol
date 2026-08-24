@@ -1,5 +1,8 @@
+import { Suspense } from "react"
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
-import { useMeQuery } from "@/api/graphql"
+import { ConfigureCardSkeleton } from "@/components/skeletons"
+
+import { useMeQuery } from "@/graphql/queries/me.generated"
 import { useUser } from "@/auth"
 import { logout } from "@/lib/allauth"
 import { ErrorBoundary } from "../ErrorBoundary"
@@ -34,8 +37,18 @@ export function ConfigureLayout() {
                 {username && (
                     <h1 className="text-3xl font-bold tracking-tight">Hi {username} :)</h1>
                 )}
+                {/*
+                  * These pages are embedded in a host application that passes
+                  * ?brand-hue= and ?theme=, so the loading state has to look
+                  * like the card that is coming. Without this boundary a cold
+                  * load drops the full-screen Arkitekt logo into someone else's
+                  * page. All routes in this group render the same two-pane
+                  * consent card, so the fallback needs no per-route dispatch.
+                  */}
                 <ErrorBoundary>
-                    <Outlet />
+                    <Suspense fallback={<ConfigureCardSkeleton />}>
+                        <Outlet />
+                    </Suspense>
                 </ErrorBoundary>
                 {user && (
                     <div className="text-muted-foreground flex items-center gap-3 text-sm">

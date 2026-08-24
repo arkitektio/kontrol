@@ -1,12 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  useHubDeviceCodeByCodeQuery,
-  useAcceptHubDeviceCodeMutation,
-  useDeclineHubDeviceCodeMutation,
-  useListOrganizationsQuery,
-  useMeQuery,
-  type HubDeviceCodeFragment,
-} from "@/api/graphql";
+import { useHubDeviceCodeByCodeQuery } from "@/graphql/queries/hub_device_code.generated"
+import { useAcceptHubDeviceCodeMutation, useDeclineHubDeviceCodeMutation } from "@/graphql/mutations/hub_device_code.generated"
+import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
+import { type HubDeviceCodeFragment } from "@/graphql/fragments/hub_device_code.generated"
+import { ConfigureCardSkeleton } from "@/components/skeletons"
+import { HUB_ADMIN_REQUIRED } from "@/hooks/useIsOrgAdmin"
+
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { OrganizationSelect } from "@/components/OrganizationSelect";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { AlertCircle, Layers, Server, Box, Loader2, Check, X, Link2, ChevronDown } from "lucide-react";
+import { AlertCircle, Layers, Server, Box, Check, X, Link2, ChevronDown, ShieldAlert } from "lucide-react";
 
 interface ConfigureFormData {
   organization: string;
@@ -61,25 +61,26 @@ export function HubConfigurePage() {
   const [authorized, setAuthorized] = useState(false);
   const navigate = useNavigate();
 
-  // Preset the active organization
+  // Preset the active organization. Adding a hub is an admin operation, so bias
+  // the preselection towards an org the user may actually deploy into — landing on
+  // one they can't use would show the "ask an admin" notice for no reason.
   useEffect(() => {
-    if (meData?.me && orgData?.organizations) {
-      const activeOrg = orgData.organizations.find(org => org.name === meData.me.username);
-      if (activeOrg && !selectedOrganization) {
-        setValue("organization", activeOrg.id);
-      } else if (orgData.organizations.length > 0 && !selectedOrganization) {
-        setValue("organization", orgData.organizations[0].id);
-      }
-    }
+    if (!meData?.me || !orgData?.organizations || selectedOrganization) return;
+    const organizations = orgData.organizations;
+    const personal = organizations.find(org => org.name === meData.me.username);
+    const preset =
+      (personal?.amIAdmin ? personal : undefined) ??
+      organizations.find(org => org.amIAdmin) ??
+      personal ??
+      organizations[0];
+    if (preset) setValue("organization", preset.id);
   }, [meData, orgData, selectedOrganization, setValue]);
 
   if (!code) return null;
 
   if (hubDeviceCodeLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
+      <ConfigureCardSkeleton />
     );
   }
 
@@ -93,8 +94,12 @@ export function HubConfigurePage() {
     );
   }
 
+  const targetOrganization = orgData?.organizations.find(org => org.id === selectedOrganization);
+  // The bar the backend enforces on acceptHubDeviceCode: owner or `admin` role.
+  const mayAddHub = Boolean(targetOrganization?.amIAdmin);
+
   const onAllow = async () => {
-    if (!selectedOrganization) return;
+    if (!selectedOrganization || !mayAddHub) return;
     try {
       const data = await acceptHubDeviceCode({
         variables: {
@@ -295,19 +300,29 @@ export function HubConfigurePage() {
                 </div>
               )}
 
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Review required</AlertTitle>
-                <AlertDescription>
-                  This hub will deploy multiple services and clients to your organization. Only allow if you trust this hub.
-                </AlertDescription>
-              </Alert>
+              {targetOrganization && !mayAddHub ? (
+                <Alert>
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Admin required</AlertTitle>
+                  <AlertDescription>{HUB_ADMIN_REQUIRED}</AlertDescription>
+                </Alert>
+              ) : (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Review required</AlertTitle>
+                  <AlertDescription>
+                    This hub will deploy multiple services and clients to your organization. Only allow if you trust this hub.
+                  </AlertDescription>
+                </Alert>
+              )}
 
+              {/* Decline stays open to any member: turning an enrolment down is not
+                  a privileged act, and it lets the hub server stop polling. */}
               <div className="flex gap-2 pt-1">
                 <Button variant="outline" className="flex-1" onClick={onCancel}>
                   Decline
                 </Button>
-                <Button className="flex-1" onClick={onAllow} disabled={!selectedOrganization}>
+                <Button className="flex-1" onClick={onAllow} disabled={!selectedOrganization || !mayAddHub}>
                   Accept
                 </Button>
               </div>

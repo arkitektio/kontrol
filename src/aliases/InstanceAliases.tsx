@@ -1,15 +1,19 @@
 import { Link } from "react-router-dom"
-import { useListInstanceAliasQuery } from "../api/graphql"
+import { useListInstanceAliasQuery } from "@/graphql/queries/instance_alias.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Globe, Lock, ArrowRight } from "lucide-react"
 import { CreateAliasDialog } from "./CreateAliasDialog"
 
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
+
 export default function InstanceAliases() {
   const { data, loading, error } = useListInstanceAliasQuery({})
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton header="heading" columns={3} count={6} />
+  if (error) return <QueryError error={error} />
 
   const aliases = data?.instanceAliases || []
 

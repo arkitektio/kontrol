@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
-import { useGetDeviceQuery, useUpdateDeviceMutation, useDeleteDeviceMutation } from "../api/graphql"
+import { useGetDeviceQuery } from "@/graphql/queries/device.generated"
+import { useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/graphql/mutations/device.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Laptop, Smartphone, Tablet, Pencil, Trash2 } from "lucide-react"
@@ -33,6 +34,10 @@ import { Label } from "../components/ui/label"
 import { useState } from "react"
 import { toast } from "sonner"
 
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
+
 export default function Device() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -46,9 +51,9 @@ export default function Device() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [name, setName] = useState("")
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.device) return <div className="p-4">Device not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="device" onRetry={() => refetch()} />
+  if (!data?.device) return <ResourceNotFound resource="device" id={id} />
 
   const device = data.device
 

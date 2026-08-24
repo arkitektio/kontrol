@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom"
-import { useOrganizationQuery, useDeleteOrganizationMutation, useChangeOrganizationOwnerMutation } from "../api/graphql"
+import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
+import { useDeleteOrganizationMutation, useChangeOrganizationOwnerMutation } from "@/graphql/mutations/organization.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { useState } from "react"
@@ -28,6 +29,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { MeshControl } from "./MeshControl"
 import { RenameOrganizationCard } from "../components/RenameOrganizationCard"
 
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { SettingsStackSkeleton } from "@/components/skeletons"
+
 export default function DangerZone() {
   const { orgId } = useParams<{ orgId: string }>()
   const navigate = useNavigate()
@@ -46,9 +51,9 @@ export default function DangerZone() {
   })
   const [changeOwner] = useChangeOrganizationOwnerMutation()
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.organization) return <div>Organization not found</div>
+  if (loading) return <SettingsStackSkeleton header="pageHeader" cards={3} rows={2} />
+  if (error) return <QueryError error={error} resource="organization" />
+  if (!data?.organization) return <ResourceNotFound resource="organization" id={orgId} />
 
   const org = data.organization
 

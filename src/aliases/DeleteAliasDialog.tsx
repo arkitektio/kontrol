@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useDeleteAliasMutation } from "../api/graphql"
+import { useDeleteAliasMutation } from "@/graphql/mutations/alias.generated"
 import {
   AlertDialog,
   AlertDialogAction,

@@ -1,5 +1,5 @@
 import type { AuthFlow } from "@/auth/types";
-import { useCredentialKey, appendNext } from "@/auth";
+import { resolveCredentialKey, appendNext } from "@/auth";
 import {
   activateTOTPAuthenticator,
   deactivateTOTPAuthenticator,
@@ -109,12 +109,12 @@ const loginFormSchema = z.object({
 
 export const useLoginForm = () => {
   // Send the identifier under the key the server's login method expects
-  // ('email' when email login is configured, otherwise 'username').
-  const credKey = useCredentialKey();
+  // ('email' when email login is configured, otherwise 'username'). Resolved
+  // at submit time so it waits for the lazily-loaded config.
   return useAllauthForm(
     loginFormSchema,
     { username: "", password: "" },
-    (data) => login({ [credKey]: data.username, password: data.password })
+    async (data) => login({ [await resolveCredentialKey()]: data.username, password: data.password })
   );
 };
 

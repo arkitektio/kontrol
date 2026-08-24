@@ -4,6 +4,7 @@ fragment Organization on ManagementOrganization {
   slug
   amIOwner
   brandHue
+  brandChroma
   roles {
     id
     identifier
@@ -56,6 +57,8 @@ fragment ListOrganization on ManagementOrganization {
   name
   slug
   brandHue
+  brandChroma
+  amIAdmin
 }
 
 

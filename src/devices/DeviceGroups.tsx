@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useParams, Link } from "react-router-dom"
-import { useListDeviceGroupsQuery, useCreateDeviceGroupMutation, useDeleteDeviceGroupMutation } from "../api/graphql"
+import { useListDeviceGroupsQuery } from "@/graphql/queries/device_group.generated"
+import { useCreateDeviceGroupMutation, useDeleteDeviceGroupMutation } from "@/graphql/mutations/device_group.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { PageHeader } from "../components/PageHeader"
@@ -15,6 +16,10 @@ import {
 } from "../components/ui/dialog"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function DeviceGroups() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -58,8 +63,8 @@ export default function DeviceGroups() {
     }
   }
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton columns={4} count={4} />
+  if (error) return <QueryError error={error} />
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">

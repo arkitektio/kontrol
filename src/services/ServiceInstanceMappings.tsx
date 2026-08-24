@@ -1,13 +1,17 @@
 import { Link } from "react-router-dom"
-import { useListServiceInstanceMappingsQuery } from "../api/graphql"
+import { useListServiceInstanceMappingsQuery } from "@/graphql/queries/service_instance_mapping.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { ClientLabel } from "../components/ClientLabel"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function ServiceInstanceMappings() {
   const { data, loading, error } = useListServiceInstanceMappingsQuery({})
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton header="heading" columns={4} count={8} />
+  if (error) return <QueryError error={error} />
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

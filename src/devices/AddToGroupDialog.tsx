@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { useListDeviceGroupsQuery, useAddDeviceToGroupMutation } from "../api/graphql"
+import { useListDeviceGroupsQuery } from "@/graphql/queries/device_group.generated"
+import { useAddDeviceToGroupMutation } from "@/graphql/mutations/device_group.generated"
 import {
   Dialog,
   DialogContent,

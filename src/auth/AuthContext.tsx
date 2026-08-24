@@ -1,5 +1,8 @@
-import { useEffect, createContext, useState, useMemo, type ReactNode } from 'react'
-import { getAuth, getConfig } from '../lib/allauth'
+import { useEffect, createContext, useState, useMemo, useContext, type ReactNode } from 'react'
+import { Outlet } from 'react-router-dom'
+import { getAuth } from '../lib/allauth'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { NetworkErrorPage } from '../components/status/pages'
 
 export interface AuthConfig {
   status: number
@@ -35,64 +38,79 @@ export interface AuthConfig {
 
 export interface AuthContextType {
   auth: any
+  /** @deprecated read via `useConfig()` (lazy store in ./config.ts); kept for shape compatibility. */
   config?: AuthConfig
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null)
 
 function Loading () {
-  return <div>Starting...</div>
+  return <LoadingScreen label="Starting" />
 }
 
+// The session check (allauth /_allauth/browser/v1/auth/session) failed before
+// the app could even decide who you are — almost always lok being down or the
+// gateway not proxying it.
 function LoadingError () {
-  return <div>Loading error!</div>
+  return (
+    <NetworkErrorPage
+      variant="page"
+      message="Could not load the authentication status from the server (the allauth session endpoint did not answer)."
+    />
+  )
 }
 
 export function AuthContextProvider (props: { children: ReactNode }) {
   const [auth, setAuth] = useState<any>(undefined)
-  const [config, setConfig] = useState<AuthConfig | undefined>(undefined)
 
   useEffect(() => {
     function onAuthChanged (e: Event) {
       const customEvent = e as CustomEvent
-      setAuth((auth: any) => {
-        if (typeof auth === 'undefined') {
-          console.log('Authentication status loaded')
-        } else {
-          console.log('Authentication status updated')
-        }
-        return customEvent.detail
-      }
-      )
+      setAuth(customEvent.detail)
     }
 
     document.addEventListener('allauth.auth.change', onAuthChanged)
+    // The only request the app boots on. index.html already started it in
+    // parallel with the bundle download (see getAuth), so this usually
+    // resolves immediately. The allauth "config" is deliberately NOT fetched
+    // here — it is loaded lazily by the auth pages that need it (./config.ts).
     getAuth().then(data => setAuth(data)).catch((e) => {
       console.error(e)
       setAuth(false)
-    })
-    getConfig().then(data => setConfig(data as unknown as AuthConfig)).catch((e) => {
-      console.error(e)
     })
     return () => {
       document.removeEventListener('allauth.auth.change', onAuthChanged)
     }
   }, [])
-  // Only gate the app on auth/session status. The server "capability" config
-  // (getConfig) is fetched below but is no longer render-blocking — consumers
-  // handle its absence locally so the app always renders.
-  const loading = (typeof auth === 'undefined')
-  
   // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({ auth, config }), [auth, config])
-  
+  const contextValue = useMemo(() => ({ auth }), [auth])
+
+  // Deliberately does NOT gate on `auth` — the shell and the public landing
+  // pages render while the session request is still in flight, so first paint
+  // no longer waits on a round trip those pages don't need. Routes that must
+  // know who you are before they render sit under <AuthGate> (see Router.tsx).
   return (
     <AuthContext.Provider value={contextValue}>
-      {loading
-        ? <Loading />
-        : (auth === false
-            ? <LoadingError />
-            : props.children)}
+      {props.children}
     </AuthContext.Provider>
   )
+}
+
+/**
+ * Holds a route subtree until the boot session check has resolved, showing the
+ * loading screen meanwhile and the network error page if it failed. This is the
+ * gate that used to live in AuthContextProvider itself; it now wraps only the
+ * layouts that need a resolved session, which is every group except the public
+ * landing pages.
+ *
+ * Everything below this can rely on `useAuth()` being defined, so the guards in
+ * ./routing.tsx never see an unresolved session and can't bounce a signed-in
+ * user to the login page mid-boot.
+ */
+export function AuthGate () {
+  const auth = useContext(AuthContext)?.auth
+
+  if (typeof auth === 'undefined') return <Loading />
+  if (auth === false) return <LoadingError />
+  return <Outlet />
 }

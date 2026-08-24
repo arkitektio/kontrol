@@ -1,5 +1,8 @@
 import { useParams, Outlet } from "react-router-dom"
-import { useGetHubQuery } from "../api/graphql"
+import { useGetHubQuery } from "@/graphql/queries/hub.generated"
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailCardSkeleton } from "@/components/skeletons"
 
 export default function Hub() {
   const { name } = useParams<{ name: string }>()
@@ -9,9 +12,9 @@ export default function Hub() {
     skip: !name,
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.hub) return <div className="p-4">Hub not found</div>
+  if (loading) return <DetailCardSkeleton panels={2} columns={2} />
+  if (error) return <QueryError error={error} resource="hub" />
+  if (!data?.hub) return <ResourceNotFound resource="hub" id={name} />
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">

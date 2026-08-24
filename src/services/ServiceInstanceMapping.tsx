@@ -1,7 +1,11 @@
 import { useParams } from "react-router-dom"
-import { useGetServiceInstanceMappingQuery } from "../api/graphql"
+import { useGetServiceInstanceMappingQuery } from "@/graphql/queries/service_instance_mapping.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { ClientLabel } from "../components/ClientLabel"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function ServiceInstanceMapping() {
   const { id } = useParams<{ id: string }>()
@@ -10,9 +14,9 @@ export default function ServiceInstanceMapping() {
     skip: !id,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.serviceInstanceMapping) return <div>Mapping not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="mapping" />
+  if (!data?.serviceInstanceMapping) return <ResourceNotFound resource="mapping" id={id} />
 
   const mapping = data.serviceInstanceMapping
 

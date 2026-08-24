@@ -1,8 +1,13 @@
 import { Link, useParams } from "react-router-dom"
-import { useRolesQuery, useScopesQuery } from "../api/graphql"
+import { useRolesQuery } from "@/graphql/queries/roles.generated"
+import { useScopesQuery } from "@/graphql/queries/scope.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { PageHeader } from "../components/PageHeader"
 import { Shield, Lock, Users, AppWindow } from "lucide-react"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function Permissions() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -68,9 +73,9 @@ export default function Permissions() {
           <h3 className="text-xl font-semibold tracking-tight">Roles</h3>
         </div>
         {rolesError ? (
-          <div className="text-sm text-destructive">Error: {rolesError.message}</div>
+          <QueryError error={rolesError} compact resource="roles" />
         ) : rolesLoading ? (
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <ListPageSkeleton variant="embedded" header="none" columns={4} count={4} />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {roles.map((role) => (
@@ -99,9 +104,9 @@ export default function Permissions() {
           <h3 className="text-xl font-semibold tracking-tight">Scopes</h3>
         </div>
         {scopesError ? (
-          <div className="text-sm text-destructive">Error: {scopesError.message}</div>
+          <QueryError error={scopesError} compact resource="scopes" />
         ) : scopesLoading ? (
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <ListPageSkeleton variant="embedded" header="none" columns={4} count={4} />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {scopes.map((scope) => (

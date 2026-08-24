@@ -1,0 +1,5 @@
+
+import type { DocumentNode } from 'graphql';
+export type MeshDeviceCodeFragment = { __typename?: 'ManagementMeshDeviceCode', id: string, code: string, requestedMachineName?: string | null, machineName?: string | null, description?: string | null, denied: boolean };
+
+export const MeshDeviceCodeFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"MeshDeviceCode"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ManagementMeshDeviceCode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"requestedMachineName"}},{"kind":"Field","name":{"kind":"Name","value":"machineName"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"denied"}}]}}]} as unknown as DocumentNode;

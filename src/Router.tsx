@@ -2,19 +2,28 @@ import { Suspense, lazy, type ComponentType } from 'react'
 import {
   createBrowserRouter,
   RouterProvider,
-  useRouteError,
   type LoaderFunctionArgs,
 } from 'react-router-dom'
-import { AnonymousRoute, AuthenticatedRoute } from './auth'
+import { AnonymousRoute, AuthenticatedRoute, AuthGate } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { AnonymousLayout } from './components/layouts/AnonymousLayout'
 import { ConfigureLayout } from './components/layouts/ConfigureLayout'
+import { DetailLayout } from './components/layouts/DetailLayout'
 import { LandingLayout } from './components/layouts/LandingLayout'
-import { ManagementLayout } from './components/layouts/ManagementLayout'
-import { OrganizationLayout } from './components/layouts/OrganizationLayout'
-import { ProfileLayout } from './components/layouts/ProfileLayout'
+import { OrganizationSidebar } from './components/sidebars/OrganizationSidebar'
+import { ProfileSidebar } from './components/sidebars/ProfileSidebar'
+import { SidebarBackHeader } from './components/SidebarBackHeader'
 import RootLayout, { ErrorLayout } from './components/RootLayout'
 import { LoadingScreen } from './components/LoadingScreen'
+import { RouteErrorPage } from './components/status/RouteErrorPage'
+import { NotFoundRoute } from './components/status/NotFoundRoute'
+
+// The public landing route is the ONLY statically-imported page. It is
+// prerendered to real HTML by scripts/prerender.mjs, and a React.lazy boundary
+// would suspend on hydration — making React throw away that server-rendered
+// banner and paint a skeleton in its place, which is precisely the LCP win the
+// prerendering exists to deliver. It is small (a banner and two buttons), so
+// the entry-chunk cost is negligible.
+import Landing from './Landing'
 
 function lazyDefault(load: () => Promise<{ default: ComponentType<any> }>) {
   return lazy(load)
@@ -75,10 +84,10 @@ const DeviceGroup = lazyDefault(() => import('./devices/DeviceGroup'))
 const DeviceGroups = lazyDefault(() => import('./devices/DeviceGroups'))
 const Devices = lazyDefault(() => import('./devices/Devices'))
 const Home = lazyDefault(() => import('./Home'))
-const Landing = lazyDefault(() => import('./Landing'))
 const Invite = lazyDefault(() => import('./invite/Invite'))
 const InvitePage = lazyNamed(() => import('./invite/InvitePage'), 'InvitePage')
 const Invites = lazyDefault(() => import('./invite/Invites'))
+const AdminPage = lazyDefault(() => import('./admin/AdminPage'))
 const Memberships = lazyDefault(() => import('./members/Memberships'))
 const Membership = lazyDefault(() => import('./members/Membership'))
 const ActivateTOTP = lazyDefault(activateTOTPModule)
@@ -137,10 +146,6 @@ const AuthKey = lazyDefault(() => import('./mesh/AuthKey'))
 const Scope = lazyDefault(() => import('./scopes/Scope'))
 const Callback = lazyDefault(() => import('./Callback'))
 const Authorize = lazyDefault(() => import('./oauth/Authorize'))
-const OpenSource = lazyDefault(() => import('./public/OpenSource'))
-const Networking = lazyDefault(() => import('./public/Networking'))
-const Auth = lazyDefault(() => import('./public/Auth'))
-const Deploy = lazyDefault(() => import('./public/Deploy'))
 
 const verifyEmailLoader = lazyLoader(verifyEmailModule)
 const resetPasswordByLinkLoader = lazyLoader(resetPasswordModule, 'resetPasswordByLinkLoader')
@@ -154,490 +159,515 @@ function RouteFallback() {
   return <LoadingScreen />
 }
 
+// Thrown loader/render errors and unmatched Responses land here. ErrorLayout
+// re-creates the theme/sidebar providers because the root errorElement replaces
+// RootLayout entirely.
 function RouterErrorBoundary() {
-  const error = useRouteError()
-  console.error(error)
-  return <ErrorLayout>{JSON.stringify(error)}</ErrorLayout>
+  return (
+    <ErrorLayout>
+      <RouteErrorPage />
+    </ErrorLayout>
+  )
 }
 
-function createRouter() {
-  return createBrowserRouter([
+/**
+ * The route tree. Exported as plain data so each entry can build the router it
+ * needs: `createBrowserRouter` in main.tsx, `createMemoryRouter` in
+ * scripts/prerender.mjs. Building it at module scope would touch
+ * `window.history` on import, which the build-time render has no access to.
+ */
+// The route tree and its Suspense fallback are shared with the build-time
+// render in scripts/prerender.mjs. Splitting them into their own module to
+// satisfy react-refresh would mean moving all ~110 lazy route declarations with
+// them, for a dev-only HMR nicety on a file that rarely changes.
+// eslint-disable-next-line react-refresh/only-export-components
+export function createRoutes() {
+  return [
     {
       path: '/',
       element: <RootLayout />,
       errorElement: <RouterErrorBoundary />,
       children: [
         {
-          element: <LandingLayout />,
+          // The public front door. LandingLayout, not DetailLayout: no sidebar,
+          // so an anonymous visitor doesn't pay for AppSidebar's useMeQuery, and
+          // no Suspense boundary — Landing is a static import (see above) and a
+          // boundary here would ship the fallback as the prerendered HTML.
+          element: <LandingLayout suspense={false} />,
           children: [
             {
               path: '/',
               element: <Landing />,
             },
-            {
-              path: '/opensource',
-              element: <OpenSource />,
-            },
-            {
-              path: '/networking',
-              element: <Networking />,
-            },
-            {
-              path: '/auth',
-              element: <Auth />,
-            },
-            {
-              path: '/deploy',
-              element: <Deploy />,
-            },
           ],
         },
         {
-          element: <AnonymousLayout />,
+          // Every layout below this point reads the session (route guards,
+          // Apollo queries keyed on the user), so it waits for the boot session
+          // check to resolve. The landing group deliberately sits outside the gate:
+          // the public pages render on first paint without that round trip.
+          element: <AuthGate />,
           children: [
             {
-              path: '/account/login',
-              element: <AnonymousRoute><Login /></AnonymousRoute>,
-            },
-            {
-              path: '/account/signup',
-              element: <AnonymousRoute><Signup /></AnonymousRoute>,
-            },
-            {
-              path: '/account/login/code',
-              element: <AnonymousRoute><RequestLoginCode /></AnonymousRoute>,
-            },
-            {
-              path: '/account/login/code/confirm',
-              element: <AnonymousRoute><ConfirmLoginCode /></AnonymousRoute>,
-            },
-            {
-              path: '/account/provider/signup',
-              element: <AnonymousRoute><ProviderSignup /></AnonymousRoute>,
-            },
-            {
-              path: '/account/signup/passkey',
-              element: <AnonymousRoute><SignupByPasskey /></AnonymousRoute>,
-            },
-            {
-              path: '/account/signup/passkey/create',
-              element: <AnonymousRoute><CreateSignupPasskey /></AnonymousRoute>,
-            },
-            {
-              path: '/account/password/reset',
-              element: <AnonymousRoute><RequestPasswordReset /></AnonymousRoute>,
-            },
-            {
-              path: '/account/password/reset/confirm',
-              element: <AnonymousRoute><ConfirmPasswordResetCode /></AnonymousRoute>,
-            },
-            {
-              path: '/account/password/reset/complete',
-              element: <AnonymousRoute><ResetPasswordByCode /></AnonymousRoute>,
-            },
-            {
-              path: '/account/password/reset/key/:key',
-              element: <AnonymousRoute><ResetPasswordByLink /></AnonymousRoute>,
-              loader: resetPasswordByLinkLoader,
-            },
-            {
-              path: '/account/authenticate/totp',
-              element: <AnonymousRoute><AuthenticateTOTP /></AnonymousRoute>,
-            },
-            {
-              path: '/account/2fa/trust',
-              element: <AnonymousRoute><Trust /></AnonymousRoute>,
-            },
-            {
-              path: '/account/authenticate/recovery-codes',
-              element: <AnonymousRoute><AuthenticateRecoveryCodes /></AnonymousRoute>,
-            },
-            {
-              path: '/account/authenticate/webauthn',
-              element: <AnonymousRoute><AuthenticateWebAuthn /></AnonymousRoute>,
-            },
-          ],
-        },
-        {
-          element: <ManagementLayout />,
-          children: [
-            {
-              path: '/home',
-              element: <AuthenticatedRoute><Home /></AuthenticatedRoute>,
-            },
-            {
-              path: '/callback',
-              element: <Callback />,
-            },
-            {
-              path: '/services',
-              element: <AuthenticatedRoute><Services /></AuthenticatedRoute>,
-            },
-            {
-              path: '/services/:id',
-              element: <AuthenticatedRoute><Service /></AuthenticatedRoute>,
-            },
-            {
-              path: '/releases',
-              element: <AuthenticatedRoute><Releases /></AuthenticatedRoute>,
-            },
-            {
-              path: '/releases/:id',
-              element: <AuthenticatedRoute><Release /></AuthenticatedRoute>,
-            },
-            {
-              path: '/service-releases',
-              element: <AuthenticatedRoute><ServiceReleases /></AuthenticatedRoute>,
-            },
-            {
-              path: '/service-releases/:id',
-              element: <AuthenticatedRoute><ServiceRelease /></AuthenticatedRoute>,
-            },
-            {
-              path: '/service-instance-mappings',
-              element: <AuthenticatedRoute><ServiceInstanceMappings /></AuthenticatedRoute>,
-            },
-            {
-              path: '/service-instance-mappings/:id',
-              element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>,
-            },
-            {
-              path: '/instance-aliases',
-              element: <AuthenticatedRoute><InstanceAliases /></AuthenticatedRoute>,
-            },
-            {
-              path: '/instance-aliases/:id',
-              element: <AuthenticatedRoute><InstanceAlias /></AuthenticatedRoute>,
-            },
-            {
-              path: '/apps',
-              element: <AuthenticatedRoute><Apps /></AuthenticatedRoute>,
-            },
-            {
-              path: '/apps/:id',
-              element: <AuthenticatedRoute><App /></AuthenticatedRoute>,
-            },
-            {
-              path: '/devices',
-              element: <AuthenticatedRoute><Devices /></AuthenticatedRoute>,
-            },
-            {
-              path: '/devices/:id',
-              element: <AuthenticatedRoute><Device /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/logout',
-              element: <Logout />,
-            },
-            {
-              path: '/account/provider/callback',
-              element: <ProviderCallback />,
-            },
-            {
-              path: '/account/verify-email',
-              element: <VerifyEmailByCode />,
-            },
-            {
-              path: '/account/verify-email/:key',
-              element: <VerifyEmail />,
-              loader: verifyEmailLoader,
-            },
-            {
-              path: '/invites/:id',
-              element: <AuthenticatedRoute><Invite /></AuthenticatedRoute>,
-            },
-          ],
-        },
-        {
-          element: <ConfigureLayout />,
-          children: [
-            {
-              path: '/configure/:deviceCode',
-              element: <AuthenticatedRoute><ConfigurePage /></AuthenticatedRoute>,
-            },
-            {
-              path: '/hubconfigure/:hubCode',
-              element: <AuthenticatedRoute><HubConfigurePage /></AuthenticatedRoute>,
-            },
-            {
-              path: '/meshconfigure/:meshCode',
-              element: <AuthenticatedRoute><MeshConfigurePage /></AuthenticatedRoute>,
-            },
-            {
-              // Public/preview-capable: anonymous visitors can see a public invite
-              // (or a sign-in gate for a private one). InvitePage branches on auth.
-              path: '/invite/:code',
-              element: <InvitePage />,
-            },
-            {
-              path: '/authorize',
-              element: <AuthenticatedRoute><Authorize /></AuthenticatedRoute>,
-            },
-          ],
-        },
-        {
-          path: 'organization/:orgId',
-          element: <OrganizationLayout />,
-          children: [
-            {
-              index: true,
-              element: <AuthenticatedRoute><OrganizationDashboard /></AuthenticatedRoute>,
-            },
-            {
-              path: 'profile',
-              element: <AuthenticatedRoute><OrganizationProfile /></AuthenticatedRoute>,
-            },
-            {
-              path: 'me',
-              element: <AuthenticatedRoute><MyMembership /></AuthenticatedRoute>,
-            },
-            {
-              path: 'members',
-              element: <AuthenticatedRoute><Memberships /></AuthenticatedRoute>,
-            },
-            {
-              path: 'members/:id',
-              element: <AuthenticatedRoute><Membership /></AuthenticatedRoute>,
-            },
-            {
-              path: 'invites',
-              element: <AuthenticatedRoute><Invites /></AuthenticatedRoute>,
-            },
-            {
-              path: 'invites/:id',
-              element: <AuthenticatedRoute><Invite /></AuthenticatedRoute>,
-            },
-            {
-              path: 'danger-zone',
-              element: <AuthenticatedRoute><DangerZone /></AuthenticatedRoute>,
-            },
-            {
-              path: 'clients',
-              element: <AuthenticatedRoute><Clients /></AuthenticatedRoute>,
-            },
-            {
-              path: 'partners',
-              element: <AuthenticatedRoute><KommunityPartners /></AuthenticatedRoute>,
-            },
-            {
-              path: 'partners/:id',
-              element: <AuthenticatedRoute><KommunityPartner /></AuthenticatedRoute>,
-            },
-            {
-              path: 'clients/:id',
-              element: <AuthenticatedRoute><Client /></AuthenticatedRoute>,
-            },
-            {
-              path: 'clients/:id/report',
-              element: <AuthenticatedRoute><ReportPage /></AuthenticatedRoute>,
-            },
-            {
-              path: 'service-instances',
-              element: <AuthenticatedRoute><ServiceInstances /></AuthenticatedRoute>,
-            },
-            {
-              path: 'service-instances/:instanceId',
-              element: <AuthenticatedRoute><ServiceInstance /></AuthenticatedRoute>,
-            },
-            {
-              path: 'service-instance-mappings',
-              element: <AuthenticatedRoute><ServiceInstanceMappings /></AuthenticatedRoute>,
-            },
-            {
-              path: 'service-instance-mappings/:id',
-              element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>,
-            },
-            {
-              path: 'hubs',
-              element: <AuthenticatedRoute><Hubs /></AuthenticatedRoute>,
-            },
-            {
-              path: 'connect-hub',
-              element: <AuthenticatedRoute><ConnectHub /></AuthenticatedRoute>,
-            },
-            {
-              path: 'hubs/:name',
-              element: <AuthenticatedRoute><Hub /></AuthenticatedRoute>,
+              // The auth flow is public-facing, so it wears the public chrome
+              // rather than the app shell: no sidebar, no breadcrumbs. `minimal`
+              // drops the top-bar log-in/sign-up buttons, which would only
+              // compete with the form on the page.
+              element: <LandingLayout minimal center />,
               children: [
                 {
-                  index: true,
-                  element: <HubOverview />,
+                  path: '/account/login',
+                  element: <AnonymousRoute><Login /></AnonymousRoute>,
                 },
                 {
-                  path: 'services',
-                  element: <HubServices />,
+                  path: '/account/signup',
+                  element: <AnonymousRoute><Signup /></AnonymousRoute>,
                 },
                 {
-                  path: 'clients',
-                  element: <HubClients />,
+                  path: '/account/login/code',
+                  element: <AnonymousRoute><RequestLoginCode /></AnonymousRoute>,
                 },
                 {
-                  path: 'redeem-tokens',
-                  element: <HubRedeemTokens />,
+                  path: '/account/login/code/confirm',
+                  element: <AnonymousRoute><ConfirmLoginCode /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/provider/signup',
+                  element: <AnonymousRoute><ProviderSignup /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/signup/passkey',
+                  element: <AnonymousRoute><SignupByPasskey /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/signup/passkey/create',
+                  element: <AnonymousRoute><CreateSignupPasskey /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/password/reset',
+                  element: <AnonymousRoute><RequestPasswordReset /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/password/reset/confirm',
+                  element: <AnonymousRoute><ConfirmPasswordResetCode /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/password/reset/complete',
+                  element: <AnonymousRoute><ResetPasswordByCode /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/password/reset/key/:key',
+                  element: <AnonymousRoute><ResetPasswordByLink /></AnonymousRoute>,
+                  loader: resetPasswordByLinkLoader,
+                },
+                {
+                  path: '/account/authenticate/totp',
+                  element: <AnonymousRoute><AuthenticateTOTP /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/2fa/trust',
+                  element: <AnonymousRoute><Trust /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/authenticate/recovery-codes',
+                  element: <AnonymousRoute><AuthenticateRecoveryCodes /></AnonymousRoute>,
+                },
+                {
+                  path: '/account/authenticate/webauthn',
+                  element: <AnonymousRoute><AuthenticateWebAuthn /></AnonymousRoute>,
                 },
               ],
             },
             {
-              path: 'devices',
-              element: <AuthenticatedRoute><Devices /></AuthenticatedRoute>,
+              element: <DetailLayout sidebar={<OrganizationSidebar />} />,
+              children: [
+                {
+                  path: '/home',
+                  element: <AuthenticatedRoute><Home /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/callback',
+                  element: <Callback />,
+                },
+                {
+                  path: '/services',
+                  element: <AuthenticatedRoute><Services /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/services/:id',
+                  element: <AuthenticatedRoute><Service /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/releases',
+                  element: <AuthenticatedRoute><Releases /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/releases/:id',
+                  element: <AuthenticatedRoute><Release /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/service-releases',
+                  element: <AuthenticatedRoute><ServiceReleases /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/service-releases/:id',
+                  element: <AuthenticatedRoute><ServiceRelease /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/service-instance-mappings',
+                  element: <AuthenticatedRoute><ServiceInstanceMappings /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/service-instance-mappings/:id',
+                  element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/instance-aliases',
+                  element: <AuthenticatedRoute><InstanceAliases /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/instance-aliases/:id',
+                  element: <AuthenticatedRoute><InstanceAlias /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/apps',
+                  element: <AuthenticatedRoute><Apps /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/apps/:id',
+                  element: <AuthenticatedRoute><App /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/devices',
+                  element: <AuthenticatedRoute><Devices /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/devices/:id',
+                  element: <AuthenticatedRoute><Device /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/logout',
+                  element: <Logout />,
+                },
+                {
+                  path: '/account/provider/callback',
+                  element: <ProviderCallback />,
+                },
+                {
+                  path: '/account/verify-email',
+                  element: <VerifyEmailByCode />,
+                },
+                {
+                  path: '/account/verify-email/:key',
+                  element: <VerifyEmail />,
+                  loader: verifyEmailLoader,
+                },
+                {
+                  path: '/invites/:id',
+                  element: <AuthenticatedRoute><Invite /></AuthenticatedRoute>,
+                },
+              ],
             },
             {
-              path: 'devices/:id',
-              element: <AuthenticatedRoute><Device /></AuthenticatedRoute>,
+              element: <ConfigureLayout />,
+              children: [
+                {
+                  path: '/configure/:deviceCode',
+                  element: <AuthenticatedRoute><ConfigurePage /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/hubconfigure/:hubCode',
+                  element: <AuthenticatedRoute><HubConfigurePage /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/meshconfigure/:meshCode',
+                  element: <AuthenticatedRoute><MeshConfigurePage /></AuthenticatedRoute>,
+                },
+                {
+                  // Public/preview-capable: anonymous visitors can see a public invite
+                  // (or a sign-in gate for a private one). InvitePage branches on auth.
+                  path: '/invite/:code',
+                  element: <InvitePage />,
+                },
+                {
+                  path: '/authorize',
+                  element: <AuthenticatedRoute><Authorize /></AuthenticatedRoute>,
+                },
+              ],
             },
             {
-              path: 'devices/groups',
-              element: <AuthenticatedRoute><DeviceGroups /></AuthenticatedRoute>,
+              path: 'organization/:orgId',
+              element: <DetailLayout sidebar={<OrganizationSidebar />} />,
+              children: [
+                {
+                  index: true,
+                  element: <AuthenticatedRoute><OrganizationDashboard /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'profile',
+                  element: <AuthenticatedRoute><OrganizationProfile /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'me',
+                  element: <AuthenticatedRoute><MyMembership /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'members',
+                  element: <AuthenticatedRoute><Memberships /></AuthenticatedRoute>,
+                },
+                {
+                  // Owner/admin desk. The page gates itself on `amIAdmin` (and lok
+                  // refuses the mutations regardless), so no extra route guard.
+                  path: 'admin',
+                  element: <AuthenticatedRoute><AdminPage /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'members/:id',
+                  element: <AuthenticatedRoute><Membership /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'invites',
+                  element: <AuthenticatedRoute><Invites /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'invites/:id',
+                  element: <AuthenticatedRoute><Invite /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'danger-zone',
+                  element: <AuthenticatedRoute><DangerZone /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'clients',
+                  element: <AuthenticatedRoute><Clients /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'partners',
+                  element: <AuthenticatedRoute><KommunityPartners /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'partners/:id',
+                  element: <AuthenticatedRoute><KommunityPartner /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'clients/:id',
+                  element: <AuthenticatedRoute><Client /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'clients/:id/report',
+                  element: <AuthenticatedRoute><ReportPage /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'service-instances',
+                  element: <AuthenticatedRoute><ServiceInstances /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'service-instances/:instanceId',
+                  element: <AuthenticatedRoute><ServiceInstance /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'service-instance-mappings',
+                  element: <AuthenticatedRoute><ServiceInstanceMappings /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'service-instance-mappings/:id',
+                  element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'hubs',
+                  element: <AuthenticatedRoute><Hubs /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'connect-hub',
+                  element: <AuthenticatedRoute><ConnectHub /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'hubs/:name',
+                  element: <AuthenticatedRoute><Hub /></AuthenticatedRoute>,
+                  children: [
+                    {
+                      index: true,
+                      element: <HubOverview />,
+                    },
+                    {
+                      path: 'services',
+                      element: <HubServices />,
+                    },
+                    {
+                      path: 'clients',
+                      element: <HubClients />,
+                    },
+                    {
+                      path: 'redeem-tokens',
+                      element: <HubRedeemTokens />,
+                    },
+                  ],
+                },
+                {
+                  path: 'devices',
+                  element: <AuthenticatedRoute><Devices /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'devices/:id',
+                  element: <AuthenticatedRoute><Device /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'devices/groups',
+                  element: <AuthenticatedRoute><DeviceGroups /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'devices/groups/:groupId',
+                  element: <AuthenticatedRoute><DeviceGroup /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'permissions',
+                  element: <AuthenticatedRoute><Permissions /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'rolesets',
+                  element: <AuthenticatedRoute><RoleSets /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'scopes/:id',
+                  element: <AuthenticatedRoute><Scope /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'roles/:id',
+                  element: <AuthenticatedRoute><Role /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'mesh',
+                  element: <AuthenticatedRoute><Mesh /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'mesh/machines/:id',
+                  element: <AuthenticatedRoute><Machine /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'mesh/authkeys/:id',
+                  element: <AuthenticatedRoute><AuthKey /></AuthenticatedRoute>,
+                },
+              ],
             },
             {
-              path: 'devices/groups/:groupId',
-              element: <AuthenticatedRoute><DeviceGroup /></AuthenticatedRoute>,
+              element: <DetailLayout sidebar={<ProfileSidebar />} header={<SidebarBackHeader />} />,
+              children: [
+                {
+                  path: '/profile',
+                  element: <AuthenticatedRoute><Profile /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account',
+                  element: <AuthenticatedRoute><Account /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/email',
+                  element: <AuthenticatedRoute><ChangeEmail /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/password/change',
+                  element: <AuthenticatedRoute><ChangePassword /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/password/success',
+                  element: <AuthenticatedRoute><PasswordChangeSuccess /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/2fa',
+                  element: <AuthenticatedRoute><MFAOverview /></AuthenticatedRoute>,
+                  loader: mfaOverviewLoader,
+                },
+                {
+                  path: '/account/2fa/totp/activate',
+                  element: <AuthenticatedRoute><ActivateTOTP /></AuthenticatedRoute>,
+                  loader: activateTOTPLoader,
+                },
+                {
+                  path: '/account/2fa/totp/deactivate',
+                  element: <AuthenticatedRoute><DeactivateTOTP /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/2fa/recovery-codes',
+                  element: <AuthenticatedRoute><RecoveryCodes /></AuthenticatedRoute>,
+                  loader: recoveryCodesLoader,
+                },
+                {
+                  path: '/account/2fa/recovery-codes/generate',
+                  element: <AuthenticatedRoute><GenerateRecoveryCodes /></AuthenticatedRoute>,
+                  loader: generateRecoveryCodesLoader,
+                },
+                {
+                  path: '/account/2fa/webauthn',
+                  element: <AuthenticatedRoute><ListWebAuthn /></AuthenticatedRoute>,
+                  loader: listWebAuthnLoader,
+                },
+                {
+                  path: '/account/2fa/webauthn/add',
+                  element: <AuthenticatedRoute><AddWebAuthn /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/reauthenticate',
+                  element: <AuthenticatedRoute><Reauthenticate /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/reauthenticate/totp',
+                  element: <AuthenticatedRoute><ReauthenticateTOTP /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/reauthenticate/recovery-codes',
+                  element: <AuthenticatedRoute><ReauthenticateRecoveryCodes /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/reauthenticate/webauthn',
+                  element: <AuthenticatedRoute><ReauthenticateWebAuthn /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/socialaccount/manage',
+                  element: <AuthenticatedRoute><ManageProviders /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/socialaccount/:id',
+                  element: <AuthenticatedRoute><SocialAccount /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/providers',
+                  element: <AuthenticatedRoute><ManageProviders /></AuthenticatedRoute>,
+                },
+                {
+                  path: '/account/sessions',
+                  element: <AuthenticatedRoute><Sessions /></AuthenticatedRoute>,
+                },
+              ],
             },
-            {
-              path: 'permissions',
-              element: <AuthenticatedRoute><Permissions /></AuthenticatedRoute>,
-            },
-            {
-              path: 'rolesets',
-              element: <AuthenticatedRoute><RoleSets /></AuthenticatedRoute>,
-            },
-            {
-              path: 'scopes/:id',
-              element: <AuthenticatedRoute><Scope /></AuthenticatedRoute>,
-            },
-            {
-              path: 'roles/:id',
-              element: <AuthenticatedRoute><Role /></AuthenticatedRoute>,
-            },
-            {
-              path: 'mesh',
-              element: <AuthenticatedRoute><Mesh /></AuthenticatedRoute>,
-            },
-            {
-              path: 'mesh/machines/:id',
-              element: <AuthenticatedRoute><Machine /></AuthenticatedRoute>,
-            },
-            {
-              path: 'mesh/authkeys/:id',
-              element: <AuthenticatedRoute><AuthKey /></AuthenticatedRoute>,
-            },
-          ],
+          ].map(route => ({
+            ...route,
+            errorElement: <RouterErrorBoundary />,
+          })),
         },
         {
-          element: <ProfileLayout />,
-          children: [
-            {
-              path: '/profile',
-              element: <AuthenticatedRoute><Profile /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account',
-              element: <AuthenticatedRoute><Account /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/email',
-              element: <AuthenticatedRoute><ChangeEmail /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/password/change',
-              element: <AuthenticatedRoute><ChangePassword /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/password/success',
-              element: <AuthenticatedRoute><PasswordChangeSuccess /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/2fa',
-              element: <AuthenticatedRoute><MFAOverview /></AuthenticatedRoute>,
-              loader: mfaOverviewLoader,
-            },
-            {
-              path: '/account/2fa/totp/activate',
-              element: <AuthenticatedRoute><ActivateTOTP /></AuthenticatedRoute>,
-              loader: activateTOTPLoader,
-            },
-            {
-              path: '/account/2fa/totp/deactivate',
-              element: <AuthenticatedRoute><DeactivateTOTP /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/2fa/recovery-codes',
-              element: <AuthenticatedRoute><RecoveryCodes /></AuthenticatedRoute>,
-              loader: recoveryCodesLoader,
-            },
-            {
-              path: '/account/2fa/recovery-codes/generate',
-              element: <AuthenticatedRoute><GenerateRecoveryCodes /></AuthenticatedRoute>,
-              loader: generateRecoveryCodesLoader,
-            },
-            {
-              path: '/account/2fa/webauthn',
-              element: <AuthenticatedRoute><ListWebAuthn /></AuthenticatedRoute>,
-              loader: listWebAuthnLoader,
-            },
-            {
-              path: '/account/2fa/webauthn/add',
-              element: <AuthenticatedRoute><AddWebAuthn /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/reauthenticate',
-              element: <AuthenticatedRoute><Reauthenticate /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/reauthenticate/totp',
-              element: <AuthenticatedRoute><ReauthenticateTOTP /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/reauthenticate/recovery-codes',
-              element: <AuthenticatedRoute><ReauthenticateRecoveryCodes /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/reauthenticate/webauthn',
-              element: <AuthenticatedRoute><ReauthenticateWebAuthn /></AuthenticatedRoute>,
-            },
-            {
-              path: '/socialaccount/manage',
-              element: <AuthenticatedRoute><ManageProviders /></AuthenticatedRoute>,
-            },
-            {
-              path: '/socialaccount/:id',
-              element: <AuthenticatedRoute><SocialAccount /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/providers',
-              element: <AuthenticatedRoute><ManageProviders /></AuthenticatedRoute>,
-            },
-            {
-              path: '/account/sessions',
-              element: <AuthenticatedRoute><Sessions /></AuthenticatedRoute>,
-            },
-          ],
-        },
-        {
-          element: <ManagementLayout />,
-          children: [
-            {
-              path: '*',
-              element: <ErrorLayout>404 Not Found</ErrorLayout>,
-            },
-          ],
+          path: '*',
+          element: <NotFoundRoute />,
         },
       ].map(route => ({
         ...route,
         errorElement: <RouterErrorBoundary />,
       })),
     },
-  ])
+  ]
 }
 
-const router = createRouter()
+let browserRouter: ReturnType<typeof createBrowserRouter> | undefined
 
 export default function BaseRouter() {
+  browserRouter ??= createBrowserRouter(createRoutes())
   return (
     <ErrorBoundary>
       <Suspense fallback={<RouteFallback />}>
-        <RouterProvider router={router} />
+        <RouterProvider router={browserRouter} />
       </Suspense>
     </ErrorBoundary>
   )
 }
+
+/** The shared Suspense boundary, reused by the build-time render. */
+export { RouteFallback }

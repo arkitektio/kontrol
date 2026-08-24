@@ -1,26 +1,27 @@
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroupLabel } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Link, useLocation } from "react-router-dom"
-import { useSidebarOrganizationQuery, useHubsQuery } from "@/api/graphql"
+import { useSidebarHubsQuery } from "@/graphql/queries/sidebar_hubs.generated"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug, Tags } from "lucide-react"
+import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug, Tags } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
-    const { activeOrgId } = useActiveOrganization()
+    const { activeOrgId, activeOrg } = useActiveOrganization()
+    // Owner-or-admin, off the same Me query the shell already ran — so the Admin
+    // entry costs no extra request. While Me is in flight it reads false and the
+    // entry simply isn't rendered yet; hiding it is cosmetic, since AdminPage
+    // gates itself and lok refuses the mutations below owner-or-admin anyway.
+    const { isAdmin: mayAdminister } = useIsOrgAdmin(activeOrgId)
 
-    const { data } = useSidebarOrganizationQuery({
-        variables: { id: activeOrgId! },
-        skip: !activeOrgId,
-    })
-
-    const { data: compData } = useHubsQuery({
+    // Hubs get their own slim query (id + name only) — the full `Hubs` query
+    // pulls every hub's instances and clients, which the sidebar never shows.
+    const { data: hubsData } = useSidebarHubsQuery({
         variables: { filters: { organization: activeOrgId || undefined } },
         skip: !activeOrgId,
     })
-    const hubs = compData?.hubs ?? []
-
-    const org = data?.organization
+    const hubs = hubsData?.hubs ?? []
 
     // No active org at all → prompt to pick/create one from the account menu.
     if (!activeOrgId) {
@@ -33,9 +34,9 @@ export function OrganizationSidebar() {
         )
     }
 
-    // Active org known but its details are still loading — render nothing yet
-    // rather than flashing the empty-state message.
-    if (!org) return null
+    // The org id + name come straight from `Me` (already fetched for the shell),
+    // so the navigation renders without waiting for any org-specific query.
+    const org = activeOrg ?? { id: activeOrgId, name: null, slug: "" }
 
     const isActive = (path: string, exact = false) => {
         if (exact) return location.pathname === path
@@ -49,6 +50,9 @@ export function OrganizationSidebar() {
         { to: `${base}/profile`, label: "Profile", icon: Building2 },
         { to: `${base}/me`, label: "My Access", icon: UserCircle, exact: true },
         { to: `${base}/members`, label: "Members", icon: Users },
+        ...(mayAdminister
+            ? [{ to: `${base}/admin`, label: "Admin", icon: ShieldCheck, exact: true }]
+            : []),
         { to: `${base}/invites`, label: "Invites", icon: Mail },
         { to: `${base}/rolesets`, label: "Role Sets", icon: Tags },
         { to: `${base}/danger-zone`, label: "Settings", icon: Settings },
@@ -65,7 +69,7 @@ export function OrganizationSidebar() {
     return (
       <>
         <SidebarGroup>
-          <SidebarGroupLabel className="truncate">{org.name}</SidebarGroupLabel>
+          <SidebarGroupLabel className="truncate">{org.name || org.slug}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -100,7 +104,7 @@ export function OrganizationSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {compData && hubs.length === 0 && (
+        {hubsData && hubs.length === 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Hubs</SidebarGroupLabel>
             <SidebarGroupContent>

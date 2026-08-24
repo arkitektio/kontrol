@@ -1,11 +1,7 @@
 import { useState } from "react"
 import { useParams } from "react-router-dom"
-import {
-  useOrganizationRoleSetsQuery,
-  useCreateRoleSetMutation,
-  useUpdateRoleSetMutation,
-  useDeleteRoleSetMutation,
-} from "../api/graphql"
+import { useOrganizationRoleSetsQuery } from "@/graphql/queries/role_set.generated"
+import { useCreateRoleSetMutation, useUpdateRoleSetMutation, useDeleteRoleSetMutation } from "@/graphql/mutations/role_set.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
@@ -23,6 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 type RoleSet = { id: string; name: string; roles: { id: string; identifier: string }[] }
 
@@ -44,9 +44,9 @@ export default function RoleSets() {
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.organization) return <div className="p-4">Organization not found</div>
+  if (loading) return <ListPageSkeleton columns={3} count={6} />
+  if (error) return <QueryError error={error} resource="organization" />
+  if (!data?.organization) return <ResourceNotFound resource="organization" id={orgId} />
 
   const org = data.organization
   const availableRoles = org.roles || []

@@ -1,9 +1,8 @@
-import { ApolloClient, HttpLink, InMemoryCache, createHttpLink, gql } from "@apollo/client";
+import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { ApolloProvider } from "@apollo/client/react";
 import { getCSRFToken } from "./lib/django";
 import fragment from "./api/fragments";
-import { fr } from "date-fns/locale";
 
 
 
@@ -24,7 +23,7 @@ import { fr } from "date-fns/locale";
     }
   });
 
-const client = new ApolloClient({
+export const client = new ApolloClient({
   link: authLink.concat(httpLink),
 
   cache: new InMemoryCache({

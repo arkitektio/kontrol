@@ -3,13 +3,18 @@ query LatestClientReport($id: ID!) {
     id
     name
     lastReportedAt
+    functional
     release {
       version
       app {
         identifier
+        logo {
+          presignedUrl
+        }
       }
     }
     device {
+      id
       name
     }
     latestReport {
@@ -17,6 +22,9 @@ query LatestClientReport($id: ID!) {
     }
     lastHealthyReport {
       ...ListReport
+    }
+    reports {
+      ...TimelineReport
     }
   }
 }

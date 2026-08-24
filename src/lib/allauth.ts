@@ -112,10 +112,15 @@ function postForm (action: string, data: Record<string, string>) {
   f.submit()
 }
 
-const tokenStorage = window.sessionStorage
+// App-mode (Client.APP) session token storage. Resolved lazily rather than at
+// module scope: this module is imported by the auth shell, which is rendered at
+// build time by scripts/prerender.mjs where there is no `window`.
+function tokenStorage () {
+  return window.sessionStorage
+}
 
 export function getSessionToken () {
-  return tokenStorage.getItem('sessionToken')
+  return tokenStorage().getItem('sessionToken')
 }
 
 interface RequestOptions extends RequestInit {
@@ -191,17 +196,56 @@ async function request (method: string, path: string, data?: unknown, headers?: 
   }
   const resp = await fetch(settings.baseUrl + path, options)
   const msg = await resp.json()
+  return handleResponse(msg)
+}
+
+// Non-sensitive hint that the last session check on this browser was
+// authenticated. Lets the next boot speculatively prefetch `Me` in parallel
+// with the session check (see src/App.tsx). Never trusted for anything else.
+export const WAS_AUTHENTICATED_KEY = 'kontrol-was-authenticated'
+
+export function wasAuthenticated (): boolean {
+  try {
+    return localStorage.getItem(WAS_AUTHENTICATED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function rememberAuthenticated (value: boolean) {
+  try {
+    if (value) localStorage.setItem(WAS_AUTHENTICATED_KEY, '1')
+    else localStorage.removeItem(WAS_AUTHENTICATED_KEY)
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/**
+ * Post-process an allauth response: persist/clear the app-client session token,
+ * remember whether we're authenticated, and broadcast auth-state changes so the
+ * AuthContext picks them up. Shared by `request()` and the index.html boot fetch.
+ */
+function handleResponse (msg: APIResponse): APIResponse {
   if (msg.status === 410) {
-    tokenStorage.removeItem('sessionToken')
+    tokenStorage().removeItem('sessionToken')
   }
   if (msg.meta?.session_token) {
-    tokenStorage.setItem('sessionToken', msg.meta.session_token)
+    tokenStorage().setItem('sessionToken', msg.meta.session_token)
   }
-  if ([401, 410].includes(msg.status) || (msg.status === 200 && msg.meta?.is_authenticated)) {
+  const authenticated = msg.status === 200 && Boolean(msg.meta?.is_authenticated)
+  if ([401, 410].includes(msg.status) || authenticated) {
+    rememberAuthenticated(authenticated)
     const event = new CustomEvent('allauth.auth.change', { detail: msg })
     document.dispatchEvent(event)
   }
   return msg
+}
+
+declare global {
+  interface Window {
+    __kontrolBoot?: { session?: Promise<unknown> }
+  }
 }
 
 
@@ -339,6 +383,16 @@ export async function changePassword (data: Record<string, unknown>) {
 }
 
 export async function getAuth () {
+  // index.html starts the session request before the bundle loads; use that
+  // response for the first call instead of issuing a second round trip.
+  const boot = window.__kontrolBoot?.session
+  if (boot) {
+    delete window.__kontrolBoot
+    const msg = (await boot) as APIResponse | null
+    if (msg && typeof msg.status === 'number') {
+      return handleResponse(msg)
+    }
+  }
   return await request('GET', URLs.SESSION)
 }
 

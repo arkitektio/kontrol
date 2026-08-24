@@ -1,17 +1,28 @@
 overwrite: true
-schema: 
+schema:
   https://go.arkitekt.live/lok/managementschema/:
       handleAsSDL: true
-documents: "graphql/**/*.graphql"
+documents: "src/graphql/**/*.graphql"
 generates:
   src/api/fragments.ts:
     plugins:
       - "fragment-matcher"
-  src/api/graphql.ts:
+  src/api/types.ts:
     plugins:
       - "typescript"
+    config:
+      enumsAsConst: true
+  src/:
+    preset: near-operation-file
+    presetConfig:
+      baseTypesPath: api/types.ts
+      extension: .generated.ts
+    plugins:
       - "typescript-operations"
       - "typescript-react-apollo"
     config:
       withHooks: true
       reactApolloVersion: 3
+      documentMode: documentNodeImportFragments
+      dedupeFragments: true
+      useTypeImports: true

@@ -1,10 +1,15 @@
 import { Link, useParams } from "react-router-dom"
-import { useHubsQuery, useListKommunityPartnerQuery } from "../api/graphql"
+import { useHubsQuery } from "@/graphql/queries/hub.generated"
+import { useListKommunityPartnerQuery } from "@/graphql/queries/kommunity_partner.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { PageHeader } from "../components/PageHeader"
 import { Layers, ArrowRight, Server } from "lucide-react"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function Hubs() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -18,8 +23,8 @@ export default function Hubs() {
     variables: { pagination: { limit: 6 } }
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton columns={3} count={6} />
+  if (error) return <QueryError error={error} />
 
   const hubs = data?.hubs || []
   const partners = partnersData?.kommunityPartners || []

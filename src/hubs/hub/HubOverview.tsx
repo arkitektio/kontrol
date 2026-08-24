@@ -1,10 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom"
-import {
-  useGetHubQuery,
-  useDeleteHubMutation,
-  useUpdateHubMutation,
-  HubsDocument,
-} from "../../api/graphql"
+import { useGetHubQuery, HubsDocument } from "@/graphql/queries/hub.generated"
+import { useDeleteHubMutation, useUpdateHubMutation } from "@/graphql/mutations/hub.generated"
 import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"

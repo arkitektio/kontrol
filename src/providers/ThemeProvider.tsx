@@ -1,63 +1,51 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes"
 
 type ThemeProviderProps = {
-  children: React.ReactNode;
-  defaultTheme?: "dark" | "light" ;
-  storageKey?: string;
-};
+  children: React.ReactNode
+  defaultTheme?: "dark" | "light" | "system"
+  storageKey?: string
+}
 
-type ThemeProviderState = {
-  theme: "dark" | "light" ;
-  setTheme: (theme: "dark" | "light" ) => void;
-};
-
-const initialState = {
-  theme:"dark" as "dark" | "light" ,
-  setTheme: () => null,
-};
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
-
+/**
+ * Theme state, backed by next-themes.
+ *
+ * The hand-rolled provider this replaces read `localStorage` and `matchMedia`
+ * inside a `useState` initializer — during render, on every route, which throws
+ * anywhere there is no `window` (prerendering) and is a hydration-mismatch
+ * source besides. next-themes does the same job without touching the browser
+ * during render. Despite the name it is framework-agnostic; nothing here
+ * involves Next.js. `src/components/ui/sonner.tsx` was already importing
+ * `useTheme` from it and silently getting the default, so this also makes the
+ * toaster follow the real theme.
+ *
+ * The pre-paint script in index.html still owns first paint: it applies the
+ * stored theme (and brand hue) before any JS module runs, so there is no flash
+ * of the wrong appearance. Keep the two in sync — both use `vite-ui-theme` and
+ * the `light`/`dark` class on <html>.
+ */
 export function ThemeProvider({
   children,
-  defaultTheme = "dark",
+  defaultTheme = "system",
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored === "dark" || stored === "light") return stored;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-
-    root.classList.remove("light", "dark");
-
-    root.classList.add(theme);
-  }, [theme]);
-
-  const value = {
-    theme,
-    setTheme: (theme: "dark" | "light") => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
-    },
-  };
-
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme={defaultTheme}
+      storageKey={storageKey}
+      enableSystem
+      disableTransitionOnChange
+      {...props}
+    >
       {children}
-    </ThemeProviderContext.Provider>
-  );
+    </NextThemesProvider>
+  )
 }
 
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider");
-
-  return context;
-};
+/**
+ * `theme` is the user's *preference* and may be "system" — use it for the
+ * theme picker. Anything choosing actual colours wants `resolvedTheme`, which
+ * is always "dark" or "light" (and `undefined` until mount, so keep a fallback).
+ */
+export const useTheme = useNextTheme

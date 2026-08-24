@@ -3,10 +3,14 @@ import { clientInitials, clientLabel } from "@/lib/clientLabel"
 import { cn } from "@/lib/utils"
 import { Activity } from "lucide-react"
 import { Link, useParams } from "react-router-dom"
-import { useDetailClientQuery } from "../api/graphql"
+import { useDetailClientQuery } from "@/graphql/queries/client.generated"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
 import { CardContent, CardHeader, CardTitle } from "../components/ui/card"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function Client() {
   const { id } = useParams<{ id: string }>()
@@ -15,9 +19,9 @@ export default function Client() {
     skip: !id,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.client) return <div>Client not found</div>
+  if (loading) return <DetailPageSkeleton sections={3} />
+  if (error) return <QueryError error={error} resource="client" />
+  if (!data?.client) return <ResourceNotFound resource="client" id={id} />
 
   const client = data.client
 

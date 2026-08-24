@@ -6,12 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kontrol</title>
     <script>
-      // Apply the brand hue and theme before first paint. A `brand-hue` and/or
-      // `theme` (dark|light) URL query param wins and is persisted; otherwise the
-      // saved value is used; otherwise a random hue is picked (and persisted) for
-      // this first visit. Runs here (not in React) to avoid flashing the default
-      // appearance before the app mounts — important for the embedded /configure
-      // pages, whose host can pass e.g. ?brand-hue=210&theme=light.
+      // Apply the brand hue/chroma and theme before first paint. A `brand-hue`,
+      // `brand-chroma` and/or `theme` (dark|light) URL query param wins and is
+      // persisted; otherwise the saved value is used; otherwise a random hue is
+      // picked (and persisted) for this first visit. Runs here (not in React) to
+      // avoid flashing the default appearance before the app mounts — important
+      // for the embedded /configure pages, whose host can pass e.g.
+      // ?brand-hue=210&brand-chroma=0.14&theme=light.
       (function () {
         try {
           var params = new URLSearchParams(window.location.search);
@@ -26,17 +27,104 @@
             document.documentElement.style.setProperty("--brand-hue", String(h));
           }
 
-          // Theme
+          // Brand chroma. Unlike hue there is no random first visit — leaving
+          // `--brand-chroma-user` unset is what gives the stock palette, and each
+          // theme derives its own chroma from it (see index.css). Setting
+          // `--brand-chroma` directly here would outrank `.dark` and flatten it.
+          // 0.3 ceiling mirrors MAX_BRAND_CHROMA in src/lib/brand.ts.
+          var chromaKey = "arkitekt-brand-chroma";
+          var chromaParam = params.get("brand-chroma");
+          var cs = chromaParam != null ? chromaParam : localStorage.getItem(chromaKey);
+          if (cs != null) {
+            var c = parseFloat(cs);
+            if (isFinite(c)) {
+              c = Math.min(0.3, Math.max(0, c));
+              localStorage.setItem(chromaKey, String(c));
+              document.documentElement.style.setProperty("--brand-chroma-user", String(c));
+            }
+          }
+
+          // Theme. Stored values come from next-themes (see
+          // src/providers/ThemeProvider.tsx) and may be "system", so resolve
+          // that — and the no-preference case — against the OS setting here
+          // rather than leaving the page unclassed until React mounts.
           var themeKey = "vite-ui-theme";
           var themeParam = params.get("theme");
           var t = themeParam === "dark" || themeParam === "light"
             ? themeParam
             : localStorage.getItem(themeKey);
-          if (t === "dark" || t === "light") {
-            if (themeParam) localStorage.setItem(themeKey, t);
-            document.documentElement.classList.remove("light", "dark");
-            document.documentElement.classList.add(t);
+          if (themeParam === "dark" || themeParam === "light") {
+            localStorage.setItem(themeKey, themeParam);
           }
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.classList.remove("light", "dark");
+          document.documentElement.classList.add(t);
+          document.documentElement.style.colorScheme = t;
+        } catch (e) {}
+      })();
+
+      // Start the session check now, in parallel with the JS download, instead
+      // of after the bundle has been fetched and parsed. The app (src/lib/allauth.ts
+      // getAuth) consumes this promise once; same-origin, so the CSRF cookie is set
+      // by this response exactly as it was before.
+      window.__kontrolBoot = {
+        session: fetch("/lok/_allauth/browser/v1/auth/session", {
+          headers: { accept: "application/json" },
+          credentials: "same-origin",
+        })
+          .then(function (r) { return r.json(); })
+          .catch(function () { return null; }),
+      };
+
+      // The public landing page is deployer-configurable through an optional
+      // /landing.json mounted into the nginx root (see src/site/config.ts).
+      // Started here so it overlaps the bundle download instead of waiting for
+      // it. Deliberately its own global, not a field on __kontrolBoot: getAuth()
+      // deletes that whole object once it has consumed the session.
+      //
+      // nginx has an exact-match location for this path so a missing file is a
+      // real 404 -- without it the SPA fallback would answer with app.html and a
+      // 200, and the JSON parse would throw on HTML. The content-type check is
+      // the belt to that suspenders, for anything else fronting this app.
+      window.__kontrolLanding = fetch("/landing.json", {
+        headers: { accept: "application/json" },
+      })
+        .then(function (r) {
+          if (!r.ok) return null;
+          var type = r.headers.get("content-type") || "";
+          return type.indexOf("json") === -1 ? null : r.json();
+        })
+        .catch(function () { return null; });
+
+      // Returning authenticated visitors also need `Me` before the shell can
+      // render anything but a skeleton. Fire it here too, rather than after the
+      // bundle has parsed (src/App.tsx used to be the earliest point), so it
+      // overlaps the download. Gated on the non-sensitive
+      // kontrol-was-authenticated hint and on the CSRF cookie already existing
+      // — a returning browser has one; a first visit doesn't, and the POST
+      // would just 403. src/App.tsx primes the Apollo cache with the result and
+      // falls back to a normal query if anything here failed. The query text is
+      // injected at build time from src/graphql/queries/me.graphql by
+      // scripts/vite-plugin-boot-query.mjs.
+      (function () {
+        try {
+          if (localStorage.getItem("kontrol-was-authenticated") !== "1") return;
+          var csrf = /(^|;\s*)csrftoken=([^;]*)/.exec(document.cookie);
+          if (!csrf) return;
+          window.__kontrolBoot.me = fetch("/lok/managementgraphql/", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "content-type": "application/json",
+              accept: "application/json",
+              "X-CSRFToken": decodeURIComponent(csrf[2]),
+            },
+            body: JSON.stringify({ operationName: "Me", query: "__ME_QUERY__", variables: {} }),
+          })
+            .then(function (r) { return r.json(); })
+            .catch(function () { return null; });
         } catch (e) {}
       })();
     </script>

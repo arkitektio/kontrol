@@ -1,11 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  useMeshDeviceCodeByCodeQuery,
-  useAcceptMeshDeviceCodeMutation,
-  useDeclineMeshDeviceCodeMutation,
-  useListOrganizationsQuery,
-  useMeQuery,
-} from "@/api/graphql";
+import { useMeshDeviceCodeByCodeQuery } from "@/graphql/queries/mesh_device_code.generated"
+import { useAcceptMeshDeviceCodeMutation, useDeclineMeshDeviceCodeMutation } from "@/graphql/mutations/mesh_device_code.generated"
+import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
+import { ConfigureCardSkeleton } from "@/components/skeletons"
+
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -14,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OrganizationSelect } from "@/components/OrganizationSelect";
-import { AlertCircle, Network, Loader2, Check, X } from "lucide-react";
+import { AlertCircle, Network, Check, X } from "lucide-react";
 
 interface ConfigureFormData {
   organization: string;
@@ -70,9 +69,7 @@ export function MeshConfigurePage() {
 
   if (meshDeviceCodeLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
+      <ConfigureCardSkeleton />
     );
   }
 

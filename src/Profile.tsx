@@ -1,5 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMeQuery, useUpdateProfileMutation, useCreateProfileMutation } from "@/api/graphql";
+import { useMeQuery } from "@/graphql/queries/me.generated"
+import { useUpdateProfileMutation, useCreateProfileMutation } from "@/graphql/mutations/profile.generated"
+import { ProfilePageSkeleton } from "@/components/skeletons"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +11,8 @@ import { useMediaUpload } from "@/hooks/use-upload";
 import { Pen, Camera, Image as ImageIcon } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+
+import { ResourceNotFound } from "@/components/status";
 
 export default function Profile() {
   const { data, loading, refetch } = useMeQuery();
@@ -23,13 +28,14 @@ export default function Profile() {
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <ProfilePageSkeleton />
+    ;
   }
 
   const user = data?.me;
 
   if (!user) {
-    return <div className="flex h-screen items-center justify-center">User not found</div>;
+    return <ResourceNotFound resource="user" />;
   }
 
   const profile = user.profile;

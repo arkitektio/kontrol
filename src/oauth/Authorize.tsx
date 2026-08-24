@@ -3,7 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useGetOauth2ClientByClientIdQuery, useListOrganizationsQuery, useMeQuery } from "@/api/graphql";
+import { useGetOauth2ClientByClientIdQuery } from "@/graphql/queries/oauth2_client.generated"
+import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
 import { getCSRFToken } from "@/lib/django";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -44,8 +46,13 @@ export default function Authorize() {
   // Preset the organization once the list loads. `defaultValues` can't do this
   // because orgData is still loading at mount — without this the form submits an
   // empty organization and the consent POST is rejected.
+  //
+  // The value is the organization *id*, not its slug: lok resolves the consent
+  // POST with `organization_id=` (a slug is a mutable, user-chosen handle and is
+  // no longer an identity). Matches MeshConfigurePage / HubConfigurePage, which
+  // already submit `.id`.
   useEffect(() => {
-    const firstOrg = orgData?.organizations.at(0)?.slug;
+    const firstOrg = orgData?.organizations.at(0)?.id;
     if (firstOrg && !selectedOrganization) {
       setValue("organization", firstOrg);
     }
@@ -178,7 +185,7 @@ export default function Authorize() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {orgData?.organizations?.map(org => (
-                                            <SelectItem key={org.id} value={org.slug}>
+                                            <SelectItem key={org.id} value={org.id}>
                                                  <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarFallback>{org.name.substring(0, 2).toUpperCase()}</AvatarFallback>

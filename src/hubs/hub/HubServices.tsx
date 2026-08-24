@@ -1,8 +1,12 @@
 import { Link, useParams } from "react-router-dom"
-import { useListServiceInstancesQuery } from "../../api/graphql"
+import { useListServiceInstancesQuery } from "@/graphql/queries/service_instance.generated"
 import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Server } from "lucide-react"
+
+import { QueryError } from "@/components/status"
+
+import { SectionSkeleton } from "@/components/skeletons"
 
 export default function HubServices() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
@@ -13,8 +17,8 @@ export default function HubServices() {
 
   const instances = data?.serviceInstances ?? []
 
-  if (loading) return <div className="text-sm text-muted-foreground">Loading...</div>
-  if (error) return <div className="text-sm text-destructive">Error: {error.message}</div>
+  if (loading) return <SectionSkeleton rows={4} />
+  if (error) return <QueryError error={error} compact />
 
   return (
     <section className="space-y-3">

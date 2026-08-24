@@ -1,13 +1,13 @@
 import { useParams, Link } from "react-router-dom"
-import {
-  useSidebarOrganizationQuery,
-  useHubsQuery,
-  useClientsQuery,
-  Ordering,
-} from "./api/graphql"
+import { useSidebarOrganizationQuery } from "@/graphql/queries/organization.generated"
+import { useHubsQuery } from "@/graphql/queries/hub.generated"
+import { useClientsQuery } from "@/graphql/queries/client.generated"
+import { Ordering } from "@/api/types"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/card"
 import { ArrowRight, Layers, AlertCircle, CheckCircle2, LayoutDashboard, UserPlus, Plug } from "lucide-react"
+
+import { DashboardSkeleton } from "@/components/skeletons"
 
 // A little personality for the members tile — a nudge that scales with the crew size.
 function funnyMemberLine(count: number): string {
@@ -24,6 +24,8 @@ import { ServiceInstanceCard } from "./components/ServiceInstanceCard"
 import { PageHeader } from "./components/PageHeader"
 import { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar"
 
+import { QueryError, ResourceNotFound } from "@/components/status"
+
 export default function OrganizationDashboard() {
   const { orgId } = useParams<{ orgId: string }>()
 
@@ -37,19 +39,22 @@ export default function OrganizationDashboard() {
     skip: !orgId,
   })
 
-  // Action items: apps this org owns that are currently reporting problems.
+  // Action items: apps this org owns that are reporting problems AND have not
+  // been triaged yet. Resolving a client's latest report clears it from here;
+  // the next report the client sends puts it straight back (lok resets
+  // Client.latest_report_resolved on every incoming report).
   const { data: unhealthyData } = useClientsQuery({
     variables: {
-      filters: { organization: orgId, functional: false },
+      filters: { organization: orgId, functional: false, latestReportResolved: false },
       ordering: [{ createdAt: Ordering.Desc }],
       pagination: { limit: 8 },
     },
     skip: !orgId,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.organization) return <div>Organization not found</div>
+  if (loading) return <DashboardSkeleton />
+  if (error) return <QueryError error={error} resource="organization" />
+  if (!data?.organization) return <ResourceNotFound resource="organization" id={orgId} />
 
   const org = data.organization
   const latestClients = org.latestClients || []

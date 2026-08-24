@@ -1,9 +1,13 @@
 import { useParams } from "react-router-dom"
-import { useDetailReleaseQuery } from "../api/graphql"
+import { useDetailReleaseQuery } from "@/graphql/queries/release.generated"
 import { ClientLabel } from "../components/ClientLabel"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Link } from "react-router-dom"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function Release() {
   const { id } = useParams<{ id: string }>()
@@ -12,9 +16,9 @@ export default function Release() {
     skip: !id,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.release) return <div>Release not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="release" />
+  if (!data?.release) return <ResourceNotFound resource="release" id={id} />
 
   const release = data.release
 

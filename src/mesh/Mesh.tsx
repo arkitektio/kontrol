@@ -1,10 +1,6 @@
 import { Link, useParams } from "react-router-dom"
-import {
-  useLayersQuery,
-  useDetailLayerQuery,
-  useCreateIonscaleAuthKeyMutation,
-  useUpdateIonscaleLayerMutation,
-} from "../api/graphql"
+import { useLayersQuery, useDetailLayerQuery } from "@/graphql/queries/layer.generated"
+import { useCreateIonscaleAuthKeyMutation, useUpdateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
@@ -26,6 +22,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 // Explains the machine-vs-device distinction the user asked to surface.
 function MachinesVsDevicesNote() {
@@ -63,9 +63,9 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
   const [newKeyEphemeral, setNewKeyEphemeral] = useState(false)
   const [newKeyTags, setNewKeyTags] = useState("")
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.layer) return <div className="p-4">Mesh not found</div>
+  if (loading) return <ListPageSkeleton columns={3} count={6} />
+  if (error) return <QueryError error={error} resource="mesh" />
+  if (!data?.layer) return <ResourceNotFound resource="mesh" id={meshId} />
 
   const mesh = data.layer
 
@@ -279,8 +279,8 @@ export default function Mesh() {
     skip: !orgId,
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton columns={3} count={6} />
+  if (error) return <QueryError error={error} resource="mesh" />
 
   // The mesh is a per-organization singleton.
   const mesh = data?.layers?.[0]

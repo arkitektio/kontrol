@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { useRedeemTokensQuery } from "../../api/graphql"
+import { useRedeemTokensQuery } from "@/graphql/queries/redeem_token.generated"
 import { CreateRedeemTokenDialog } from "../../components/CreateRedeemTokenDialog"
 import { Card, CardHeader, CardDescription } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
@@ -7,6 +7,10 @@ import { Button } from "../../components/ui/button"
 import { Ticket, Copy, Check } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function HubRedeemTokens() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
@@ -43,9 +47,9 @@ export default function HubRedeemTokens() {
         A redeem token can be used once to create or attach a development client for this hub.
       </p>
       {error ? (
-        <div className="text-sm text-destructive">Error: {error.message}</div>
+        <QueryError error={error} compact resource="redeem tokens" />
       ) : loading ? (
-        <div className="text-sm text-muted-foreground">Loading...</div>
+        <ListPageSkeleton variant="embedded" header="none" columns={3} count={3} />
       ) : tokens.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
           No redeem tokens for this hub yet.

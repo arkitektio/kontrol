@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
-import { useDetailInstanceAliasQuery } from "../api/graphql"
+import { useDetailInstanceAliasQuery } from "@/graphql/queries/instance_alias.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Globe, Lock, Server, ExternalLink, Shield } from "lucide-react"
@@ -7,6 +7,10 @@ import { Button } from "../components/ui/button"
 import { Separator } from "../components/ui/separator"
 import { UpdateAliasSheet } from "./UpdateAliasSheet"
 import { DeleteAliasDialog } from "./DeleteAliasDialog"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function InstanceAlias() {
   const { id } = useParams<{ id: string }>()
@@ -16,9 +20,9 @@ export default function InstanceAlias() {
     skip: !id,
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.instanceAlias) return <div className="p-4">Instance alias not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="instance alias" />
+  if (!data?.instanceAlias) return <ResourceNotFound resource="instance alias" id={id} />
 
   const alias = data.instanceAlias
 

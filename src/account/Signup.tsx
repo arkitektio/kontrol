@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { signUp } from '../lib/allauth'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useConfig, credentialKey, useCredentialKey, URLs } from '../auth'
+import { useConfig, resolveCredentialKey, useCredentialKey, URLs } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { useForm } from "react-hook-form"
 import type { Error as ApiError } from '../lib/allauth'
@@ -13,12 +13,15 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormDescription,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+import { useSiteConfig } from "@/site/config"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, GalleryVerticalEnd } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 
 const signupSchema = z.object({
   username: z.string(),
@@ -62,6 +65,13 @@ const SignupForm = () => {
   // Label the single identifier field for the configured login method.
   const isEmailLogin = useCredentialKey() === 'email'
   const identifierLabel = isEmailLogin ? 'Email' : 'Username'
+  const { privacyPolicyUrl } = useSiteConfig()
+
+  // The confirmation field starts folded away: asking for a password twice
+  // before someone has typed it once is noise. It unfolds when they leave the
+  // password field having entered something — which is also the moment tabbing
+  // forward should land on it.
+  const [confirmShown, setConfirmShown] = useState(false)
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
@@ -72,11 +82,18 @@ const SignupForm = () => {
     },
   })
 
-  function onSubmit(values: SignupValues) {
+  // Derived, not synced: never leave a required field folded away while it is
+  // complaining. A submit that skipped the password field entirely would
+  // otherwise fail against an error message nobody can see.
+  const showConfirm = confirmShown || Boolean(form.formState.errors.passwordConfirm)
+
+  async function onSubmit(values: SignupValues) {
     setGlobalError(null)
     // Send the identifier under the key the server's signup expects
-    // ('email' when email login is configured, otherwise 'username').
-    signUp({ [credentialKey(config)]: values.username, password: values.password }).then((content) => {
+    // ('email' when email login is configured, otherwise 'username'). Resolved
+    // at submit time so it waits for the lazily-loaded config.
+    const key = await resolveCredentialKey()
+    return signUp({ [key]: values.username, password: values.password }).then((content) => {
       const errors: ApiError[] = content.errors ?? []
       if (errors.length > 0) {
         // `errors` is an array of { message, code, param } — route each to its
@@ -125,10 +142,10 @@ const SignupForm = () => {
         </Alert>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Create an account</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-semibold tracking-tight">Create an account</h1>
+          <p className="text-muted-foreground text-balance">
             Enter your details below to create a new account
           </p>
         </div>
@@ -148,6 +165,21 @@ const SignupForm = () => {
                       autoComplete={isEmailLogin ? 'email' : 'username'}
                     />
                   </FormControl>
+                  <FormDescription>
+                    {isEmailLogin ? 'No marketing — just for sign-in.' : 'Just for sign-in.'}
+                    {privacyPolicyUrl && (
+                      <a
+                        href={privacyPolicyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Privacy policy"
+                        aria-label="Privacy policy"
+                        className="border-muted-foreground/40 text-muted-foreground hover:border-foreground hover:text-foreground ml-1.5 inline-flex size-4 translate-y-px items-center justify-center rounded-full border text-[10px] leading-none font-medium transition-colors"
+                      >
+                        ?
+                      </a>
+                    )}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -159,27 +191,63 @@ const SignupForm = () => {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} autoComplete="new-password" />
+                    <Input
+                      type="password"
+                      {...field}
+                      autoComplete="new-password"
+                      onBlur={(event) => {
+                        field.onBlur()
+                        if (event.target.value) setConfirmShown(true)
+                      }}
+                    />
                   </FormControl>
+                  {/*
+                    * The real server-side rules, from Django's default validators
+                    * in lok (AUTH_PASSWORD_VALIDATORS): minimum length, plus
+                    * common-password / all-numeric / similarity checks. Stating
+                    * the length up front beats a rejection after the fact.
+                    */}
+                  <FormDescription>At least 8 characters.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="passwordConfirm"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} autoComplete="new-password" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            {/*
+              * The unfold. A grid whose single row animates 0fr -> 1fr is the
+              * one way to transition to a content-derived height in CSS.
+              * `inert` while folded keeps the hidden input out of the tab order
+              * and out of the accessibility tree — it is still in the DOM, and
+              * a zero-height focusable field is worse than no field at all.
+              */}
+            <div
+              className={cn(
+                'grid transition-[grid-template-rows] duration-300 ease-out',
+                showConfirm ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
               )}
-            />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              Sign Up
+            >
+              <div className="overflow-hidden" inert={!showConfirm}>
+                <FormField
+                  control={form.control}
+                  name="passwordConfirm"
+                  render={({ field }) => (
+                    <FormItem className="pt-1">
+                      <FormLabel>Confirm password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} autoComplete="new-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <Button
+              type="submit"
+              size="lg"
+              className="mt-2 w-full"
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? "Creating account…" : "Sign up"}
             </Button>
           </form>
         </Form>
@@ -191,7 +259,7 @@ const SignupForm = () => {
                   <span className="w-full border-t" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
+                  <span className="bg-background/0 text-muted-foreground px-2 backdrop-blur-sm">
                       Or continue with
                   </span>
                   </div>
@@ -203,7 +271,7 @@ const SignupForm = () => {
         )}
       </div>
 
-      <div className="text-center text-sm">
+      <div className="pt-2 text-center text-sm">
         <p className="text-muted-foreground">
           Already have an account?{" "}
           <Link to={loginHref} className="underline text-primary underline-offset-4 hover:text-primary/80">
@@ -216,17 +284,11 @@ const SignupForm = () => {
 }
 
 export default function Signup() {
+  // Centring and page padding come from LandingLayout's `center` prop; this
+  // only caps the measure so the fields don't stretch on a wide screen.
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <SignupForm />
-          </div>
-        </div>
-      </div>
-      {/* Right column intentionally empty — shows the page background. */}
-      <div className="hidden lg:block" />
+    <div className="w-full max-w-sm">
+      <SignupForm />
     </div>
   )
 }

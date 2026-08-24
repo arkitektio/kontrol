@@ -1,9 +1,12 @@
 import { useParams } from "react-router-dom"
-import { useGetAuthKeyQuery } from "../api/graphql"
+import { useGetAuthKeyQuery } from "@/graphql/queries/auth_keys.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { Skeleton } from "../components/ui/skeleton"
 import { Key, Tag, User } from "lucide-react"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailCardSkeleton } from "@/components/skeletons"
 
 export default function AuthKey() {
   const { id } = useParams<{ id: string }>()
@@ -15,31 +18,10 @@ export default function AuthKey() {
     skip: !id,
   })
 
-  if (loading) return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-lg" />
-            <div className="space-y-1">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-48" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-             <Skeleton className="h-24 w-full" />
-             <Skeleton className="h-24 w-full" />
-             <Skeleton className="h-24 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  if (loading) return <DetailCardSkeleton panels={3} columns={3} panelHeight="md" />
 
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.ionscaleAuthKey) return <div className="p-4">Auth Key not found</div>
+  if (error) return <QueryError error={error} resource="auth key" />
+  if (!data?.ionscaleAuthKey) return <ResourceNotFound resource="auth key" id={id} />
 
   const authKey = data.ionscaleAuthKey
 

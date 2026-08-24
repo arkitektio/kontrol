@@ -1,7 +1,11 @@
 import { Link, useParams } from "react-router-dom"
-import { useGetServiceQuery } from "../api/graphql"
+import { useGetServiceQuery } from "@/graphql/queries/services.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function Service() {
   const { id } = useParams<{ id: string }>()
@@ -10,9 +14,9 @@ export default function Service() {
     skip: !id,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.service) return <div>Service not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="service" />
+  if (!data?.service) return <ResourceNotFound resource="service" id={id} />
 
   const service = data.service
 

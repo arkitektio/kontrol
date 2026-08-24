@@ -1,46 +1,42 @@
 import { useEffect, useState } from "react"
 import { Palette, Shuffle } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const STORAGE_KEY = "arkitekt-brand-hue"
+import {
+  applyBrand,
+  brandSwatch,
+  DEFAULT_BRAND_CHROMA,
+  DEFAULT_BRAND_HUE,
+  MAX_BRAND_CHROMA,
+  readAppliedChroma,
+  readAppliedHue,
+} from "@/lib/brand"
 
 /** A few curated hues users can pick from with one click. */
 const PRESETS = [267, 222, 200, 160, 130, 90, 40, 12, 330, 300]
 
-function swatch(hue: number) {
-  return `oklch(0.62 0.19 ${hue})`
-}
-
-/** Apply the hue to the whole UI and remember it for next time. */
-function applyHue(hue: number) {
-  document.documentElement.style.setProperty("--brand-hue", String(hue))
-  try {
-    localStorage.setItem(STORAGE_KEY, String(hue))
-  } catch {
-    /* ignore */
-  }
-}
-
 /**
- * Picks the brand hue that tints the whole UI (see `--brand-hue` in index.css).
- * The early inline script in index.html applies the stored (or first-visit
- * random) hue before paint; this popover lets the visitor change it. Every
- * change is saved to localStorage immediately and restored on the next load.
- * Sits in the topbar (DetailLayout header).
+ * Picks the brand hue and intensity that tint the whole UI (see `--brand-hue`
+ * and `--brand-chroma-user` in index.css). The early inline script in index.html
+ * applies the stored (or first-visit random) hue before paint; this popover lets
+ * the visitor change it. Every change is saved to localStorage immediately and
+ * restored on the next load. Sits in the topbar (DetailLayout header).
  */
 export function BrandColorPicker() {
-  const [hue, setHue] = useState(267)
+  const [hue, setHue] = useState(DEFAULT_BRAND_HUE)
+  const [chroma, setChroma] = useState(DEFAULT_BRAND_CHROMA)
 
-  // Sync from whatever the early script already applied.
+  // Sync from whatever the early script already applied. Reads the *-user knob
+  // for chroma, not the derived `--brand-chroma`: in dark mode the latter is
+  // already damped, so round-tripping it would ratchet the palette down.
   useEffect(() => {
-    const current = getComputedStyle(document.documentElement).getPropertyValue("--brand-hue")
-    const parsed = parseFloat(current)
-    if (!Number.isNaN(parsed)) setHue(Math.round(parsed))
+    setHue(Math.round(readAppliedHue()))
+    setChroma(readAppliedChroma())
   }, [])
 
-  function preview(next: number) {
-    setHue(next)
-    applyHue(next)
+  function preview(nextHue: number, nextChroma: number = chroma) {
+    setHue(nextHue)
+    setChroma(nextChroma)
+    applyBrand({ hue: nextHue, chroma: nextChroma })
   }
 
   function shuffle() {
@@ -55,7 +51,7 @@ export function BrandColorPicker() {
       >
         <span
           className="size-4 rounded-full ring-1 ring-inset ring-black/10"
-          style={{ background: swatch(hue) }}
+          style={{ background: brandSwatch(hue, chroma) }}
         />
       </summary>
 
@@ -77,8 +73,28 @@ export function BrandColorPicker() {
           aria-label="Hue"
           className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full"
           style={{
-            background:
-              "linear-gradient(to right, oklch(0.62 0.19 0), oklch(0.62 0.19 60), oklch(0.62 0.19 120), oklch(0.62 0.19 180), oklch(0.62 0.19 240), oklch(0.62 0.19 300), oklch(0.62 0.19 360))",
+            // Built from the live chroma so the track shows the colours this
+            // picker would actually produce, rather than a fixed-intensity ramp.
+            background: `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360]
+              .map((h) => brandSwatch(h, chroma))
+              .join(", ")})`,
+          }}
+        />
+
+        <input
+          type="range"
+          min={0}
+          max={MAX_BRAND_CHROMA}
+          step={0.005}
+          value={chroma}
+          onChange={(e) => preview(hue, Number(e.target.value))}
+          aria-label="Intensity"
+          className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full"
+          style={{
+            background: `linear-gradient(to right, ${brandSwatch(hue, 0)}, ${brandSwatch(
+              hue,
+              MAX_BRAND_CHROMA,
+            )})`,
           }}
         />
 
@@ -93,7 +109,7 @@ export function BrandColorPicker() {
                 "size-6 rounded-full ring-1 ring-inset ring-black/10 transition-transform hover:scale-110",
                 Math.abs(hue - preset) < 6 && "ring-2 ring-foreground",
               )}
-              style={{ background: swatch(preset) }}
+              style={{ background: brandSwatch(preset, chroma) }}
             />
           ))}
         </div>

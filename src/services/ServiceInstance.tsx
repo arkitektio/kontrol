@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
-import { useGetServiceInstanceQuery } from "../api/graphql"
+import { useGetServiceInstanceQuery } from "@/graphql/queries/service_instance.generated"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
@@ -37,6 +37,10 @@ import { Trash2, Plus, Box, ArrowRight } from "lucide-react"
 import { useState } from "react"
 import { useTheme } from "@/providers/ThemeProvider"
 
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
+
 export default function ServiceInstance() {
   const params = useParams<{ id: string; instanceId?: string }>()
   const id = params.instanceId || params.id
@@ -45,7 +49,7 @@ export default function ServiceInstance() {
     skip: !id,
   })
   
-  const { theme } = useTheme()
+  const { resolvedTheme: theme } = useTheme()
   const [createAliasOpen, setCreateAliasOpen] = useState(false)
   const [aliasHost, setAliasHost] = useState("")
   const [aliasPort, setAliasPort] = useState("")
@@ -53,9 +57,9 @@ export default function ServiceInstance() {
   const [aliasSsl, setAliasSsl] = useState(true)
   const [aliasKind, setAliasKind] = useState("")
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.serviceInstance) return <div className="p-4">Instance not found</div>
+  if (loading) return <DetailPageSkeleton sections={3} />
+  if (error) return <QueryError error={error} resource="instance" />
+  if (!data?.serviceInstance) return <ResourceNotFound resource="instance" id={id} />
 
   const instance = data.serviceInstance
 

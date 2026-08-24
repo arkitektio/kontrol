@@ -1,0 +1,11 @@
+# Slim variant for the sidebar: only what's needed to render hub navigation.
+# Lives in its own file so the app shell chunk doesn't pull in the full
+# `Hubs`/`GetHub` documents (ListHub → ListClient/ListServiceInstance fragments).
+# `Hubs` (ListHub) pulls every hub's instances and clients, which the sidebar
+# never shows.
+query SidebarHubs($filters: ManagementHubFilter) {
+  hubs(filters: $filters) {
+    id
+    name
+  }
+}

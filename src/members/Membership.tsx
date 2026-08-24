@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom"
-import { useGetMembershipQuery, useUpdateMembershipMutation } from "../api/graphql"
+import { useGetMembershipQuery } from "@/graphql/queries/memberships.generated"
+import { useUpdateMembershipMutation } from "@/graphql/mutations/membership.generated"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
@@ -10,6 +11,11 @@ import { Checkbox } from "../components/ui/checkbox"
 import { Label } from "../components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { Pencil } from "lucide-react"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
+import { SendNotification } from "./SendNotification"
 
 export default function Membership() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -25,9 +31,9 @@ export default function Membership() {
         refetchQueries: ["GetMembership"]
     })
 
-    if (loading) return <div>Loading...</div>
-    if (error) return <div>Error: {error.message}</div>
-    if (!data?.membership) return <div>Membership not found</div>
+    if (loading) return <DetailPageSkeleton sections={2} />
+    if (error) return <QueryError error={error} resource="membership" />
+    if (!data?.membership) return <ResourceNotFound resource="membership" id={orgId} />
 
     const membership = data.membership
 
@@ -155,6 +161,15 @@ export default function Membership() {
                     </div>
                 </CardContent>
             </Card>
+
+            <div className="mt-6">
+                <SendNotification
+                    membershipId={membership.id}
+                    username={membership.user?.username}
+                    allowNotifications={membership.allowNotifications}
+                    hasNotificationChannel={membership.hasNotificationChannel}
+                />
+            </div>
         </div>
     )
 }

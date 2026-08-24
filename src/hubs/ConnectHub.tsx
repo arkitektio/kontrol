@@ -1,9 +1,11 @@
 import { Link, useParams } from "react-router-dom"
-import { useListKommunityPartnerQuery } from "../api/graphql"
+import { useListKommunityPartnerQuery } from "@/graphql/queries/kommunity_partner.generated"
+import { HUB_ADMIN_REQUIRED, useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { PageHeader } from "../components/PageHeader"
-import { Plug, Boxes, Terminal, ArrowRight } from "lucide-react"
+import { Plug, Boxes, Terminal, ArrowRight, ShieldAlert } from "lucide-react"
 
 /**
  * Onboarding page shown when an organization has no hub yet. A hub is a
@@ -11,6 +13,10 @@ import { Plug, Boxes, Terminal, ArrowRight } from "lucide-react"
  * two ways to connect one — deploy a managed stack via a Kommunity Partner, or
  * connect a self-hosted Arkitekt server with the `arkitekt-server hub connect`
  * CLI. Linked from the sidebar call-to-action.
+ *
+ * Both routes end in an admin-only mutation, so a plain member is told up front to
+ * ask an admin. The page (and the call-to-action leading here) stays visible for
+ * everyone — a hidden entry point cannot explain who to ask.
  */
 export default function ConnectHub() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -19,6 +25,7 @@ export default function ConnectHub() {
     variables: { pagination: { limit: 4 } },
   })
   const partners = partnersData?.kommunityPartners || []
+  const { isAdmin, loading: adminLoading } = useIsOrgAdmin(orgId)
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">
@@ -27,6 +34,14 @@ export default function ConnectHub() {
         title="Connect a Hub"
         description="A hub is a pre-configured stack of Arkitekt services and clients. Connect one to start deploying to this organization."
       />
+
+      {!adminLoading && !isAdmin && (
+        <Alert>
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Admin required</AlertTitle>
+          <AlertDescription>{HUB_ADMIN_REQUIRED}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Option 1 — Kommunity Partner */}

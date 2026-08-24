@@ -1,12 +1,10 @@
 import { useParams, Link } from "react-router-dom";
-import {
-  useDeviceCodeByCodeQuery,
-  useAcceptDeviceCodeMutation,
-  useDeclineDeviceCodeMutation,
-  useHubsQuery,
-  useMeQuery,
-  useValidateDeviceCodeQuery,
-} from "@/api/graphql";
+import { useDeviceCodeByCodeQuery, useValidateDeviceCodeQuery } from "@/graphql/queries/device_code.generated"
+import { useAcceptDeviceCodeMutation, useDeclineDeviceCodeMutation } from "@/graphql/mutations/device_code.generated"
+import { useHubsQuery } from "@/graphql/queries/hub.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
+import { ConfigureCardSkeleton } from "@/components/skeletons"
+
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -21,7 +19,7 @@ import {
   Loader2, ExternalLink, Github, ChevronDown, Check, X,
 } from "lucide-react";
 import { useActiveOrganization } from "@/hooks/useActiveOrganization";
-import { BRAND_HUE_KEY, DEFAULT_BRAND_HUE } from "@/lib/brand";
+import { applyBrand, DEFAULT_BRAND_CHROMA, DEFAULT_BRAND_HUE } from "@/lib/brand";
 
 interface ConfigureFormData {
   hub: string;
@@ -67,7 +65,7 @@ export function ConfigurePage() {
   const [deviceName, setDeviceName] = useState("");
   const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
 
-  const { effectiveHueForOrg } = useActiveOrganization();
+  const { effectiveHueForOrg, effectiveChromaForOrg } = useActiveOrganization();
 
   useEffect(() => {
     if (compData?.hubs?.length && !selectedHub) {
@@ -76,31 +74,27 @@ export function ConfigurePage() {
   }, [compData, selectedHub, setValue]);
 
   // The workspace lives in an organization; tint the whole page with that org's
-  // membership brand hue (the member's personal hue → the org default → the
-  // neutral brand hue) so the authorization screen wears the workspace's colours.
+  // membership brand hue and chroma (the member's personal value → the org
+  // default → the neutral brand value) so the authorization screen wears the
+  // workspace's colours.
   const selectedComp =
     compData?.hubs?.find((c) => c.id === selectedHub) ?? null;
   const activeHue = selectedComp
     ? effectiveHueForOrg(selectedComp.organization.id) ?? DEFAULT_BRAND_HUE
     : null;
+  const activeChroma = selectedComp
+    ? effectiveChromaForOrg(selectedComp.organization.id) ?? DEFAULT_BRAND_CHROMA
+    : null;
 
   useEffect(() => {
-    if (activeHue == null) return;
-    document.documentElement.style.setProperty("--brand-hue", String(activeHue));
-    try {
-      localStorage.setItem(BRAND_HUE_KEY, String(activeHue));
-    } catch {
-      /* localStorage unavailable */
-    }
-  }, [activeHue]);
+    applyBrand({ hue: activeHue, chroma: activeChroma });
+  }, [activeHue, activeChroma]);
 
   if (!code) return null;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
+      <ConfigureCardSkeleton />
     );
   }
 

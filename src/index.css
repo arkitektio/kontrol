@@ -49,9 +49,15 @@
 
   /* Arkitekt brand hue — the whole palette below is derived from these two
      values (mirrors the docs theme), so setting `--brand-hue` on <html> (the
-     BrandColorPicker / early script) re-tints the entire UI live. */
+     BrandColorPicker / early script) re-tints the entire UI live.
+
+     Chroma goes through `--brand-chroma-user` rather than being set directly:
+     `.dark` lives on <html> too, so an inline `--brand-chroma` would outrank it
+     and dark mode would lose its damping. Setting the *-user knob instead lets
+     each theme keep deriving its own chroma from the picked value. Leave it
+     unset for the stock palette. */
   --brand-hue: 267.256;
-  --brand-chroma: 0.19;
+  --brand-chroma: var(--brand-chroma-user, 0.19);
 
   /* Neutrals: light with a faint brand tint (docs lightness values). */
   --background: oklch(0.97 0.004 var(--brand-hue));
@@ -99,8 +105,10 @@
 }
 
 .dark {
-  /* Same hue, slightly lower chroma on dark surfaces (mirrors docs). */
-  --brand-chroma: 0.16;
+  /* Same hue, slightly lower chroma on dark surfaces (mirrors docs). The 0.84
+     factor reproduces the old flat 0.16 when no user chroma is set, and damps a
+     picked chroma by the same ratio. */
+  --brand-chroma: calc(var(--brand-chroma-user, 0.19) * 0.84);
 
   --background: oklch(0.16 0.008 var(--brand-hue));
   --foreground: oklch(0.94 0.005 var(--brand-hue));

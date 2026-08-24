@@ -1,6 +1,8 @@
 import { useParams, Link } from "react-router-dom"
 import { useState, useRef } from "react"
-import { useOrganizationQuery, useUpdateOrganizationProfileMutation, useCreateOrganizationProfileMutation, useCancelInviteMutation } from "./api/graphql"
+import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
+import { useUpdateOrganizationProfileMutation, useCreateOrganizationProfileMutation } from "@/graphql/mutations/organization_profile.generated"
+import { useCancelInviteMutation } from "@/graphql/mutations/invite.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar"
 import { Button } from "./components/ui/button"
@@ -10,6 +12,10 @@ import { CreateInviteDialog } from "./components/CreateInviteDialog"
 import { useMediaUpload } from "./hooks/use-upload"
 import { Pen, Camera, XCircle } from "lucide-react"
 import { toast } from "sonner"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { ProfilePageSkeleton } from "@/components/skeletons"
 
 export default function OrganizationProfile() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -32,9 +38,9 @@ export default function OrganizationProfile() {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.organization) return <div>Organization not found</div>
+  if (loading) return <ProfilePageSkeleton />
+  if (error) return <QueryError error={error} resource="organization" onRetry={() => refetch()} />
+  if (!data?.organization) return <ResourceNotFound resource="organization" id={orgId} />
 
   const org = data.organization
   const profile = org.profile

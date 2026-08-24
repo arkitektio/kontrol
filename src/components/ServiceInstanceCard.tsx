@@ -1,5 +1,5 @@
 import { useTheme } from '@/providers/ThemeProvider';
-import type { ListServiceInstanceFragment } from '@/api/graphql';
+import type { ListServiceInstanceFragment } from "@/graphql/fragments/service_instance.generated"
 import { Card } from './ui/card';
 import { ArrowRight, Box } from 'lucide-react';
 import { Button } from './ui/button';
@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { Badge } from './ui/badge';
 
 export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanceFragment }) => {
-  const { theme } = useTheme();
+  const { resolvedTheme: theme } = useTheme();
 
   return (
     <Link to={`/organization/${instance.organization.id}/service-instances/${instance.id}`} >

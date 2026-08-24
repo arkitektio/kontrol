@@ -1,10 +1,14 @@
 import { Link, useParams } from "react-router-dom"
-import { useListDevicesQuery } from "../api/graphql"
+import { useListDevicesQuery } from "@/graphql/queries/device.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { PageHeader } from "../components/PageHeader"
 import { Laptop, Smartphone, Tablet } from "lucide-react"
 import { DeviceContextMenu } from "./DeviceContextMenu"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function Devices() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -16,8 +20,8 @@ export default function Devices() {
     }
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton columns={4} count={8} />
+  if (error) return <QueryError error={error} />
 
   const devices = data?.devices || []
 

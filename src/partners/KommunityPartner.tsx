@@ -1,14 +1,20 @@
 import { gql, useMutation } from "@apollo/client";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGetKommunityPartnerQuery, useMeQuery } from "../api/graphql";
+import { useGetKommunityPartnerQuery } from "@/graphql/queries/kommunity_partner.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { AlertCircle, ArrowUpRight, BadgeCheck, FileSignature } from "lucide-react";
+import { AlertCircle, ArrowUpRight, BadgeCheck, FileSignature, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import { HUB_ADMIN_REQUIRED } from "@/hooks/useIsOrgAdmin";
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 const ConnectKommunityPartnerDocument = gql`
   mutation ConnectKommunityPartner($input: ConnectKommunityPartnerInput!) {
@@ -63,15 +69,18 @@ export default function KommunityPartner() {
     awaitRefetchQueries: true,
   });
 
-  if (loading || meLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!data?.kommunityPartner) return <div>Partner not found</div>;
-  if (!orgId) return <div>Organization not found</div>;
+  if (loading || meLoading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="partner" />
+  if (!data?.kommunityPartner) return <ResourceNotFound resource="partner" id={id} />
+  if (!orgId) return <ResourceNotFound resource="organization" />
 
   const partner = data.kommunityPartner;
   const organizations = meData?.me.memberships.map((membership) => membership.organization) ?? [];
   const organization = organizations.find((membershipOrganization) => membershipOrganization.id === orgId);
   const isPreauthorized = partner.partnerKind === "preauthorized";
+  // Connecting a preauthorized partner provisions its hub, which the backend only
+  // lets an owner/admin do — so say that here instead of letting them hit the error.
+  const mayAddHub = Boolean(organization?.amIAdmin);
   const connectUrl = partner.authUrl || partner.websiteUrl;
   const licenseAgreement = partner.licenseAgreement?.trim() || "";
   const requiresSignature = Boolean(licenseAgreement);
@@ -84,6 +93,12 @@ export default function KommunityPartner() {
       const message = "You must be a member of this organization before connecting a partner.";
       setConnectError(message);
       toast.error(message);
+      return;
+    }
+
+    if (!mayAddHub) {
+      setConnectError(HUB_ADMIN_REQUIRED);
+      toast.error(HUB_ADMIN_REQUIRED);
       return;
     }
 
@@ -217,6 +232,13 @@ export default function KommunityPartner() {
                       Open this partner from an organization where you are an owner or member.
                     </p>
                   )}
+                  {organization && !mayAddHub && (
+                    <Alert>
+                      <ShieldAlert />
+                      <AlertTitle>Admin required</AlertTitle>
+                      <AlertDescription>{HUB_ADMIN_REQUIRED}</AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               )}
 
@@ -228,6 +250,7 @@ export default function KommunityPartner() {
             onClick={handleConnectPreauthorizedPartner}
             disabled={
               !organization ||
+              !mayAddHub ||
               connectLoading ||
               (requiresSignature && !licenseSignature.trim())
             }

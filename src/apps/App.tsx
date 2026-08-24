@@ -1,7 +1,11 @@
 import { useParams, Link } from "react-router-dom"
-import { useDetailAppQuery } from "../api/graphql"
+import { useDetailAppQuery } from "@/graphql/queries/app.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function App() {
   const { id } = useParams<{ id: string }>()
@@ -10,9 +14,9 @@ export default function App() {
     skip: !id,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.app) return <div>App not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="app" />
+  if (!data?.app) return <ResourceNotFound resource="app" id={id} />
 
   const app = data.app
 

@@ -1,9 +1,6 @@
 import { Link } from "react-router-dom"
-import {
-  useLayersQuery,
-  useDeleteIonscaleLayerMutation,
-  useCreateIonscaleLayerMutation,
-} from "../api/graphql"
+import { useLayersQuery } from "@/graphql/queries/layer.generated"
+import { useDeleteIonscaleLayerMutation, useCreateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
 import { Button } from "../components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import {

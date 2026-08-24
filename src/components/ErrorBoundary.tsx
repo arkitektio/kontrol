@@ -1,9 +1,9 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Alert, AlertDescription, AlertTitle } from './ui/alert'
-import { Button } from './ui/button'
-import { AlertCircle, RefreshCw, Home } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { UnexpectedErrorPage, UpdateAvailablePage } from './status/pages'
+// Imported from the module, not the ./status barrel: this file is the app's
+// outermost boundary and the barrel drags in every status page. staleBundle has
+// no imports of its own.
+import { isStaleBundleError } from './status/staleBundle'
 
 interface Props {
   children: ReactNode
@@ -34,7 +34,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    // A chunk that vanished under a deploy is expected operational noise, not a
+    // defect — logging it as an error just buries the real ones.
+    if (!isStaleBundleError(error)) {
+      console.error('ErrorBoundary caught an error:', error, errorInfo)
+    }
     this.setState({
       error,
       errorInfo
@@ -51,61 +55,25 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      /*
+       * A lazy route chunk that 404s because a deploy replaced the hashed
+       * bundles while this tab was open. React.lazy surfaces that as a throw
+       * during render, so it lands HERE — at the nearest React boundary, which
+       * is this one inside DetailLayout/LandingLayout — and never reaches the
+       * react-router errorElement in status/RouteErrorPage, which was the only
+       * place that checked. The result was the generic "unexpected error" page
+       * (and a scary minified stack) for what is really just "reload me".
+       */
+      if (isStaleBundleError(this.state.error)) {
+        return <UpdateAvailablePage />
+      }
+
       return (
-        <div className="flex justify-center items-center min-h-[50vh] p-4">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="bg-destructive text-destructive-foreground flex size-12 items-center justify-center rounded-lg">
-                  <AlertCircle className="size-6" />
-                </div>
-                <div>
-                  <CardTitle>Something went wrong</CardTitle>
-                  <CardDescription>
-                    An unexpected error occurred while rendering this page
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error Details</AlertTitle>
-                <AlertDescription className="mt-2 font-mono text-sm">
-                  {this.state.error?.toString()}
-                </AlertDescription>
-              </Alert>
-
-              {this.state.errorInfo && (
-                <details className="mt-4 cursor-pointer">
-                  <summary className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                    Show error stack trace
-                  </summary>
-                  <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-muted p-4 text-xs overflow-x-auto">
-                    {this.state.errorInfo.componentStack}
-                  </pre>
-                </details>
-              )}
-
-              <div className="flex flex-col gap-2 sm:flex-row pt-4">
-                <Button onClick={this.handleReset} className="flex-1">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Try Again
-                </Button>
-                <Button variant="outline" asChild className="flex-1">
-                  <Link to="/">
-                    <Home className="mr-2 h-4 w-4" />
-                    Go to Home
-                  </Link>
-                </Button>
-              </div>
-
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                If this problem persists, please contact support or check the browser console for more details.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <UnexpectedErrorPage
+          error={this.state.error ?? undefined}
+          description="An unexpected error occurred while rendering this page. Your data is safe — this is a problem in the app, not with your account."
+          onRetry={this.handleReset}
+        />
       )
     }
 

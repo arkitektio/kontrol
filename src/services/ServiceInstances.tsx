@@ -1,6 +1,10 @@
 import { Link, useParams } from "react-router-dom"
-import { useListServiceInstancesQuery } from "../api/graphql"
+import { useListServiceInstancesQuery } from "@/graphql/queries/service_instance.generated"
 import { ServiceInstanceCard } from "../components/ServiceInstanceCard"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function ServiceInstances() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -13,9 +17,8 @@ export default function ServiceInstances() {
       }
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton header="heading" columns={3} count={6} card="tall" />
+  if (error) return <QueryError error={error} />
 
   const instances = data?.serviceInstances || []
 

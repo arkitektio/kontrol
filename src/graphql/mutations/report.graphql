@@ -1,0 +1,11 @@
+mutation ResolveReport($id: ID!, $note: String) {
+  resolveReport(input: { id: $id, note: $note }) {
+    ...ListReport
+  }
+}
+
+mutation UnresolveReport($id: ID!) {
+  unresolveReport(input: { id: $id }) {
+    ...ListReport
+  }
+}

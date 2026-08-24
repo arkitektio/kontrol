@@ -1,10 +1,9 @@
 import { useParams, useLocation } from "react-router-dom";
-import {
-  useInviteByCodeQuery,
-  useAcceptInviteMutation,
-  useDeclineInviteMutation,
-  useMeQuery
-} from "@/api/graphql";
+import { useInviteByCodeQuery } from "@/graphql/queries/invite.generated"
+import { useAcceptInviteMutation, useDeclineInviteMutation } from "@/graphql/mutations/invite.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
+import { CenteredCardSkeleton } from "@/components/skeletons"
+
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,8 @@ export function InvitePage() {
   }
 
   if (inviteLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <CenteredCardSkeleton />
+    ;
   }
 
   const invite = inviteData?.inviteByCode;

@@ -1,13 +1,17 @@
 import { Link } from "react-router-dom"
-import { useAppsQuery } from "../api/graphql"
+import { useAppsQuery } from "@/graphql/queries/app.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function Apps() {
   const { data, loading, error } = useAppsQuery({})
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton header="heading" columns={4} count={8} />
+  if (error) return <QueryError error={error} />
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

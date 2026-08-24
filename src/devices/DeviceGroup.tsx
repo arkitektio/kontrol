@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
-import { useGetDeviceGroupQuery, useDeleteDeviceGroupMutation } from "../api/graphql"
+import { useGetDeviceGroupQuery } from "@/graphql/queries/device_group.generated"
+import { useDeleteDeviceGroupMutation } from "@/graphql/mutations/device_group.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
@@ -18,6 +19,10 @@ import {
 import { useState } from "react"
 import { Avatar, AvatarFallback } from "../components/ui/avatar"
 import { DeviceContextMenu } from "./DeviceContextMenu"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function DeviceGroup() {
   const { groupId, orgId } = useParams<{ groupId: string, orgId: string }>()
@@ -47,9 +52,9 @@ export default function DeviceGroup() {
     }
   }
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.deviceGroup) return <div className="p-4">Device group not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="device group" />
+  if (!data?.deviceGroup) return <ResourceNotFound resource="device group" id={groupId} />
 
   const deviceGroup = data.deviceGroup
   const devices = deviceGroup.devices.flat()

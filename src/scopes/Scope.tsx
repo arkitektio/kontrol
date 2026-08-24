@@ -1,8 +1,12 @@
 import { useParams } from "react-router-dom"
-import { useDeteilScopeQuery } from "../api/graphql"
+import { useDeteilScopeQuery } from "@/graphql/queries/scope.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { ServiceInstanceCard } from "../components/ServiceInstanceCard"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function Scope() {
   const { id } = useParams<{ id: string }>()
@@ -11,9 +15,9 @@ export default function Scope() {
     skip: !id,
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.scope) return <div className="p-4">Scope not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="scope" />
+  if (!data?.scope) return <ResourceNotFound resource="scope" id={id} />
 
   const scope = data.scope
 

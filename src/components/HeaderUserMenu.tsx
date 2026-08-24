@@ -10,8 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useUser } from "@/auth"
-import { useMeQuery } from "@/api/graphql"
-
+import { useMeQuery } from "@/graphql/queries/me.generated"
 /**
  * Compact avatar menu for the focused (no-sidebar) top bar. The full NavUser is
  * sidebar-shaped; this is the slim equivalent for redirect flows.

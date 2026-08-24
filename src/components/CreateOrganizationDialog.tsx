@@ -25,8 +25,13 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import * as z from "zod";
-import { useCreateOrganizationMutation } from "../api/graphql";
-import { DEFAULT_BRAND_HUE } from "@/lib/brand";
+import { useCreateOrganizationMutation } from "@/graphql/mutations/organization.generated"
+import {
+  brandSwatch,
+  DEFAULT_BRAND_CHROMA,
+  DEFAULT_BRAND_HUE,
+  MAX_BRAND_CHROMA,
+} from "@/lib/brand";
 import { SLUG_REGEX, slugifyName } from "@/lib/slug";
 
 const formSchema = z.object({
@@ -40,6 +45,8 @@ const formSchema = z.object({
     ),
   description: z.string().optional(),
   brandHue: z.number().min(0).max(360),
+  // Chroma is on its own scale (oklch), clamped to what sRGB can actually show.
+  brandChroma: z.number().min(0).max(MAX_BRAND_CHROMA),
 });
 
 /** Pull a suggested handle out of a backend rejection like `Try 'the-real-acme'.` */
@@ -76,6 +83,7 @@ export const CreateOrganizationDialog = ({
       slug: "",
       description: "",
       brandHue: DEFAULT_BRAND_HUE,
+      brandChroma: DEFAULT_BRAND_CHROMA,
     },
   });
 
@@ -84,6 +92,11 @@ export const CreateOrganizationDialog = ({
   // stop syncing and leave their value alone.
   const slugDirty = useRef(false);
   const name = form.watch("name");
+  // Watched at the top rather than inside the render callbacks: the two brand
+  // fields preview each other (the swatch needs both, each track needs the
+  // other's value), and `watch()` can't be called from a memoized subtree.
+  const brandHue = form.watch("brandHue");
+  const brandChroma = form.watch("brandChroma");
   useEffect(() => {
     if (!slugDirty.current) {
       form.setValue("slug", slugifyName(name), { shouldValidate: true });
@@ -98,6 +111,7 @@ export const CreateOrganizationDialog = ({
           slug: values.slug,
           description: values.description || undefined,
           brandHue: values.brandHue,
+          brandChroma: values.brandChroma,
         },
       },
     }).then((result) => {
@@ -197,7 +211,9 @@ export const CreateOrganizationDialog = ({
                     <div className="flex items-center gap-4">
                       <div
                         className="h-9 w-9 shrink-0 rounded-full border"
-                        style={{ backgroundColor: `hsl(${field.value} 70% 50%)` }}
+                        style={{
+                          backgroundColor: brandSwatch(field.value, brandChroma),
+                        }}
                         aria-hidden
                       />
                       <div className="flex-1 space-y-2">
@@ -217,6 +233,43 @@ export const CreateOrganizationDialog = ({
                       </div>
                       <span className="w-10 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
                         {Math.round(field.value)}
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="brandChroma"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default colour intensity</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div
+                          className="h-3 w-full rounded-full"
+                          style={{
+                            background: `linear-gradient(to right, ${brandSwatch(
+                              brandHue,
+                              0,
+                            )}, ${brandSwatch(brandHue, MAX_BRAND_CHROMA)})`,
+                          }}
+                          aria-hidden
+                        />
+                        <Slider
+                          min={0}
+                          max={MAX_BRAND_CHROMA}
+                          step={0.005}
+                          value={[field.value]}
+                          onValueChange={([v]) => field.onChange(v)}
+                          aria-label="Default brand intensity"
+                        />
+                      </div>
+                      <span className="w-10 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+                        {field.value.toFixed(2)}
                       </span>
                     </div>
                   </FormControl>

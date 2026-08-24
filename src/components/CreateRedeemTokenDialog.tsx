@@ -3,7 +3,7 @@ import { Check, Copy } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { useHubsQuery } from "@/api/graphql"
+import { useHubsQuery } from "@/graphql/queries/hub.generated"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

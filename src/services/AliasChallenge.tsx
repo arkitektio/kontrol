@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react";
-import { type ListInstanceAlias } from "../api/graphql";
+import type { ListInstanceAliasFragment as ListInstanceAlias } from "@/graphql/fragments/alias.generated";
 
 interface AliasChallengeProps {
   alias: ListInstanceAlias;

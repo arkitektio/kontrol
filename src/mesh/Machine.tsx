@@ -1,12 +1,15 @@
 import { useState } from "react"
 import { useParams } from "react-router-dom"
-import { useDetailMachineQuery } from "../api/graphql"
+import { useDetailMachineQuery } from "@/graphql/queries/machine.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
-import { Skeleton } from "../components/ui/skeleton"
 import { Monitor, Globe, Copy, Check } from "lucide-react"
 import { toast } from "sonner"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailCardSkeleton } from "@/components/skeletons"
 
 /** A single key/value row in the details card. Renders nothing when the value is empty. */
 function DetailRow({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
@@ -60,30 +63,10 @@ export default function Machine() {
     skip: !id,
   })
 
-  if (loading) return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-lg" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-9 w-80" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  if (loading) return <DetailCardSkeleton panels={2} columns={2} panelHeight="lg" />
 
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.machine) return <div className="p-4">Machine not found</div>
+  if (error) return <QueryError error={error} resource="machine" />
+  if (!data?.machine) return <ResourceNotFound resource="machine" id={id} />
 
   const machine = data.machine
 

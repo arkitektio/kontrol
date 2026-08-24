@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useUpdateOrganizationMutation } from "@/api/graphql"
+import { useUpdateOrganizationMutation } from "@/graphql/mutations/organization.generated"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"

@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom"
-import { useMembershipsQuery, useOrganizationQuery } from "../api/graphql"
+import { useMembershipsQuery } from "@/graphql/queries/memberships.generated"
+import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Button } from "../components/ui/button"
@@ -7,12 +8,20 @@ import { useState } from "react"
 import { CreateInviteDialog } from "../components/CreateInviteDialog"
 import { Badge } from "../components/ui/badge"
 import { PageHeader } from "../components/PageHeader"
-import { RoleRequestInbox } from "./RoleRequestInbox"
-import { Users } from "lucide-react"
+import { ShieldCheck, Users } from "lucide-react"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
+import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
 
 export default function Memberships() {
   const { orgId } = useParams<{ orgId: string }>()
   const [inviteOpen, setInviteOpen] = useState(false)
+  // Owner-or-admin — the same bar the Admin page and lok's approve/decline
+  // mutations use. Deliberately not `org.amIOwner`: an admin who isn't the owner
+  // may resolve role requests, so they get the link too.
+  const { isAdmin: mayAdminister } = useIsOrgAdmin(orgId)
   
   const { data: orgData } = useOrganizationQuery({
     variables: { id: orgId! },
@@ -26,8 +35,8 @@ export default function Memberships() {
     skip: !orgId
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton columns={3} count={6} />
+  if (error) return <QueryError error={error} />
   
   const memberships = data?.memberships || []
   const org = orgData?.organization
@@ -38,10 +47,23 @@ export default function Memberships() {
             icon={Users}
             title="Members"
             description={<>Manage members of {org?.name}</>}
-            actions={<Button onClick={() => setInviteOpen(true)}>Invite Member</Button>}
+            actions={
+              <>
+                {/* The role-request inbox moved to the Admin page — it is one of two
+                    things waiting on a privileged decision, and both now live together. */}
+                {mayAdminister && (
+                  <Button variant="outline" asChild>
+                    <Link to={`/organization/${orgId}/admin`}>
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Role requests
+                    </Link>
+                  </Button>
+                )}
+                <Button onClick={() => setInviteOpen(true)}>Invite Member</Button>
+              </>
+            }
         />
 
-      {org?.amIOwner && <RoleRequestInbox organizationId={org.id} />}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {memberships.map((membership) => (

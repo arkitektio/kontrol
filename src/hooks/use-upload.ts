@@ -1,10 +1,6 @@
 
-import {
-    type PresignedPostCredentialsFragment,
-    RequestMediaUploadDocument,
-    type RequestMediaUploadMutation,
-    type RequestMediaUploadMutationVariables,
-} from "@/api/graphql";
+import { type PresignedPostCredentialsFragment } from "@/graphql/fragments/presigned_post.generated"
+import { RequestMediaUploadDocument, type RequestMediaUploadMutation, type RequestMediaUploadMutationVariables } from "@/graphql/mutations/upload.generated"
 import { useApolloClient } from "@apollo/client/react";
 import { useCallback } from "react";
 import { useDatalayerEndpoint } from "./use-datalayer";

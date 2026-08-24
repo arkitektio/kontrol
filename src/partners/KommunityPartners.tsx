@@ -1,17 +1,21 @@
-import { useListKommunityPartnerQuery } from "../api/graphql";
+import { useListKommunityPartnerQuery } from "@/graphql/queries/kommunity_partner.generated"
 import { Link, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { PageHeader } from "../components/PageHeader";
 import { Handshake } from "lucide-react";
 
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
+
 export default function KommunityPartners() {
   const { orgId } = useParams<{ orgId: string }>();
   const { data, loading, error } = useListKommunityPartnerQuery();
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!orgId) return <div>Organization not found</div>;
+  if (loading) return <ListPageSkeleton columns={3} count={6} />
+  if (error) return <QueryError error={error} resource="organization" />
+  if (!orgId) return <ResourceNotFound resource="organization" />
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">

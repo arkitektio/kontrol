@@ -1,0 +1,15 @@
+mutation SetMembershipNotifications($input: SetMembershipNotificationsInput!) {
+  setMembershipNotifications(input: $input) {
+    ...Membership
+  }
+}
+
+mutation NotifyMember($input: NotifyMemberInput!) {
+  notifyMember(input: $input) {
+    delivered
+    attempted
+    membership {
+      ...Membership
+    }
+  }
+}

@@ -1,16 +1,16 @@
 import { useParams } from "react-router-dom"
 import { UserCircle, Shield, Plus, Clock, Check, X } from "lucide-react"
 import { toast } from "sonner"
-import {
-  useMeQuery,
-  useRequestRoleMutation,
-  useCancelRoleRequestMutation,
-} from "@/api/graphql"
+import { useMeQuery } from "@/graphql/queries/me.generated"
+import { useRequestRoleMutation, useCancelRoleRequestMutation } from "@/graphql/mutations/role_request.generated"
 import { PageHeader } from "@/components/PageHeader"
 import { BrandHuePicker } from "@/components/BrandHuePicker"
+import { NotificationPreferences } from "@/components/NotificationPreferences"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+
+import { SettingsStackSkeleton } from "@/components/skeletons"
 
 /** Colour a request badge by its status. */
 function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
@@ -37,8 +37,7 @@ export default function MyMembership() {
     refetchQueries: ["Me", "RoleRequests"],
   })
 
-  if (loading) return <div className="container mx-auto py-10">Loading...</div>
-
+  if (loading) return <SettingsStackSkeleton header="pageHeader" cards={2} rows={3} />
   const membership = data?.me?.memberships?.find((m) => m.organization.id === orgId)
   if (!membership) {
     return (
@@ -202,6 +201,9 @@ export default function MyMembership() {
           </CardContent>
         </Card>
       )}
+
+      {/* Per-organization notification opt-in */}
+      <NotificationPreferences organizationId={org.id} />
 
       {/* Personal brand colour for this organization */}
       <BrandHuePicker organizationId={org.id} />

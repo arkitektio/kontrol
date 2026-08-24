@@ -1,9 +1,6 @@
 import { type ReactNode } from "react"
-import {
-  useListDeviceGroupsQuery,
-  useAddDeviceToGroupMutation,
-  useRemoveDeviceFromGroupMutation,
-} from "../api/graphql"
+import { useListDeviceGroupsQuery } from "@/graphql/queries/device_group.generated"
+import { useAddDeviceToGroupMutation, useRemoveDeviceFromGroupMutation } from "@/graphql/mutations/device_group.generated"
 import {
   ContextMenu,
   ContextMenuContent,

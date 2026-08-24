@@ -1,0 +1,11 @@
+{
+  "name": "Arkitekt",
+  "title": "Take the K Pill",
+  "subtitle": "Start working on microscopy data collaboratively, today",
+  "description": "Arkitekt is an open platform for collaborative microscopy data: shared instruments, shared analysis, shared results.",
+  "primaryCta": { "label": "Sign up", "to": "/account/signup" },
+  "secondaryCta": { "label": "Log in", "to": "/account/login" },
+  "tertiaryCta": { "label": "Learn more", "to": "https://arkitekt.live" },
+  "privacyPolicyUrl": "https://arkitekt.live/privacy",
+  "links": [{ "label": "What is this?", "href": "https://arkitekt.live" }]
+}

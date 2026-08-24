@@ -1,6 +1,9 @@
 fragment Membership on ManagementMembership {
   id
   brandHue
+  brandChroma
+  allowNotifications
+  hasNotificationChannel
   roles {
     identifier
     id
@@ -35,6 +38,7 @@ fragment Membership on ManagementMembership {
 fragment ListMembership on ManagementMembership {
   id
   brandHue
+  brandChroma
   roles {
     identifier
     id

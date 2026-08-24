@@ -1,7 +1,11 @@
-import { useGetSocialAccountQuery } from "@/api/graphql"
+import { useGetSocialAccountQuery } from "@/graphql/queries/social_account.generated"
 import { useParams } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { SettingsStackSkeleton } from "@/components/skeletons"
 
 export default function SocialAccount() {
     const { id } = useParams<{ id: string }>()
@@ -10,9 +14,9 @@ export default function SocialAccount() {
         skip: !id
     })
 
-    if (loading) return <div>Loading...</div>
-    if (error) return <div>Error: {error.message}</div>
-    if (!data?.socialAccount) return <div>Social Account not found</div>
+    if (loading) return <SettingsStackSkeleton cards={2} rows={3} />
+    if (error) return <QueryError error={error} resource="social account" />
+    if (!data?.socialAccount) return <ResourceNotFound resource="social account" id={id} />
 
     const account = data.socialAccount
 

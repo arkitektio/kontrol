@@ -1,4 +1,4 @@
-import { useMeQuery } from "@/api/graphql"
+import { useMeQuery } from "@/graphql/queries/me.generated"
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroupLabel } from "@/components/ui/sidebar"
 import { Link, useLocation } from "react-router-dom"
 import ProviderIcon from "../ProviderIcon"

@@ -1,14 +1,31 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { useConfig, appendNext } from '../auth'
+import { useConfig, appendNext, useCredentialKey } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
-import { Card } from "@/components/ui/card"
 import { useLoginForm } from '@/hooks/use-next'
-import GoogleOneTap from '@/socialaccount/GoogleOneTap'
+
+/** The "or" rule between the password form and each alternative sign-in route. */
+const Divider = ({ label }: { label: string }) => (
+  <div className="relative">
+    <div className="absolute inset-0 flex items-center">
+      <span className="w-full border-t" />
+    </div>
+    <div className="relative flex justify-center text-xs uppercase">
+      {/*
+        * Transparent, not `bg-background`: RootLayout paints a LavaBackground
+        * behind every route, so an opaque swatch here showed as a grey block
+        * sitting on the gradient.
+        */}
+      <span className="text-muted-foreground bg-background/0 px-2 backdrop-blur-sm">
+        {label}
+      </span>
+    </div>
+  </div>
+)
 
 export const LoginForm = () => {
   const config = useConfig()
@@ -16,18 +33,27 @@ export const LoginForm = () => {
   const nextParam = useSearchParams()[0].get("next")
   const next = nextParam || "/home"
 
+  // Same as signup: label the single identifier field for the server's
+  // configured login method rather than hedging with "Username or Email",
+  // which contradicted the line above it telling people to enter their email.
+  const isEmailLogin = useCredentialKey() === 'email'
+  const identifierLabel = isEmailLogin ? 'Email' : 'Username'
+
   const { form, onSubmit, globalError } = useLoginForm()
 
   return (
     <div className="space-y-4">
-      {next && next != "/" && (<>
-        <Card className="text-muted-foreground text-xs w-full p-2">
-          <div className="w-full">
-          You will be redirected to <code>{next}</code> after login
-          </div>
-        </Card>
-      </>)}
-    
+      {/*
+        * Only when a deep link actually asked for somewhere: `next` falls back
+        * to /home, so testing it announced "you will be redirected to /home"
+        * on every ordinary sign-in.
+        */}
+      {nextParam && nextParam !== '/' && (
+        <p className="text-muted-foreground rounded-md border px-3 py-2 text-xs">
+          You'll be taken to <code className="text-foreground">{nextParam}</code> after signing in.
+        </p>
+      )}
+
       {globalError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -36,11 +62,11 @@ export const LoginForm = () => {
         </Alert>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
-          <p className="text-muted-foreground">
-            Enter your email below to login to your account
+          <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
+          <p className="text-muted-foreground text-balance">
+            Sign in to your account to continue
           </p>
         </div>
 
@@ -51,9 +77,13 @@ export const LoginForm = () => {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username or Email</FormLabel>
+                  <FormLabel>{identifierLabel}</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} autoComplete="username" />
+                    <Input
+                      placeholder={isEmailLogin ? 'name@example.com' : 'username'}
+                      {...field}
+                      autoComplete="username"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -64,59 +94,51 @@ export const LoginForm = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <div className="flex items-center justify-between gap-2">
+                    <FormLabel>Password</FormLabel>
+                    <Link
+                      to={appendNext('/account/password/reset', nextParam)}
+                      className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 transition-colors hover:underline"
+                    >
+                      Forgot?
+                    </Link>
+                  </div>
                   <FormControl>
                     <Input type="password" {...field} autoComplete="current-password" />
                   </FormControl>
                   <FormMessage />
-                  <div className="text-sm text-right">
-                    <Link
-                      to="/account/password/reset"
-                      className="text-primary underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </Link>
-                  </div>
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              Login
+            <Button
+              type="submit"
+              size="lg"
+              className="mt-2 w-full"
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? "Signing in…" : "Log in"}
             </Button>
           </form>
         </Form>
 
         {hasProviders && (
           <div>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            <Divider label="Or continue with" />
+            {/*
+              * No GoogleOneTap here: the one-tap prompt loads Google's script
+              * and overlays itself on the page uninvited. The ordinary provider
+              * buttons below cover the same sign-in without that.
+              */}
             <div className="mt-4">
-              <GoogleOneTap process={"login"} />
-              <ProviderList callbackURL={next || "/"} process='login'/>
+              <ProviderList callbackURL={next} process='login'/>
             </div>
           </div>
         )}
 
         {config?.data?.account?.login_by_code_enabled && (
           <div>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            {/* "Or" on its own when a provider divider already said the long form. */}
+            <Divider label={hasProviders ? "Or" : "Or continue with"} />
             <div className="mt-4">
               <Button asChild variant="outline" className="w-full">
                 <Link to={appendNext('/account/login/code', nextParam)}>Send me a sign-in code</Link>
@@ -126,10 +148,10 @@ export const LoginForm = () => {
         )}
       </div>
 
-      <div className="text-center text-sm">
+      <div className="pt-2 text-center text-sm">
         <p className="text-muted-foreground">
           Don't have an account?{" "}
-          <Link to={appendNext('/account/signup', nextParam)} className="underline text-primary underline-offset-4 hover:text-primary/80">
+          <Link to={appendNext('/account/signup', nextParam)} className="text-primary underline underline-offset-4 hover:text-primary/80">
             Sign up
           </Link>
         </p>
@@ -139,17 +161,11 @@ export const LoginForm = () => {
 }
 
 export default function Login () {
+  // Centring and page padding come from LandingLayout's `center` prop; this
+  // only caps the measure so the fields don't stretch on a wide screen.
   return (
-    <div className="grid min-h-svh lg:grid-cols-1">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <LoginForm />
-          </div>
-        </div>
-      </div>
+    <div className="w-full max-w-sm">
+      <LoginForm />
     </div>
   )
 }

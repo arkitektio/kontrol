@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom"
-import { Ordering, useClientsQuery } from "../api/graphql"
+import { Ordering } from "@/api/types"
+import { useClientsQuery } from "@/graphql/queries/client.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
@@ -8,6 +9,10 @@ import { ClientLabel } from "../components/ClientLabel"
 import { clientInitials } from "../lib/clientLabel"
 import { PageHeader } from "../components/PageHeader"
 import { Package } from "lucide-react"
+
+import { QueryError } from "@/components/status"
+
+import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function Clients() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -21,8 +26,8 @@ export default function Clients() {
       pagination: { limit: 5 }
     }})
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
+  if (loading) return <ListPageSkeleton columns={4} count={8} />
+  if (error) return <QueryError error={error} />
 
   // Filter clients by organization if orgId is present
   // Note: Ideally this should be done on the backend, but the current filter type doesn't seem to support it directly

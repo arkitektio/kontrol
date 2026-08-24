@@ -1,7 +1,11 @@
 import { useParams } from "react-router-dom"
-import { useGetRoleQuery } from "../api/graphql"
+import { useGetRoleQuery } from "@/graphql/queries/roles.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { ServiceInstanceCard } from "../components/ServiceInstanceCard"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function Role() {
   const { id } = useParams<{ id: string }>()
@@ -10,9 +14,9 @@ export default function Role() {
     skip: !id,
   })
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4">Error: {error.message}</div>
-  if (!data?.role) return <div className="p-4">Role not found</div>
+  if (loading) return <DetailPageSkeleton sections={2} />
+  if (error) return <QueryError error={error} resource="role" />
+  if (!data?.role) return <ResourceNotFound resource="role" id={id} />
 
   const role = data.role
 

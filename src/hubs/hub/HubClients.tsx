@@ -1,9 +1,13 @@
 import { Link, useParams } from "react-router-dom"
-import { useClientsQuery } from "../../api/graphql"
+import { useClientsQuery } from "@/graphql/queries/client.generated"
 import { ClientLabel } from "../../components/ClientLabel"
 import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Box } from "lucide-react"
+
+import { QueryError } from "@/components/status"
+
+import { SectionSkeleton } from "@/components/skeletons"
 
 export default function HubClients() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
@@ -14,8 +18,8 @@ export default function HubClients() {
 
   const clients = data?.clients ?? []
 
-  if (loading) return <div className="text-sm text-muted-foreground">Loading...</div>
-  if (error) return <div className="text-sm text-destructive">Error: {error.message}</div>
+  if (loading) return <SectionSkeleton rows={4} />
+  if (error) return <QueryError error={error} compact />
 
   return (
     <section className="space-y-3">

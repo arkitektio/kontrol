@@ -10,3 +10,4 @@ query GetHub($id: ID!) {
     ...Hub
   }
 }
+

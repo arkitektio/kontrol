@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
-import { useUpdateAliasMutation, type InstanceAliasFragment } from "../api/graphql"
+import { useUpdateAliasMutation } from "@/graphql/mutations/alias.generated"
+import { type InstanceAliasFragment } from "@/graphql/fragments/alias.generated"
 import {
   Sheet,
   SheetContent,

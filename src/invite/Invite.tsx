@@ -1,11 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom"
-import { useGetInviteQuery, useCancelInviteMutation } from "../api/graphql"
+import { useGetInviteQuery } from "@/graphql/queries/invite.generated"
+import { useCancelInviteMutation } from "@/graphql/mutations/invite.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { toast } from "sonner"
 import { Copy, XCircle, CheckCircle2, Clock } from "lucide-react"
+
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function Invite() {
   const { id } = useParams<{ id: string }>()
@@ -17,9 +22,9 @@ export default function Invite() {
     skip: !id,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.invite) return <div>Invite not found</div>
+  if (loading) return <DetailPageSkeleton sections={1} rows={2} />
+  if (error) return <QueryError error={error} resource="invite" onRetry={() => refetch()} />
+  if (!data?.invite) return <ResourceNotFound resource="invite" id={id} />
 
   const invite = data.invite
   const isPending = invite.status === "PENDING"

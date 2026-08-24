@@ -2,7 +2,8 @@ import { Check, Copy, Mail, XCircle } from "lucide-react"
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { useCancelInviteMutation, useOrganizationQuery } from "../api/graphql"
+import { useCancelInviteMutation } from "@/graphql/mutations/invite.generated"
+import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
 import { CreateInviteDialog } from "../components/CreateInviteDialog"
 import { PageHeader } from "../components/PageHeader"
 import { Button } from "../components/ui/button"
@@ -18,6 +19,10 @@ import {
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 
+import { QueryError, ResourceNotFound } from "@/components/status"
+
+import { SettingsStackSkeleton } from "@/components/skeletons"
+
 export default function Invites() {
   const { orgId } = useParams<{ orgId: string }>()
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -32,9 +37,9 @@ export default function Invites() {
     skip: !orgId,
   })
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!data?.organization) return <div>Organization not found</div>
+  if (loading) return <SettingsStackSkeleton header="pageHeader" cards={1} rows={4} />
+  if (error) return <QueryError error={error} resource="organization" onRetry={() => refetch()} />
+  if (!data?.organization) return <ResourceNotFound resource="organization" id={orgId} />
 
   const org = data.organization
 
