@@ -5,6 +5,7 @@ fragment Organization on ManagementOrganization {
   amIOwner
   brandHue
   brandChroma
+  accessTokenLifetime
   roles {
     id
     identifier

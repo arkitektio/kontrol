@@ -28,6 +28,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { MeshControl } from "./MeshControl"
 import { RenameOrganizationCard } from "../components/RenameOrganizationCard"
+import { AccessTokenLifetimeCard } from "../components/AccessTokenLifetimeCard"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -125,6 +126,11 @@ export default function DangerZone() {
       <MeshControl orgId={org.id} />
 
       <RenameOrganizationCard organizationId={org.id} name={org.name} slug={org.slug} />
+
+      <AccessTokenLifetimeCard
+        organizationId={org.id}
+        accessTokenLifetime={org.accessTokenLifetime}
+      />
 
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Danger Zone</h2>
