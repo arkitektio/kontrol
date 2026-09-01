@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom"
 import { useLayersQuery, useDetailLayerQuery } from "@/graphql/queries/layer.generated"
+import { useTailnetLockQuery } from "@/graphql/queries/tailnet_lock.generated"
 import { useCreateIonscaleAuthKeyMutation, useUpdateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
@@ -42,6 +43,50 @@ function MachinesVsDevicesNote() {
         several machines. This page lists machines on the network, not devices.
       </AlertDescription>
     </Alert>
+  )
+}
+
+/**
+ * Entry point into the guided tailnet lock setup, with the current state
+ * summarised so the mesh page shows whether anything still needs doing.
+ * Deliberately its own query: adding tailnetLock to the Layer fragment would
+ * make every layer read hit the control plane.
+ */
+function TailnetLockSummary({ orgId, meshId }: { orgId: string; meshId: string }) {
+  const { data } = useTailnetLockQuery({ variables: { id: meshId }, skip: !meshId })
+  const lock = data?.layer?.tailnetLock
+
+  const unsigned = lock ? lock.nodes.filter((n) => !n.signed).length : 0
+
+  let status: string
+  let cta = "Set up"
+  if (!lock) {
+    status = "Checking..."
+  } else if (!lock.capabilityEnabled) {
+    status = "Off — machines are admitted on this control plane's word alone."
+  } else if (!lock.authorityActive) {
+    status = "Capability granted, but no key authority yet — nothing is locked."
+    cta = "Finish setup"
+  } else if (unsigned > 0) {
+    status = `Locked — ${unsigned} machine${unsigned === 1 ? "" : "s"} awaiting a signature.`
+    cta = "Manage"
+  } else {
+    status = "Locked — every machine's key is signed."
+    cta = "Manage"
+  }
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+        <ShieldCheck className="h-4 w-4" /> Tailnet lock
+      </h3>
+      <Card className="flex flex-row items-center justify-between gap-4 p-4">
+        <p className="text-sm text-muted-foreground">{status}</p>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/organization/${orgId}/mesh/lock`}>{cta}</Link>
+        </Button>
+      </Card>
+    </section>
   )
 }
 
@@ -114,6 +159,8 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
         title="Mesh"
         description="The private WireGuard network for this organization. Clients opt in to join it."
       />
+
+      <TailnetLockSummary orgId={orgId} meshId={meshId} />
 
       {/* Network settings */}
       <section className="space-y-3">

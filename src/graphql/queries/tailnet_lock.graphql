@@ -1,0 +1,18 @@
+query TailnetLock($id: ID!) {
+  layer(id: $id) {
+    id
+    name
+    tailnetName
+    tailnetLock {
+      capabilityEnabled
+      authorityActive
+      authorityDisabled
+      head
+      nodes {
+        machineId
+        name
+        signed
+      }
+    }
+  }
+}

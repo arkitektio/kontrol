@@ -1,0 +1,11 @@
+mutation EnableTailnetLock($input: TailnetLockInput!) {
+  enableTailnetLock(input: $input) {
+    id
+  }
+}
+
+mutation DisableTailnetLock($input: TailnetLockInput!) {
+  disableTailnetLock(input: $input) {
+    id
+  }
+}

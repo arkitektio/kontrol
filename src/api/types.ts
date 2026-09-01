@@ -317,12 +317,18 @@ export type ManagementClient = {
   name: Scalars['String']['output'];
   /** The organization this client is bound to. Null until a registration is approved, and for global relying-party clients. */
   organization?: Maybe<ManagementOrganization>;
+  /** Is this client being asked to re-report its configuration? True until the client's next report arrives. */
+  pleaseReport: Scalars['Boolean']['output'];
   /** Is this client public? A public client has no client secret and authenticates through a user-facing flow (device code / PKCE) instead. */
   public: Scalars['Boolean']['output'];
   /** The public sources of the client. These are the public sources where users can find more information about the client. */
   publicSources: Array<ManagementPublicSource>;
   /** The release that this client belongs to. Null for clients that are not bound to an app release: hub identities, relying parties, and registrations that are still awaiting approval. */
   release?: Maybe<ManagementRelease>;
+  /** When an operator asked this client to re-report its configuration; null when nothing is pending. While set, the client's token responses carry `please_report`. */
+  reportRequestedAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The operator who asked this client to re-report. */
+  reportRequestedBy?: Maybe<ManagementUser>;
   /** The retained self-reports of this client, most recent first. */
   reports: Array<ManagementReport>;
   /** The operational role of the client: INTERFACE (a human interface operated by a user) vs AGENT (an autonomous client authorized once that then runs unattended, receiving tasks). */
@@ -907,6 +913,8 @@ export type ManagementLayer = {
   name: Scalars['String']['output'];
   /** The organization that owns this alias. */
   organization: ManagementOrganization;
+  /** Tailnet lock status for this mesh (only works for IonscaleLayers). Null when the layer has no tailnet or ionscale is unreachable. */
+  tailnetLock?: Maybe<ManagementTailnetLockStatus>;
   /** The tailnet name of the layer. This is only set for Ionscale layers. */
   tailnetName: Scalars['String']['output'];
 };
@@ -1141,6 +1149,8 @@ export type ManagementOrcidPerson = {
 /** An Organization is a group of users that can work together on a project. */
 export type ManagementOrganization = {
   __typename?: 'ManagementOrganization';
+  /** Access-token lifetime in seconds for this organization's clients. Null means the server default (one hour). Clamped into the server's allowed range when tokens are issued. */
+  accessTokenLifetime?: Maybe<Scalars['Int']['output']>;
   /** The users that are currently active in the organization */
   activeUsers: Array<ManagementUser>;
   /** Whether the currently authenticated user owns this organization or holds its `admin` role — the bar for privileged operations such as adding a hub. */
@@ -1806,6 +1816,32 @@ export type ManagementStagingServiceManifest = {
   version: Scalars['String']['output'];
 };
 
+/** One machine's standing under tailnet lock. */
+export type ManagementTailnetLockNode = {
+  __typename?: 'ManagementTailnetLockNode';
+  /** The ionscale machine id. */
+  machineId: Scalars['String']['output'];
+  /** The machine's name. */
+  name: Scalars['String']['output'];
+  /** Whether the machine's node key is signed by the key authority. An unsigned machine is registered but unreachable by locked peers until an existing signing node signs it. */
+  signed: Scalars['Boolean']['output'];
+};
+
+/** The state of tailnet lock for a mesh. Tailnet lock has two independent halves: the control plane grants the capability, but the key authority itself is created by running `tailscale lock init` on a machine. A mesh can sit with the capability granted and no authority indefinitely. */
+export type ManagementTailnetLockStatus = {
+  __typename?: 'ManagementTailnetLockStatus';
+  /** Whether a key authority actually exists and is enforcing signatures. Only a client can bring this about. */
+  authorityActive: Scalars['Boolean']['output'];
+  /** Whether an authority existed and was shut down with a disablement secret. Distinct from never having had one. */
+  authorityDisabled: Scalars['Boolean']['output'];
+  /** Whether the control plane grants machines the tailnet-lock capability. Required before `tailscale lock init` will work. */
+  capabilityEnabled: Scalars['Boolean']['output'];
+  /** The head of the tailnet key authority chain, empty when there is no authority. */
+  head: Scalars['String']['output'];
+  /** Every machine on the mesh and whether its key is signed. */
+  nodes: Array<ManagementTailnetLockNode>;
+};
+
 /**
  * A client's most recent self-report for one requirement key: which alias it
  * resolved to and whether it was reachable.
@@ -1963,8 +1999,11 @@ export type Mutation = {
   deleteOrganizationProfile: Scalars['ID']['output'];
   deleteProfile: Scalars['ID']['output'];
   deleteRoleSet: Scalars['ID']['output'];
+  disableTailnetLock: ManagementLayer;
+  enableTailnetLock: ManagementLayer;
   notifyMember: ManagementNotificationResult;
   removeDeviceFromGroup: ManagementDevice;
+  requestClientReport: ManagementClient;
   requestMediaUpload: PresignedPostCredentials;
   requestRole: ManagementRoleRequest;
   resolveReport: ManagementReport;
@@ -2165,6 +2204,16 @@ export type MutationDeleteRoleSetArgs = {
 };
 
 
+export type MutationDisableTailnetLockArgs = {
+  input: TailnetLockInput;
+};
+
+
+export type MutationEnableTailnetLockArgs = {
+  input: TailnetLockInput;
+};
+
+
 export type MutationNotifyMemberArgs = {
   input: NotifyMemberInput;
 };
@@ -2172,6 +2221,11 @@ export type MutationNotifyMemberArgs = {
 
 export type MutationRemoveDeviceFromGroupArgs = {
   input: RemoveDeviceFromGroupInput;
+};
+
+
+export type MutationRequestClientReportArgs = {
+  input: RequestClientReportInput;
 };
 
 
@@ -2701,6 +2755,13 @@ export type RemoveDeviceFromGroupInput = {
   deviceGroup: Scalars['ID']['input'];
 };
 
+export type RequestClientReportInput = {
+  /** The client that should re-report its configuration. */
+  client: Scalars['ID']['input'];
+  /** True to ask the client to report, False to withdraw a pending request. */
+  request?: Scalars['Boolean']['input'];
+};
+
 export type RequestMediaUploadInput = {
   datalayer: Scalars['String']['input'];
   key: Scalars['String']['input'];
@@ -2808,6 +2869,11 @@ export type StrFilterLookup = {
   startsWith?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type TailnetLockInput = {
+  /** The ID of the Ionscale layer (mesh) to change. */
+  layerId: Scalars['ID']['input'];
+};
+
 export type UnresolveReportInput = {
   id: Scalars['ID']['input'];
 };
@@ -2853,6 +2919,7 @@ export type UpdateMembershipInput = {
 };
 
 export type UpdateOrganizationInput = {
+  accessTokenLifetime?: InputMaybe<Scalars['Int']['input']>;
   avatar?: InputMaybe<Scalars['ID']['input']>;
   brandChroma?: InputMaybe<Scalars['Float']['input']>;
   brandHue?: InputMaybe<Scalars['Float']['input']>;

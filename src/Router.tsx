@@ -143,6 +143,7 @@ const Machine = lazyDefault(() => import('./mesh/Machine'))
 const KommunityPartner = lazyDefault(() => import('./partners/KommunityPartner'))
 const KommunityPartners = lazyDefault(() => import('./partners/KommunityPartners'))
 const AuthKey = lazyDefault(() => import('./mesh/AuthKey'))
+const TailnetLock = lazyDefault(() => import('./mesh/TailnetLock'))
 const Scope = lazyDefault(() => import('./scopes/Scope'))
 const Callback = lazyDefault(() => import('./Callback'))
 const Authorize = lazyDefault(() => import('./oauth/Authorize'))
@@ -538,6 +539,10 @@ export function createRoutes() {
                 {
                   path: 'mesh',
                   element: <AuthenticatedRoute><Mesh /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'mesh/lock',
+                  element: <AuthenticatedRoute><TailnetLock /></AuthenticatedRoute>,
                 },
                 {
                   path: 'mesh/machines/:id',
