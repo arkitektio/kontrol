@@ -1,0 +1,5 @@
+# pnpm blocks dependency lifecycle scripts by default and exits non-zero when any
+# are pending. esbuild's postinstall links its platform binary; approve it here so
+# `pnpm install` succeeds unattended (Docker builds, CI).
+allowBuilds:
+  esbuild: true

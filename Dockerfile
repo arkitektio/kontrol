@@ -1,11 +1,15 @@
 FROM node:22
 
+RUN npm install -g pnpm@11.25.0
+
 WORKDIR /workspace/
-COPY package.json .
-COPY . . 
-COPY yarn.lock .
-RUN yarn install
+
+# Dependency manifests first so the install layer survives source-only changes.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
 EXPOSE 80
 
-    
-CMD ["yarn", "dev", "--host", "--port", "80"]
+CMD ["pnpm", "dev", "--host", "--port", "80"]

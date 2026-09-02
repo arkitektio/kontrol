@@ -74,7 +74,7 @@ the prerendered HTML is always the banner.
    ```
 3. **The landing group stays outside `<AuthGate>`.** Moving it in reintroduces a
    session round-trip before first paint.
-4. **Run the full `yarn build`, not `node scripts/prerender.mjs` on its own.**
+4. **Run the full `pnpm build`, not `node scripts/prerender.mjs` on its own.**
    `vite build` empties `dist/`; the prerenderer does not. A warm `dist/` from
    before the marketing pages were removed still holds `dist/opensource/`,
    `dist/networking/`, `dist/auth/` and `dist/deploy/`, and nginx serves those
@@ -88,8 +88,8 @@ deployer rebuild.
 ## Running
 
 ```bash
-yarn dev          # http://localhost:5173/
-yarn build        # vite build + prerender + chunk-cycle check
+pnpm dev          # http://localhost:5173/
+pnpm build        # vite build + prerender + chunk-cycle check
 ```
 
 To exercise a mounted config in dev, put a `landing.json` in

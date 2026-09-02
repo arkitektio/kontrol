@@ -41,7 +41,7 @@ export default defineConfig(({ isSsrBuild }) => ({
         //    everyone needs (Rollup's CJS interop helper is a virtual module, not
         //    under node_modules, and must be pinned here or it lands wherever).
         //  - every other group may import only "react" or itself.
-        // scripts/check-chunk-cycles.mjs verifies this after `yarn build`.
+        // scripts/check-chunk-cycles.mjs verifies this after `pnpm build`.
         manualChunks(id) {
           if (id.includes("commonjsHelpers") || /node_modules\/tslib\//.test(id)) return "react"
           if (!id.includes("node_modules")) return undefined
