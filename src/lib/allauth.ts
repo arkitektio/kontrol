@@ -195,8 +195,37 @@ async function request (method: string, path: string, data?: unknown, headers?: 
     options.headers['Content-Type'] = 'application/json'
   }
   const resp = await fetch(settings.baseUrl + path, options)
-  const msg = await resp.json()
-  return handleResponse(msg)
+  return handleResponse(await parseResponse(resp, path))
+}
+
+/**
+ * allauth answers with meaningful JSON on plenty of non-2xx statuses — 401 with
+ * the available `flows`, 409, and the 404 that carries `meta.secret` /
+ * `meta.totp_url` for TOTP setup — so the body is parsed regardless of status.
+ * Never gate this on `resp.ok`.
+ *
+ * What it does guard is a NON-JSON body: an endpoint allauth didn't mount (every
+ * `/webauthn/*` route when `MFA_SUPPORTED_TYPES` omits it, say) answers with
+ * Django's HTML 404 page, and `resp.json()` on that throws a SyntaxError that
+ * surfaces as an unhandled rejection instead of a rendered message.
+ */
+async function parseResponse (resp: Response, path: string): Promise<APIResponse> {
+  const contentType = resp.headers.get('content-type') ?? ''
+  if (contentType.includes('json')) {
+    return await resp.json()
+  }
+  console.error(`allauth: non-JSON ${resp.status} from ${path} (${contentType || 'no content-type'})`)
+  return {
+    status: resp.status,
+    // `meta` is always present on a real allauth response and consumers read
+    // `meta.is_authenticated` off a 401 — keep the shape honest.
+    meta: { is_authenticated: false },
+    errors: [{
+      message: resp.status === 404
+        ? 'This feature is not enabled on this server.'
+        : 'The server returned an unexpected response.'
+    }]
+  }
 }
 
 // Non-sensitive hint that the last session check on this browser was

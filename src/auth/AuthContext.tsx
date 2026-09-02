@@ -1,4 +1,5 @@
 import { useEffect, createContext, useState, useMemo, useContext, type ReactNode } from 'react'
+import type { MFAType } from './types'
 import { Outlet } from 'react-router-dom'
 import { getAuth } from '../lib/allauth'
 import { LoadingScreen } from '../components/LoadingScreen'
@@ -21,10 +22,21 @@ export interface AuthConfig {
         openid_configuration_url?: string
       }>
     }
-    mfa: {
-      supported_types: string[]
+    /**
+     * Absent when the deployment has no MFA app installed. `supported_types`
+     * is the authoritative list of factors the SERVER will accept — the UI must
+     * gate on it rather than assuming the full set, or it offers flows whose
+     * endpoints allauth never mounted (see useMFATypes in ./hooks.ts).
+     */
+    mfa?: {
+      supported_types: MFAType[]
+      passkey_login_enabled?: boolean
+      /** lok extension (see lok_server/headless_config.py): allauth itself does
+       * not report whether /auth/webauthn/signup is mounted. */
+      passkey_signup_enabled?: boolean
     }
-    usersessions: {
+    /** Absent unless `allauth.usersessions` is in INSTALLED_APPS. */
+    usersessions?: {
       track_activity: boolean
     }
     /**

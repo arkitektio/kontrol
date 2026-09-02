@@ -28,17 +28,47 @@ export default function ActivateTOTP () {
 
   const { onSubmit, form, globalError } = useActivateTotpForm()
  
+  // The loader GETs the TOTP authenticator, and allauth answers with one of three
+  // statuses (allauth/headless/mfa/views.py:90-100):
+  //   404 — not enrolled; `meta.secret` / `meta.totp_url` carry the setup data
+  //         this page renders below. The normal case.
+  //   200 — already enrolled; the body has `data`, no `meta`, so falling through
+  //         would paint an empty QR and a blank secret.
+  //   409 — cannot enrol: the account has an unverified email address
+  //         (allauth/mfa/internal/flows/add.py:17-29). NOT "already active".
+  if (totp.status === 200) {
+    return <div className="flex justify-center items-center min-h-[50vh] p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Authenticator app already active</CardTitle>
+          <CardDescription>
+            Your account is already secured with an authenticator app. To use a
+            different one, deactivate the current authenticator first.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Button asChild>
+            <Link to="/account/2fa">Go back</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  }
+
   if (totp.status === 409) {
     return <div className="flex justify-center items-center min-h-[50vh] p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>TOTP Activation not possible </CardTitle>
           <CardDescription>
-           {totp.errors?.map((e ) => e.message).join(" ") || 'Your account is already secured with TOTP.'}
+           {totp.errors?.map((e ) => e.message).join(" ") || 'Verify your email address before adding an authenticator app.'}
           </CardDescription>
         </CardHeader>
-        <CardFooter>
+        <CardFooter className="gap-2">
           <Button asChild>
+            <Link to="/account/email">Manage email addresses</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link to="/account/2fa">Go back</Link>
           </Button>
         </CardFooter>

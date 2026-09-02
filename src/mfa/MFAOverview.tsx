@@ -1,5 +1,6 @@
 import { Link, useLoaderData } from 'react-router-dom'
 import * as allauth from '../lib/allauth'
+import { useSupportsMFAType } from '@/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -12,6 +13,10 @@ export async function loader () {
 
 export default function MFAOverview () {
   const { authenticators } = useLoaderData() as { authenticators: any[] }
+  // allauth only mounts the /webauthn/* endpoints when "webauthn" is in
+  // MFA_SUPPORTED_TYPES, so offering security keys unconditionally points the
+  // user at routes that 404 on a deployment without them.
+  const webauthnSupported = useSupportsMFAType(allauth.AuthenticatorType.WEBAUTHN)
   const totp = authenticators.find(authenticator => authenticator.type === allauth.AuthenticatorType.TOTP)
   const webauthn = authenticators.filter(authenticator => authenticator.type === allauth.AuthenticatorType.WEBAUTHN)
   const recoveryCodes = authenticators.find(authenticator => authenticator.type === allauth.AuthenticatorType.RECOVERY_CODES)
@@ -53,23 +58,27 @@ export default function MFAOverview () {
             </div>
           </div>
 
-          <Separator />
+          {webauthnSupported && (
+            <>
+              <Separator />
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-medium">Security Keys</h3>
-                    <p className="text-sm text-muted-foreground">
-                        {webauthn.length ? `You have added ${webauthn.length} security keys.` : "No security keys have been added."}
-                    </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-medium">Security Keys</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {webauthn.length ? `You have added ${webauthn.length} security keys.` : "No security keys have been added."}
+                        </p>
+                    </div>
+                    <Button asChild variant="outline">
+                        <Link to={webauthn.length ? '/account/2fa/webauthn' : '/account/2fa/webauthn/add'}>
+                            {webauthn.length ? "Manage" : "Add"}
+                        </Link>
+                    </Button>
                 </div>
-                <Button asChild variant="outline">
-                    <Link to={webauthn.length ? '/account/2fa/webauthn' : '/account/2fa/webauthn/add'}>
-                        {webauthn.length ? "Manage" : "Add"}
-                    </Link>
-                </Button>
-            </div>
-          </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 

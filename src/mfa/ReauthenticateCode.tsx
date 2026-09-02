@@ -1,15 +1,29 @@
+import type { ReactNode } from 'react'
 import { useMFAReauthenticateForm } from '@/hooks/use-next'
-import Button from '../components/Button'
-
+import ReauthenticateFlow from '../account/ReauthenticateFlow'
+import { Flows } from '../lib/allauth'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 
-export default function ReauthenticateCode () {
-  
-  const {form , onSubmit} = useMFAReauthenticateForm()
-  return (
-    <div>
+// Shared by the TOTP and recovery-code reauthentication pages: same six-digit
+// entry, same endpoint, only the prompt and the highlighted method differ.
+export default function ReauthenticateCode ({ method, children }: { method: string, children?: ReactNode }) {
+  const { form, onSubmit, globalError } = useMFAReauthenticateForm()
 
+  return (
+    <ReauthenticateFlow flow={Flows.MFA_REAUTHENTICATE} method={method}>
+      {children}
+
+      {globalError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{globalError}</AlertDescription>
+        </Alert>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -21,20 +35,17 @@ export default function ReauthenticateCode () {
                 <FormLabel>Code</FormLabel>
                 <FormControl>
                   <div className="space-y-2 w-full">
-      <InputOTP
-        maxLength={6}
-        {...field}
-      >
-        <InputOTPGroup>
-          <InputOTPSlot index={0} />
-          <InputOTPSlot index={1} />
-          <InputOTPSlot index={2} />
-          <InputOTPSlot index={3} />
-          <InputOTPSlot index={4} />
-          <InputOTPSlot index={5} />
-        </InputOTPGroup>
-      </InputOTP>
-    </div>
+                    <InputOTP maxLength={6} {...field}>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -45,6 +56,6 @@ export default function ReauthenticateCode () {
           </Button>
         </form>
       </Form>
-    </div>
+    </ReauthenticateFlow>
   )
 }

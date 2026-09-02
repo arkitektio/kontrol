@@ -1,34 +1,47 @@
-import { useState } from 'react'
-import FormErrors from '../components/FormErrors'
-import { reauthenticate, Flows } from '../lib/allauth'
+import { Flows } from '../lib/allauth'
 import ReauthenticateFlow from './ReauthenticateFlow'
-import Button from '../components/Button'
+import { useReauthenticateForm } from '@/hooks/use-next'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
 export default function Reauthenticate () {
-  const [password, setPassword] = useState('')
-  const [response, setResponse] = useState({ fetching: false, content: null })
+  const { form, onSubmit, globalError } = useReauthenticateForm()
 
-  function submit () {
-    setResponse({ ...response, fetching: true })
-    reauthenticate({ password }).then((content) => {
-      setResponse((r) => { return { ...r, content } })
-    }).catch((e) => {
-      console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
-    })
-  }
   return (
     <ReauthenticateFlow flow={Flows.REAUTHENTICATE}>
-      <p>Enter your password:</p>
+      <p className="text-sm text-muted-foreground">Enter your password:</p>
 
-      <FormErrors errors={response.content?.errors} />
+      {globalError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{globalError}</AlertDescription>
+        </Alert>
+      )}
 
-      <div><label>Password: <input value={password} onChange={(e) => setPassword(e.target.value)} type='password' required /></label>
-        <FormErrors param='password' errors={response.content?.errors} />
-      </div>
-      <Button disabled={response.fetching} onClick={() => submit()}>Confirm</Button>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" autoComplete="current-password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            Confirm
+          </Button>
+        </form>
+      </Form>
     </ReauthenticateFlow>
   )
 }

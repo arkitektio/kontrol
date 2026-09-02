@@ -7,6 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { useLoginForm } from '@/hooks/use-next'
+import WebAuthnLoginButton from '@/mfa/WebAuthnLoginButton'
 
 /** The "or" rule between the password form and each alternative sign-in route. */
 const Divider = ({ label }: { label: string }) => (
@@ -143,6 +144,18 @@ export const LoginForm = () => {
               <Button asChild variant="outline" className="w-full">
                 <Link to={appendNext('/account/login/code', nextParam)}>Send me a sign-in code</Link>
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Gated on the server's own report: the /auth/webauthn/* endpoints are
+          * only mounted when passkey login is enabled, so an ungated button
+          * would point at a 404. */}
+        {config?.data?.mfa?.passkey_login_enabled && (
+          <div>
+            <Divider label={hasProviders || config?.data?.account?.login_by_code_enabled ? "Or" : "Or continue with"} />
+            <div className="mt-4">
+              <WebAuthnLoginButton />
             </div>
           </div>
         )}

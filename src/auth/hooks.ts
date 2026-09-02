@@ -1,6 +1,7 @@
 import { useContext, useEffect, useSyncExternalStore } from 'react'
 import { AuthContext, type AuthConfig } from './AuthContext'
 import { ensureConfig, getCachedConfig, loadConfig, subscribeConfig } from './config'
+import type { MFAType } from './types'
 
 export function useAuth () {
   return useContext(AuthContext)?.auth
@@ -41,6 +42,23 @@ export async function resolveCredentialKey (): Promise<'email' | 'username'> {
   return credentialKey(await loadConfig())
 }
 
+/**
+ * Which MFA factors this deployment actually supports, from allauth's /config
+ * (`MFA_SUPPORTED_TYPES` server-side). The UI must gate on this: WebAuthn routes
+ * are only mounted when "webauthn" is in the list, so advertising a security-key
+ * option without checking sends the user at an endpoint that 404s.
+ *
+ * Returns an empty list while the (lazy) config is still loading, so callers
+ * render nothing rather than something they may have to take away.
+ */
+export function useMFATypes (): MFAType[] {
+  return useConfig()?.data?.mfa?.supported_types ?? []
+}
+
+export function useSupportsMFAType (type: MFAType): boolean {
+  return useMFATypes().includes(type)
+}
+
 export function useUser () {
   const auth = useContext(AuthContext)?.auth
   return authInfo(auth).user
@@ -59,7 +77,7 @@ function authInfo (auth) {
   if (!auth) {
     return { isAuthenticated: false, requiresReauthentication: false, user: null, pendingFlow: undefined }
   }
-  const isAuthenticated = auth.status === 200 || (auth.status === 401 && auth.meta.is_authenticated)
+  const isAuthenticated = auth.status === 200 || (auth.status === 401 && Boolean(auth.meta?.is_authenticated))
   const requiresReauthentication = isAuthenticated && auth.status === 401
   const pendingFlow = auth.data?.flows?.find(flow => flow.is_pending)
   return { isAuthenticated, requiresReauthentication, user: isAuthenticated ? auth.data.user : null, pendingFlow }

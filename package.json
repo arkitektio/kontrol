@@ -6,8 +6,9 @@
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prerender.mjs && node scripts/check-chunk-cycles.mjs",
+    "build": "node scripts/check-types.mjs && vite build && node scripts/prerender.mjs && node scripts/check-chunk-cycles.mjs",
     "lint": "eslint .",
+    "typecheck": "node scripts/check-types.mjs",
     "preview": "vite preview",
     "lok": "graphql-codegen --config lok.yml && node scripts/prune-generated-imports.mjs"
   },

@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useSiteConfig } from "@/site/config"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, KeyRound } from "lucide-react"
 
 const signupSchema = z.object({
   username: z.string(),
@@ -56,6 +56,10 @@ const SignupForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
   const hasProviders = (config?.data?.socialaccount?.providers?.length ?? 0) > 0
+  // Passkey signup needs the server to have MFA_PASSKEY_SIGNUP_ENABLED, not just
+  // webauthn support — allauth mounts /auth/webauthn/signup only for the former,
+  // so gating on supported_types alone would advertise a route that 404s.
+  const passkeySignupEnabled = config?.data?.mfa?.passkey_signup_enabled ?? false
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   // Preserve `?next` through signup so a deep link (e.g. an invite) survives account
@@ -266,6 +270,32 @@ const SignupForm = () => {
               </div>
               <div className="mt-4">
                   <ProviderList callbackURL={next || '/'} process='login' />
+              </div>
+          </div>
+        )}
+
+        {/* Passkey signup exists only when the server supports webauthn AND has
+          * MFA_PASSKEY_SIGNUP_ENABLED; allauth reports the former in
+          * supported_types, and without it /auth/webauthn/signup is unmounted. */}
+        {passkeySignupEnabled && (
+          <div>
+              <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background/0 text-muted-foreground px-2 backdrop-blur-sm">
+                      {hasProviders ? "Or" : "Or continue with"}
+                  </span>
+                  </div>
+              </div>
+              <div className="mt-4">
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to='/account/signup/passkey'>
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      Sign up with a passkey
+                    </Link>
+                  </Button>
               </div>
           </div>
         )}

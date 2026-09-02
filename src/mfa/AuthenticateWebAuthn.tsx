@@ -7,13 +7,15 @@ import {
   get
 } from '@github/webauthn-json/browser-ponyfill'
 import AuthenticateFlow from './AuthenticateFlow'
+import { flowRoute } from '@/hooks/use-next'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 export default function AuthenticateWebAuthn () {
   const [response, setResponse] = useState<{ fetching: boolean, content: any, error?: string }>({ fetching: false, content: null })
   const navigate = useNavigate()
-  const next = useSearchParams()[0].get('next') || '/home'
+  const nextParam = useSearchParams()[0].get('next')
+  const next = nextParam || '/home'
 
   async function submit () {
     setResponse({ ...response, fetching: true, error: undefined })
@@ -22,11 +24,20 @@ export default function AuthenticateWebAuthn () {
       const jsonOptions = optResp.data.request_options
       const options = parseRequestOptionsFromJSON(jsonOptions)
       const credential = await get(options)
-      const reauthResp = await authenticateUsingWebAuthn(credential)
-      if (reauthResp.status === 200) {
+      const authResp = await authenticateUsingWebAuthn(credential)
+      if (authResp.status === 200) {
           navigate(next)
       } else {
-          setResponse((r) => { return { ...r, content: reauthResp, error: "Authentication failed." } })
+          // A successful security-key challenge can still leave a stage pending
+          // — mfa_trust asks whether to remember this browser — so route on the
+          // response the same way every other flow does instead of assuming
+          // 200-or-failure.
+          const route = flowRoute(authResp, nextParam)
+          if (route) {
+            navigate(route.path, route.state ? { state: route.state } : undefined)
+            return
+          }
+          setResponse((r) => { return { ...r, content: authResp, error: authResp.errors?.[0]?.message ?? "Authentication failed." } })
       }
     } catch (e) {
       console.error(e)

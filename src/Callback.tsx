@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { useAuth, appendNext } from "./auth"
-import { flowToUrl, isPending } from "./hooks/use-next"
+import { useAuth } from "./auth"
+import { flowRoute } from "./hooks/use-next"
 
 export default function Callback() {
 
@@ -19,8 +19,9 @@ export default function Callback() {
             navigate(nextParam || "/home")
             return
         }
-        if (auth.data?.flows?.some(isPending)) {
-            navigate(appendNext(flowToUrl(auth.data.flows.find(isPending)!), nextParam));
+        const route = flowRoute(auth, nextParam)
+        if (route) {
+            navigate(route.path, route.state ? { state: route.state } : undefined)
             return
         }
     },[auth])
