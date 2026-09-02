@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { useListServiceInstancesQuery } from "@/graphql/queries/service_instance.generated"
 import { ServiceInstanceCard } from "../components/ServiceInstanceCard"
 

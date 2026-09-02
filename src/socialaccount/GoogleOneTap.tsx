@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useConfig } from '../auth'
 import { authenticateByToken } from '../lib/allauth'
-import GoogleOneTapLogin from 'react-google-one-tap-login';
+// Type-only: this package is never called here (the GSI script is injected by
+// hand below), but its ambient declaration is what types `window.google`.
+import type {} from 'react-google-one-tap-login'
 
 
 function installGoogleOneTap (cb: () => void) {

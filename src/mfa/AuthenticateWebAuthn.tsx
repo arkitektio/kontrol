@@ -10,7 +10,7 @@ import AuthenticateFlow from './AuthenticateFlow'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
-export default function AuthenticateWebAuthn (props: any) {
+export default function AuthenticateWebAuthn () {
   const [response, setResponse] = useState<{ fetching: boolean, content: any, error?: string }>({ fetching: false, content: null })
   const navigate = useNavigate()
   const next = useSearchParams()[0].get('next') || '/home'

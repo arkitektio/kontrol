@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom"
 import { useDeteilScopeQuery } from "@/graphql/queries/scope.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { Badge } from "../components/ui/badge"
 import { ServiceInstanceCard } from "../components/ServiceInstanceCard"
 
 import { QueryError, ResourceNotFound } from "@/components/status"

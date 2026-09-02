@@ -1,6 +1,6 @@
 import ReauthenticateCode from './ReauthenticateCode'
 
-export default function ReauthenticateTOTP (props) {
+export default function ReauthenticateTOTP () {
 
 
 

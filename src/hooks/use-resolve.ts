@@ -17,7 +17,7 @@ const s3resolveWithEndpoint = (endpointUrl: string, key: string) => {
 
 
 export const useResolve = () => {
-  let endpoint = useDatalayerEndpoint();
+  const endpoint = useDatalayerEndpoint();
 
   const s3resolve = useCallback(
     (key: string | undefined) => {
@@ -25,7 +25,7 @@ export const useResolve = () => {
         return "";
       }
 
-      let url = s3resolveWithEndpoint(endpoint, key);
+      const url = s3resolveWithEndpoint(endpoint, key);
       console.log("s3resolve", url);
       return url;
     },

@@ -5,7 +5,7 @@ import Button from '../components/Button'
 
 import * as allauth from '../lib/allauth'
 
-export async function loader ({ params }) {
+export async function loader () {
   const resp = await allauth.getRecoveryCodes()
   return { recoveryCodes: resp }
 }

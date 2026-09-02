@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom"
 import { useGetServiceQuery } from "@/graphql/queries/services.generated"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 
 import { QueryError, ResourceNotFound } from "@/components/status"

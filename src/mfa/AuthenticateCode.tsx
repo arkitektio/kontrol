@@ -1,9 +1,4 @@
-import { useState } from 'react'
-import * as allauth from '../lib/allauth'
 import AuthenticateFlow from './AuthenticateFlow'
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -13,18 +8,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
-import { handleFormErrors } from "@/lib/utils"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
-import type { AuthFlow } from '@/auth/types'
-import { useNavigate } from 'react-router'
 import { useAuthCodeForm } from '@/hooks/use-next'
-
-const formSchema = z.object({
-  code: z.string().min(1, "Code is required"),
-})
 
 export default function AuthenticateCode (props: any) {
   const {form, onSubmit, globalError} = useAuthCodeForm()

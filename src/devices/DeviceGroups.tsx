@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useParams, Link } from "react-router-dom"
 import { useListDeviceGroupsQuery } from "@/graphql/queries/device_group.generated"
-import { useCreateDeviceGroupMutation, useDeleteDeviceGroupMutation } from "@/graphql/mutations/device_group.generated"
+import { useCreateDeviceGroupMutation } from "@/graphql/mutations/device_group.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { PageHeader } from "../components/PageHeader"

@@ -1,10 +1,6 @@
-import { useState } from 'react'
 import * as allauth from '../lib/allauth'
-import { Navigate, useLoaderData, Link } from 'react-router-dom'
+import { useLoaderData, Link } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -15,22 +11,16 @@ import {
   FormMessage,
   FormDescription
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
-import { useAuth } from '@/auth'
 import { useActivateTotpForm } from '@/hooks/use-next'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 
-export async function loader ({ params }) {
+export async function loader () {
   const resp = await allauth.getTOTPAuthenticator()
   return { totp: resp }
 }
-
-const formSchema = z.object({
-  code: z.string().min(1, "Authenticator code is required"),
-})
 
 export default function ActivateTOTP () {
   const { totp } = useLoaderData() as { totp: allauth.APIResponse }

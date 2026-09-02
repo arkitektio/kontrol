@@ -6,12 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
-export async function loader ({ params }) {
+export async function loader () {
   const resp = await allauth.getRecoveryCodes()
   return { recoveryCodes: resp }
 }
 
-export default function RecoveryCodes (props) {
+export default function RecoveryCodes () {
   const { recoveryCodes } = useLoaderData()
 
   const handlePrint = () => {

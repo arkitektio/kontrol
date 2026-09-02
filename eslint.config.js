@@ -20,4 +20,16 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // graphql-codegen output (`pnpm lok`), regenerated wholesale from the Lok
+    // schema — hand-edits here are overwritten on the next run. The emitted code
+    // uses `any` for custom scalars and `@ts-nocheck`-style pragmas, so those two
+    // rules are exempted; everything else (e.g. unused vars, which
+    // scripts/prune-generated-imports.mjs cleans up) still applies.
+    files: ['src/**/*.generated.ts', 'src/api/types.ts', 'src/api/fragments.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
 ])

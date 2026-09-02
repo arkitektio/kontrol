@@ -18,7 +18,6 @@ import { DetailPageSkeleton } from "@/components/skeletons"
 import { SendNotification } from "./SendNotification"
 
 export default function Membership() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { orgId, id } = useParams<{ orgId: string, id: string }>()
     const [isEditing, setIsEditing] = useState(false)
     const [selectedRoles, setSelectedRoles] = useState<string[]>([])

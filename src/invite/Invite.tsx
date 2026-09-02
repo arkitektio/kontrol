@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { toast } from "sonner"
-import { Copy, XCircle, CheckCircle2, Clock } from "lucide-react"
+import { Copy, XCircle, Clock } from "lucide-react"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -28,7 +28,6 @@ export default function Invite() {
 
   const invite = data.invite
   const isPending = invite.status === "PENDING"
-  const isCanceled = invite.status === "CANCELED"
   const isAccepted = invite.status === "ACCEPTED"
 
   const handleCancel = async () => {

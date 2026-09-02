@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMeshDeviceCodeByCodeQuery } from "@/graphql/queries/mesh_device_code.generated"
 import { useAcceptMeshDeviceCodeMutation, useDeclineMeshDeviceCodeMutation } from "@/graphql/mutations/mesh_device_code.generated"
 import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
@@ -42,7 +42,6 @@ export function MeshConfigurePage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
-  const navigate = useNavigate();
 
   const meshDeviceCode = meshDeviceCodeData?.meshDeviceCodeByCode;
 

@@ -3,7 +3,7 @@ import { Link, useLoaderData, Navigate } from 'react-router-dom'
 import Button from '../components/Button'
 import * as allauth from '../lib/allauth'
 
-export async function loader ({ params }) {
+export async function loader () {
   const resp = await allauth.getAuthenticators()
   return { authenticators: resp.data }
 }
@@ -39,7 +39,7 @@ function Authenticator (props) {
   )
 }
 
-export default function ListWebAuthn (props) {
+export default function ListWebAuthn () {
   const { authenticators } = useLoaderData()
   const [editId, setEditId] = useState(null)
   const [keys, setKeys] = useState(() => authenticators.filter(authenticator => authenticator.type === allauth.AuthenticatorType.WEBAUTHN))

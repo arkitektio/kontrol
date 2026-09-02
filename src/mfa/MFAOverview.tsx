@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ShieldCheck } from "lucide-react"
 
-export async function loader ({ params }) {
+export async function loader () {
   const resp = await allauth.getAuthenticators()
   return { authenticators: resp.data }
 }
 
-export default function MFAOverview (props: any) {
+export default function MFAOverview () {
   const { authenticators } = useLoaderData() as { authenticators: any[] }
   const totp = authenticators.find(authenticator => authenticator.type === allauth.AuthenticatorType.TOTP)
   const webauthn = authenticators.filter(authenticator => authenticator.type === allauth.AuthenticatorType.WEBAUTHN)

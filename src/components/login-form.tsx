@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
 
 const formSchema = z.object({
   username: z.string().min(1, "Title is required"),

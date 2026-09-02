@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom"
 import { useDetailReleaseQuery } from "@/graphql/queries/release.generated"
 import { ClientLabel } from "../components/ClientLabel"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Link } from "react-router-dom"
 

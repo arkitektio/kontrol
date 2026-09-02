@@ -1,6 +1,6 @@
-import { useParams, Link, useNavigate } from "react-router-dom"
+import { useParams, Link } from "react-router-dom"
 import { useGetServiceInstanceQuery } from "@/graphql/queries/service_instance.generated"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { Separator } from "../components/ui/separator"
@@ -33,9 +33,8 @@ import {
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Switch } from "../components/ui/switch"
-import { Trash2, Plus, Box, ArrowRight } from "lucide-react"
+import { Trash2, Plus, ArrowRight } from "lucide-react"
 import { useState } from "react"
-import { useTheme } from "@/providers/ThemeProvider"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -49,7 +48,6 @@ export default function ServiceInstance() {
     skip: !id,
   })
   
-  const { resolvedTheme: theme } = useTheme()
   const [createAliasOpen, setCreateAliasOpen] = useState(false)
   const [aliasHost, setAliasHost] = useState("")
   const [aliasPort, setAliasPort] = useState("")

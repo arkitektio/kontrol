@@ -483,7 +483,7 @@ export function setup (client: ClientType, baseUrl: string, withCredentials: boo
 
 
 
-export const PreAuthClient = ({callback_url}: {callback_url: string}) => ({
+export const PreAuthClient = () => ({
 
 
 

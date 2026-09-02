@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom"
 import { Ordering } from "@/api/types"
 import { useClientsQuery } from "@/graphql/queries/client.generated"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"

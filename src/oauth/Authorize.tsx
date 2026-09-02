@@ -9,8 +9,8 @@ import { useMeQuery } from "@/graphql/queries/me.generated"
 import { getCSRFToken } from "@/lib/django";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Lock, Shield, LayoutGrid, AlertCircle } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Lock, Shield, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 

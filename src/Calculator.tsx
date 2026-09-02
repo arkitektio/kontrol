@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react'
-import { getSessionToken, settings, Client } from './lib/allauth'
+import { useState } from 'react'
 
 function APICard (props) {
   return (
@@ -20,8 +19,8 @@ function APICard (props) {
 export default function Calculator () {
   const [x, setX] = useState('')
   const [y, setY] = useState('')
-  const [drfResponse, setDRFResponse] = useState({ status: '', data: '' })
-  const [ninjaResponse, setNinjaResponse] = useState({ status: '', data: '' })
+  const [drfResponse] = useState({ status: '', data: '' })
+  const [ninjaResponse] = useState({ status: '', data: '' })
 
   return (
     <div>

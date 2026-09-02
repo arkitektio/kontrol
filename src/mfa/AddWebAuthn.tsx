@@ -8,7 +8,7 @@ import {
   parseCreationOptionsFromJSON
 } from '@github/webauthn-json/browser-ponyfill'
 
-export default function AddWebAuthn (props) {
+export default function AddWebAuthn () {
   const [passwordless, setPasswordless] = useState(false)
   const [name, setName] = useState('')
   const [response, setResponse] = useState({ fetching: false, content: null })

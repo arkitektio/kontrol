@@ -17,7 +17,6 @@ import {
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog"
 import { useState } from "react"
-import { Avatar, AvatarFallback } from "../components/ui/avatar"
 import { DeviceContextMenu } from "./DeviceContextMenu"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -27,7 +26,7 @@ import { DetailPageSkeleton } from "@/components/skeletons"
 export default function DeviceGroup() {
   const { groupId, orgId } = useParams<{ groupId: string, orgId: string }>()
   const navigate = useNavigate()
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [, setDeleteError] = useState<string | null>(null)
   const { data, loading, error } = useGetDeviceGroupQuery({
     variables: { id: groupId! },
     skip: !groupId,

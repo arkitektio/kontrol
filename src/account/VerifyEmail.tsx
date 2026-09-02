@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import {
   useLoaderData,
-  Navigate,
   useNavigate
 } from 'react-router-dom'
 import { getEmailVerification, verifyEmail } from '../lib/allauth'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 
 export async function loader ({ params }: any) {
   const key = params.key
@@ -19,7 +18,6 @@ export async function loader ({ params }: any) {
 export default function VerifyEmail () {
   const { key, verification } = useLoaderData() as any
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const navigate = useNavigate()

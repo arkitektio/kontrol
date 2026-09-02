@@ -6,7 +6,7 @@ import { useDeactivateTotpForm } from '@/hooks/use-next'
 import { AlertCircle } from "lucide-react"
 import { Link } from 'react-router-dom'
 
-export default function DeactivateTOTP (props: any) {
+export default function DeactivateTOTP () {
   
   const { form, onSubmit, globalError } = useDeactivateTotpForm()
   

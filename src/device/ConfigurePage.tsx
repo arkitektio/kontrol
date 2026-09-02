@@ -47,7 +47,8 @@ export function ConfigurePage() {
     skip: !code,
   });
   const { data: compData } = useHubsQuery();
-  const { data: meData } = useMeQuery();
+  // Result deliberately unused — the call stays so the `me` query is still issued.
+  useMeQuery();
   const { data: validationData, loading: validating } = useValidateDeviceCodeQuery({
     variables: {
       deviceCode: deviceCodeData?.deviceCodeByCode?.id || "",

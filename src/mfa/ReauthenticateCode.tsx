@@ -6,7 +6,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 
 export default function ReauthenticateCode () {
   
-  const {form , onSubmit, globalError} = useMFAReauthenticateForm()
+  const {form , onSubmit} = useMFAReauthenticateForm()
   return (
     <div>
 

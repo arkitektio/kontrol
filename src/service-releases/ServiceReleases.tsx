@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom"
 import { useServiceReleasesQuery } from "@/graphql/queries/service_release.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 
 import { QueryError } from "@/components/status"
 

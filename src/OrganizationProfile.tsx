@@ -10,7 +10,7 @@ import { Input } from "./components/ui/input"
 import { Label } from "./components/ui/label"
 import { CreateInviteDialog } from "./components/CreateInviteDialog"
 import { useMediaUpload } from "./hooks/use-upload"
-import { Pen, Camera, XCircle } from "lucide-react"
+import { Pen, Camera } from "lucide-react"
 import { toast } from "sonner"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
