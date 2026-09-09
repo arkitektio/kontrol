@@ -13,6 +13,9 @@ fragment InstanceAlias on ManagementInstanceAlias {
   instance {
     id
   }
+  organization {
+    id
+  }
   scope
 }
 

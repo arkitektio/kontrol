@@ -173,7 +173,7 @@ export default function Device() {
                  {device.clients && device.clients.length > 0 ? (
                     <div className="grid gap-2">
                         {device.clients.map(client => (
-                            <Link key={client.id} to={`/clients/${client.id}`}>
+                            <Link key={client.id} to={`/organization/${device.organization.id}/clients/${client.id}`}>
                                 <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center gap-3">
                                     <Avatar className="h-8 w-8">
                                         <AvatarImage src={client.logo?.presignedUrl || undefined} />

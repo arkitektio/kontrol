@@ -63,7 +63,7 @@ export default function ServiceRelease() {
             <h3 className="font-semibold mb-2">Instances of this release</h3>
             <div className="grid gap-2">
               {release.service.releases.flatMap(r => r.instances).map(instance => (
-                <Link key={instance.id} to={`/service-instances/${instance.id}`}>
+                <Link key={instance.id} to={`/organization/${instance.organization.id}/service-instances/${instance.id}`}>
                   <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div>

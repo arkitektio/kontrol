@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom'
 import { AnonymousRoute, AuthenticatedRoute, AuthGate } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { registerRoutes } from './routeRegistry'
 import { ConfigureLayout } from './components/layouts/ConfigureLayout'
 import { DetailLayout } from './components/layouts/DetailLayout'
 import { LandingLayout } from './components/layouts/LandingLayout'
@@ -183,7 +184,7 @@ function RouterErrorBoundary() {
 // them, for a dev-only HMR nicety on a file that rarely changes.
 // eslint-disable-next-line react-refresh/only-export-components
 export function createRoutes() {
-  return [
+  const routes = [
     {
       path: '/',
       element: <RootLayout />,
@@ -659,6 +660,11 @@ export function createRoutes() {
       })),
     },
   ]
+  // Publish the resolved paths so consumers can ask "is this a real route?"
+  // without importing this module (which the layouts import — see
+  // src/routeRegistry.ts for why that direction matters).
+  registerRoutes(routes)
+  return routes
 }
 
 let browserRouter: ReturnType<typeof createBrowserRouter> | undefined

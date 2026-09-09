@@ -2,6 +2,7 @@ import { useLocation, Link } from "react-router-dom"
 import { ChevronRight } from "lucide-react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "./ui/breadcrumb"
 import { useMeQuery } from "@/graphql/queries/me.generated"
+import { isNavigablePath } from "@/routeRegistry"
 import { useUser } from "@/auth"
 interface BreadcrumbSegment {
   label: string
@@ -53,18 +54,26 @@ export const RouteBreadcrumbs = () => {
         {breadcrumbs.map((crumb, index) => {
           const isLast = index === breadcrumbs.length - 1
           const isActive = location.pathname === crumb.path
+          // Crumbs are cumulative path prefixes, and some prefixes are pure
+          // containers with no page behind them (`/organization`,
+          // `/account/password`, ...). Linking those sent the user to the 404
+          // catch-all, so they render as plain text: the hierarchy still reads,
+          // but only real destinations are clickable.
+          const isNavigable = isNavigablePath(crumb.path)
 
           return (
             <div key={crumb.path} className="flex items-center gap-1.5">
               <BreadcrumbItem className={isActive ? "" : "hidden md:block"}>
                 {isActive ? (
                   <span className="text-foreground font-medium">{crumb.label}</span>
-                ) : (
+                ) : isNavigable ? (
                   <BreadcrumbLink asChild>
                     <Link to={crumb.path} className="transition-colors hover:text-foreground">
                       {crumb.label}
                     </Link>
                   </BreadcrumbLink>
+                ) : (
+                  <span>{crumb.label}</span>
                 )}
               </BreadcrumbItem>
               {!isLast && (

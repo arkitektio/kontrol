@@ -39,7 +39,7 @@ export default function Release() {
             <h3 className="font-semibold mb-2">Clients running this release</h3>
             <div className="grid gap-2">
                 {release.clients.map(client => (
-                    <Link key={client.id} to={`/clients/${client.id}`}>
+                    <Link key={client.id} to={`/organization/${client.organization?.id}/clients/${client.id}`}>
                         <div className="p-2 border rounded-md hover:bg-muted/50 transition-colors">
                             <ClientLabel client={client} className="font-medium" />
                             <div className="text-xs text-muted-foreground">by {client?.user?.username}</div>

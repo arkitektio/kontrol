@@ -151,7 +151,7 @@ export default function InstanceAlias() {
                   {alias.instance?.id}
                 </div>
               </div>
-              <Link to={`/service-instances/${alias.instance?.id}`}>
+              <Link to={`/organization/${alias.organization.id}/service-instances/${alias.instance?.id}`}>
                 <Button variant="outline" size="sm">
                   View Instance
                   <ExternalLink className="h-3 w-3 ml-2" />
