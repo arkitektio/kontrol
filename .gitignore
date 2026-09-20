@@ -20,3 +20,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# pnpm keeps its content-addressable store on the same filesystem as node_modules; under
+# the dev compose bind mount that lands here, root-owned and ~400 MB.
+.pnpm-store
