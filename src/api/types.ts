@@ -26,6 +26,8 @@ export type Scalars = {
 };
 
 export type AcceptDeviceCodeInput = {
+  /** Hand the app a pre-authorized key for the organization's mesh, if it asked for one (`requestAuthKey`). */
+  allowIonscale?: Scalars['Boolean']['input'];
   /** The user-facing code the device displayed — proof that the approver actually saw the enrolment request */
   code: Scalars['String']['input'];
   declinedRequirements?: Array<Scalars['String']['input']>;
@@ -502,6 +504,8 @@ export type ManagementDeviceCode = {
   id: Scalars['ID']['output'];
   /** Clients the caller already approved for this app on this device, most recently seen first. Empty when the manifest carries no device id or nothing matches. Scoped to the caller's own approvals in organizations they belong to. */
   priorAuthorizations: Array<ManagementPriorAuthorization>;
+  /** Whether the app asked for a pre-authorized key to the organization's mesh. Accepting with `allowIonscale` (the default) grants it. */
+  requestAuthKey: Scalars['Boolean']['output'];
   /** The requested client kind (written onto the staged client at registration) */
   stagingKind: Scalars['String']['output'];
   /** The staging manifest for this device code */

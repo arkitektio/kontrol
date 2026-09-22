@@ -2,6 +2,7 @@ fragment DeviceCode on ManagementDeviceCode {
   id
   code 
   stagingKind
+  requestAuthKey
   stagingManifest {
     identifier
     version

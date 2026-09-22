@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Monitor, Smartphone, Globe, CheckCircle2, XCircle, Circle,
-  Loader2, ExternalLink, Github, ChevronDown, Check, X, History, ShieldAlert, UserRound,
+  Loader2, ExternalLink, Github, ChevronDown, Check, X, History, ShieldAlert, UserRound, Network,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useActiveOrganization } from "@/hooks/useActiveOrganization";
@@ -75,6 +75,7 @@ export function ConfigurePage() {
   const [authorized, setAuthorized] = useState(false);
   const [deviceName, setDeviceName] = useState("");
   const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
+  const [allowMesh, setAllowMesh] = useState(true);
 
   const { effectiveHueForOrg, effectiveChromaForOrg } = useActiveOrganization();
 
@@ -189,6 +190,7 @@ export function ConfigurePage() {
             code: deviceCode.code,
             hub: selectedHub,
             declinedRequirements: Array.from(declinedRequirements),
+            allowIonscale: allowMesh,
             // Only send a name when a new device will actually be created; for an
             // existing device the backend ignores it, so don't imply otherwise.
             ...(willCreateNewDevice ? { deviceName: deviceName.trim() || undefined } : {}),
@@ -468,6 +470,26 @@ export function ConfigurePage() {
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+            )}
+
+            {/* Mesh access */}
+            {deviceCode.requestAuthKey && (
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  Network
+                </p>
+                <div className="flex items-start gap-3">
+                  <Network className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm leading-snug font-medium">Join the organization's mesh</p>
+                    <p className="text-muted-foreground text-xs">
+                      Hands the app a pre-authorized key, so this device joins the private network without a
+                      separate sign-in. Only applies if the organization has a mesh.
+                    </p>
+                  </div>
+                  <Switch checked={allowMesh} onCheckedChange={setAllowMesh} className="mt-0.5 shrink-0" />
+                </div>
+              </div>
             )}
 
             {/* Where to assign + actions */}
