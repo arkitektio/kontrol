@@ -33,4 +33,23 @@ fragment DeviceCode on ManagementDeviceCode {
       }
     }
   }
+  priorAuthorizations {
+    hub {
+      id
+      name
+      organization {
+        id
+        name
+      }
+    }
+    client {
+      id
+      name
+    }
+    version
+    scopes
+    authorizedAt
+    lastSeenAt
+    accessState
+  }
 }

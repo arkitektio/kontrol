@@ -216,6 +216,7 @@ export type DeleteHubInput = {
 };
 
 export type DeleteIonscaleLayerInput = {
+  /** The mesh to disable. Irreversible: the tailnet and every machine enrolled in it are deleted on ionscale as well. */
   id: Scalars['ID']['input'];
 };
 
@@ -453,8 +454,11 @@ export type ManagementDevice = {
   clients: Array<ManagementClient>;
   /** The device groups that belong to this compute node. */
   deviceGroups: Array<ManagementDeviceGroup>;
+  /** The (per-organization hashed) id of the device. */
+  deviceId: Scalars['ID']['output'];
   id: Scalars['ID']['output'];
   name?: Maybe<Scalars['String']['output']>;
+  /** @deprecated Use deviceId. */
   nodeId: Scalars['ID']['output'];
   /** The organization that owns this compute node. */
   organization: ManagementOrganization;
@@ -496,6 +500,8 @@ export type ManagementDeviceCode = {
   denied: Scalars['Boolean']['output'];
   expiresAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
+  /** Clients the caller already approved for this app on this device, most recently seen first. Empty when the manifest carries no device id or nothing matches. Scoped to the caller's own approvals in organizations they belong to. */
+  priorAuthorizations: Array<ManagementPriorAuthorization>;
   /** The requested client kind (written onto the staged client at registration) */
   stagingKind: Scalars['String']['output'];
   /** The staging manifest for this device code */
@@ -1174,7 +1180,7 @@ export type ManagementOrganization = {
   name?: Maybe<Scalars['String']['output']>;
   /** The profile of the organization */
   profile?: Maybe<ManagementOrganizationProfile>;
-  /** Whether clients created in this organization must present a device node_id. None/False means device auth is not required. */
+  /** Whether clients created in this organization must present a device_id. None/False means device auth is not required. */
   requireDeviceAuth?: Maybe<Scalars['Boolean']['output']>;
   /** The role sets (named bundles of roles) defined in the organization */
   roleSets: Array<ManagementRoleSet>;
@@ -1248,6 +1254,25 @@ export type ManagementOrganizationProfile = {
   /** The display name of the organization */
   name?: Maybe<Scalars['String']['output']>;
   organization: ManagementOrganization;
+};
+
+/** A client the caller previously approved for the same app on the same device as a pending device code. Informational only: the device id in a manifest is self-asserted, so this never shortcuts consent. */
+export type ManagementPriorAuthorization = {
+  __typename?: 'ManagementPriorAuthorization';
+  /** ACTIVE: it can still refresh (parallel install). EXPIRED: its refresh chain ran out. REVOKED: an operator or reuse detection revoked it — re-approval undoes that. */
+  accessState: PriorAccessState;
+  /** When the earlier approval happened. */
+  authorizedAt: Scalars['DateTime']['output'];
+  /** The surviving client row of that approval. Re-approving into the same hub replaces it. */
+  client: ManagementClient;
+  /** The hub the earlier approval bound the app to. */
+  hub: ManagementHub;
+  /** When that client last reported in. */
+  lastSeenAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The scope identifiers that approval granted, for diffing against the new request. */
+  scopes: Array<Scalars['String']['output']>;
+  /** The app version that was approved back then. */
+  version: Scalars['String']['output'];
 };
 
 /**
@@ -1775,7 +1800,9 @@ export type ManagementStagingManifest = {
   __typename?: 'ManagementStagingManifest';
   authors: Array<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;
-  /** Whether this manifest is bound to a device (carries a node id). The id itself is never exposed. */
+  /** Whether this manifest is bound to a device (carries a device id). The id itself is never exposed. */
+  hasDeviceId: Scalars['Boolean']['output'];
+  /** @deprecated Use hasDeviceId. */
   hasNodeId: Scalars['Boolean']['output'];
   homepage?: Maybe<Scalars['String']['output']>;
   identifier: Scalars['String']['output'];
@@ -2368,6 +2395,14 @@ export type PresignedPostCredentials = {
   xAmzSignature: Scalars['String']['output'];
 };
 
+/** Whether a previously approved client can still refresh its tokens. */
+export const PriorAccessState = {
+  Active: 'ACTIVE',
+  Expired: 'EXPIRED',
+  Revoked: 'REVOKED'
+} as const;
+
+export type PriorAccessState = typeof PriorAccessState[keyof typeof PriorAccessState];
 export type Query = {
   __typename?: 'Query';
   _service: _Service;
@@ -2899,8 +2934,6 @@ export type UpdateHubInput = {
 };
 
 export type UpdateIonscaleLayerInput = {
-  /** List of membership IDs to block from accessing this layer. */
-  blockedFor?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** The description of the tailnet layer. */
   description?: InputMaybe<Scalars['String']['input']>;
   /** Enable or disable HTTPS certificates for this mesh. Requires MagicDNS. */

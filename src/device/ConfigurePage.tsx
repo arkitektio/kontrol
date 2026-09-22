@@ -1,14 +1,16 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useDeviceCodeByCodeQuery, useValidateDeviceCodeQuery } from "@/graphql/queries/device_code.generated"
 import { useAcceptDeviceCodeMutation, useDeclineDeviceCodeMutation } from "@/graphql/mutations/device_code.generated"
 import { useHubsQuery } from "@/graphql/queries/hub.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { logout } from "@/lib/allauth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -16,8 +18,9 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Monitor, Smartphone, Globe, CheckCircle2, XCircle, Circle,
-  Loader2, ExternalLink, Github, ChevronDown, Check, X,
+  Loader2, ExternalLink, Github, ChevronDown, Check, X, History, ShieldAlert, UserRound,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { useActiveOrganization } from "@/hooks/useActiveOrganization";
 import { applyBrand, DEFAULT_BRAND_CHROMA, DEFAULT_BRAND_HUE } from "@/lib/brand";
 
@@ -39,6 +42,14 @@ function WorkspaceRow({ org, hub }: { org: string; hub: string }) {
 
 export function ConfigurePage() {
   const { deviceCode: code } = useParams<{ deviceCode: string }>();
+  // Hints the device may append to the configure link. Both are self-asserted by
+  // the device, so they only ever *suggest*: `hub` preselects a hub the user can
+  // already see, `sub` lets us warn when a different account than the one that
+  // last used the app is signed in. Neither is trusted for anything else.
+  const [searchParams] = useSearchParams();
+  const hubHint = searchParams.get("hub");
+  const subHint = searchParams.get("sub");
+  const navigate = useNavigate();
   const { control, watch, setValue } = useForm<ConfigureFormData>();
   const selectedHub = watch("hub");
 
@@ -47,8 +58,7 @@ export function ConfigurePage() {
     skip: !code,
   });
   const { data: compData } = useHubsQuery();
-  // Result deliberately unused — the call stays so the `me` query is still issued.
-  useMeQuery();
+  const { data: meData } = useMeQuery();
   const { data: validationData, loading: validating } = useValidateDeviceCodeQuery({
     variables: {
       deviceCode: deviceCodeData?.deviceCodeByCode?.id || "",
@@ -68,11 +78,37 @@ export function ConfigurePage() {
 
   const { effectiveHueForOrg, effectiveChromaForOrg } = useActiveOrganization();
 
+  // Preselect, in order: the hub the device asked for (`?hub=`), the hub this app
+  // was last approved into on this device (most recently seen first), the first hub.
+  // Only a suggestion: the picker stays editable, and both the hint and the device
+  // id behind the prior match are self-asserted by the device.
+  const priorAuthorizations = useMemo(
+    () => deviceCodeData?.deviceCodeByCode?.priorAuthorizations ?? [],
+    [deviceCodeData],
+  );
+  const hubHintKnown = !!hubHint && !!compData?.hubs?.some((h) => h.id === hubHint);
   useEffect(() => {
-    if (compData?.hubs?.length && !selectedHub) {
-      setValue("hub", compData.hubs[0].id);
+    if (!compData?.hubs?.length || selectedHub) return;
+    const hubIds = new Set(compData.hubs.map((h) => h.id));
+    const requested = hubHint && hubIds.has(hubHint) ? hubHint : undefined;
+    const remembered = priorAuthorizations.find((p) => hubIds.has(p.hub.id))?.hub.id;
+    setValue("hub", requested ?? remembered ?? compData.hubs[0].id);
+  }, [compData, hubHint, priorAuthorizations, selectedHub, setValue]);
+
+  // `sub` is the user id the app's last token was issued for. A mismatch with the
+  // signed-in account usually means a shared machine or a stale browser session,
+  // so we warn and offer to switch — the id itself is never shown or looked up.
+  const me = meData?.me ?? null;
+  const differentUser = !!subHint && !!me && subHint !== me.id;
+
+  const switchAccount = async () => {
+    try {
+      await logout();
+    } catch (e) {
+      console.error(e);
     }
-  }, [compData, selectedHub, setValue]);
+    navigate(`/account/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+  };
 
   // The workspace lives in an organization; tint the whole page with that org's
   // membership brand hue and chroma (the member's personal value → the org
@@ -125,6 +161,16 @@ export function ConfigurePage() {
   const existingDevice = validationData?.validateDeviceCode.existingDevice ?? null;
   const isNodeManifest = !!manifest?.hasNodeId;
   const willCreateNewDevice = isNodeManifest && hasValidation && !existingDevice;
+
+  // The earlier approval of this app on this device. `prior` is the one for the
+  // currently selected hub (re-approving there replaces its credential); `anyPrior`
+  // is the most recent one anywhere, used for the badge when another hub is picked.
+  const anyPrior = priorAuthorizations[0] ?? null;
+  const prior = priorAuthorizations.find((p) => p.hub.id === selectedHub) ?? null;
+  const priorScopes = new Set(prior?.scopes ?? []);
+  const newScopes = prior ? (manifest?.scopes ?? []).filter((scope) => !priorScopes.has(scope)) : [];
+  const versionChanged = !!prior && !!manifest?.version && prior.version !== manifest.version;
+  const relative = (iso: string) => formatDistanceToNow(new Date(iso), { addSuffix: true });
 
   const toggleRequirement = (key: string) =>
     setDeclinedRequirements((prev) => {
@@ -211,7 +257,22 @@ export function ConfigurePage() {
   const appIdentifier = manifest?.identifier ?? deviceCode.client?.release?.app.identifier;
 
   return (
-    <div className="w-full max-w-3xl">
+    <div className="w-full max-w-3xl space-y-4">
+      {differentUser && (
+        <Alert variant="destructive">
+          <UserRound className="h-4 w-4" />
+          <AlertTitle>Signed in as a different account</AlertTitle>
+          <AlertDescription>
+            <p>
+              This app was last used by another account, but you are signed in as{" "}
+              <span className="font-medium">{me?.username}</span>. Approving now grants access to this account's hubs.
+            </p>
+            <button type="button" onClick={switchAccount} className="mt-1 underline underline-offset-2">
+              Switch account
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
       <Card className="w-full gap-0 overflow-hidden border p-0 shadow-lg">
         <div className="grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)]">
 
@@ -232,6 +293,31 @@ export function ConfigurePage() {
                 </p>
               </div>
             </div>
+
+            {anyPrior && (
+              anyPrior.accessState === "REVOKED" ? (
+                <div className="border-destructive/40 bg-destructive/10 text-destructive space-y-1 rounded-lg border px-3 py-2 text-xs">
+                  <p className="flex items-center gap-1.5 font-medium">
+                    <ShieldAlert className="h-3.5 w-3.5 shrink-0" /> Access was revoked
+                  </p>
+                  <p>
+                    You approved this app on this device for {anyPrior.hub.name} {relative(anyPrior.authorizedAt)}, and that
+                    access has since been revoked. Only re-authorize it if you expect this request.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Badge variant="secondary" className="max-w-full">
+                    <History /> Previously authorized
+                  </Badge>
+                  <p className="text-muted-foreground text-xs">
+                    Matches a device you approved for {anyPrior.hub.name} ({anyPrior.hub.organization.name}) {relative(anyPrior.authorizedAt)}
+                    {anyPrior.lastSeenAt ? `, last seen ${relative(anyPrior.lastSeenAt)}` : ""}.
+                    {anyPrior.accessState === "ACTIVE" ? " That access is still active." : ""}
+                  </p>
+                </div>
+              )
+            )}
 
             {(githubSource || websiteSource || manifest?.repoUrl) && (
               <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-xs">
@@ -271,12 +357,24 @@ export function ConfigurePage() {
                   Requested permissions
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {manifest!.scopes.map((scope) => (
-                    <Badge key={scope} variant="secondary" className="font-mono text-xs">
-                      {scope}
-                    </Badge>
-                  ))}
+                  {manifest!.scopes.map((scope) => {
+                    const isNew = prior !== null && !priorScopes.has(scope);
+                    return (
+                      <Badge key={scope} variant={isNew ? "destructive" : "secondary"} className="font-mono text-xs">
+                        {scope}
+                        {isNew && <span className="font-sans opacity-80">new</span>}
+                      </Badge>
+                    );
+                  })}
                 </div>
+                {(newScopes.length > 0 || versionChanged) && (
+                  <p className="text-destructive text-xs">
+                    {newScopes.length > 0 &&
+                      `This request asks for ${newScopes.length} permission${newScopes.length === 1 ? "" : "s"} the previous authorization did not have.`}
+                    {newScopes.length > 0 && versionChanged && " "}
+                    {versionChanged && `Version changed from ${prior!.version} to ${manifest!.version}.`}
+                  </p>
+                )}
               </div>
             )}
 
@@ -377,6 +475,11 @@ export function ConfigurePage() {
               {compData?.hubs?.length ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Assign to hub</p>
+                  {hubHint && !hubHintKnown && (
+                    <p className="text-muted-foreground text-xs">
+                      The app asked for a hub this account cannot access, so pick one below.
+                    </p>
+                  )}
                   <Controller
                     control={control}
                     name="hub"
@@ -432,6 +535,12 @@ export function ConfigurePage() {
                 <p className="text-muted-foreground text-xs">
                   Reusing your existing device
                   {existingDevice.name ? ` "${existingDevice.name}"` : ""} in this workspace.
+                </p>
+              )}
+
+              {prior && (
+                <p className="text-muted-foreground text-xs">
+                  Re-authorizing replaces the credential issued {relative(prior.authorizedAt)}; the old one stops working.
                 </p>
               )}
 
