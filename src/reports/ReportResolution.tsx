@@ -1,6 +1,5 @@
 import { useState } from "react"
 import type { ApolloCache } from "@apollo/client"
-import { formatDistanceToNow } from "date-fns"
 import { CheckCircle2, RotateCcw, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 
@@ -20,15 +19,8 @@ import {
   useUnresolveReportMutation,
 } from "@/graphql/mutations/report.generated"
 import type { ListReportFragment } from "@/graphql/fragments/report.generated"
-
-function timeAgo(iso?: string | null): string {
-  if (!iso) return "unknown"
-  try {
-    return formatDistanceToNow(new Date(iso), { addSuffix: true })
-  } catch {
-    return "unknown"
-  }
-}
+import { toastError } from "@/lib/errors"
+import { timeAgo } from "@/lib/time"
 
 /**
  * Acknowledging a report is triage, not repair: the backend deliberately leaves
@@ -63,7 +55,7 @@ export function ResolveReportAction({ report }: { report: ListReportFragment }) 
       setOpen(false)
       setNote("")
     } catch (e) {
-      toast.error("Could not resolve report: " + (e as Error).message)
+      toastError(e, "Couldn't resolve the report")
     }
   }
 
@@ -72,7 +64,7 @@ export function ResolveReportAction({ report }: { report: ListReportFragment }) 
       await unresolve({ variables: { id: report.id } })
       toast.success("Report reopened")
     } catch (e) {
-      toast.error("Could not reopen report: " + (e as Error).message)
+      toastError(e, "Couldn't reopen the report")
     }
   }
 

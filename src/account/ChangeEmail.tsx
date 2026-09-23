@@ -27,6 +27,21 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Trash2, CheckCircle2, XCircle, AlertCircle, Mail, Plus } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
+
+// allauth's email endpoints return the address list as `data` — narrower than
+// the shared `Data` type, so it's cast once here at the boundary.
+type EmailAddress = { email: string, primary: boolean, verified: boolean }
+const emailsOf = (resp: allauth.APIResponse) => (resp.data ?? []) as unknown as EmailAddress[]
+
+// A non-200 allauth reply. 401 means "reauthenticate first": the auth context
+// already routes to the reauth flow for that, so no toast on top of it.
+function reportFailure(resp: allauth.APIResponse, action: string) {
+  if (resp.status === 401) return
+  toastError(resp.errors?.[0]?.message ?? `The server answered ${resp.status}`, action)
+}
 
 const addEmailSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -35,10 +50,11 @@ const addEmailSchema = z.object({
 export default function ChangeEmail() {
   const config = useConfig()
   const [redirectToVerification, setRedirectToVerification] = useState(false)
-  const [emailAddresses, setEmailAddresses] = useState<any[]>([])
+  const [emailAddresses, setEmailAddresses] = useState<EmailAddress[]>([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null) // email -> action
   const [globalError, setGlobalError] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   const form = useForm<z.infer<typeof addEmailSchema>>({
     resolver: zodResolver(addEmailSchema),
@@ -51,8 +67,12 @@ export default function ChangeEmail() {
     setLoading(true)
     allauth.getEmailAddresses().then((resp) => {
       if (resp.status === 200) {
-        setEmailAddresses(resp.data)
+        setEmailAddresses(emailsOf(resp))
+      } else {
+        reportFailure(resp, "Couldn't load your email addresses")
       }
+    }).catch((e) => {
+      toastError(e, "Couldn't load your email addresses")
     }).finally(() => {
       setLoading(false)
     })
@@ -69,15 +89,24 @@ export default function ChangeEmail() {
     setActionLoading("add")
     allauth.addEmail(values.email).then((resp) => {
       if (resp.status === 200) {
-        setEmailAddresses(resp.data)
+        setEmailAddresses(emailsOf(resp))
         form.reset()
+        toast.success(`Added ${values.email} — check your inbox to verify it`)
         requestRedirectToVerification()
       } else {
-         if (resp.data?.errors?.email) {
-             form.setError("email", { message: resp.data.errors.email.join(" ") })
-         } else {
-             setGlobalError("Failed to add email.")
-         }
+        // allauth: `errors: [{param, message, code}]` — field errors under the
+        // input, anything else (no param) above the form.
+        const errors = resp.errors ?? []
+        const fieldErrors = errors.filter((e) => e.param === "email")
+        const otherErrors = errors.filter((e) => e.param !== "email")
+        if (fieldErrors.length) {
+          form.setError("email", { message: fieldErrors.map((e) => e.message).join(" ") })
+        }
+        if (otherErrors.length) {
+          setGlobalError(otherErrors.map((e) => e.message).join(" "))
+        } else if (!fieldErrors.length) {
+          setGlobalError("Couldn't add the email address.")
+        }
       }
     }).catch((e) => {
       console.error(e)
@@ -91,41 +120,48 @@ export default function ChangeEmail() {
     setActionLoading(`verify-${email}`)
     allauth.requestEmailVerification(email).then((resp) => {
       if (resp.status === 200) {
+        toast.success(`Verification email sent to ${email}`)
         requestRedirectToVerification()
-        // Optionally show a success message
+      } else {
+        reportFailure(resp, "Couldn't send the verification email")
       }
     }).catch((e) => {
-      console.error(e)
-      window.alert(e)
+      toastError(e, "Couldn't send the verification email")
     }).finally(() => {
       setActionLoading(null)
     })
   }
 
-  function deleteEmail(email: string) {
-    if (!window.confirm(`Are you sure you want to remove ${email}?`)) return
+  async function deleteEmail(email: string) {
     setActionLoading(`delete-${email}`)
-    allauth.deleteEmail(email).then((resp) => {
+    try {
+      const resp = await allauth.deleteEmail(email)
       if (resp.status === 200) {
-        setEmailAddresses(resp.data)
+        setEmailAddresses(emailsOf(resp))
+        toast.success(`Removed ${email}`)
+      } else {
+        reportFailure(resp, "Couldn't remove the email address")
+        return false
       }
-    }).catch((e) => {
-      console.error(e)
-      window.alert(e)
-    }).finally(() => {
+    } catch (e) {
+      toastError(e, "Couldn't remove the email address")
+      return false
+    } finally {
       setActionLoading(null)
-    })
+    }
   }
 
   function markAsPrimary(email: string) {
     setActionLoading(`primary-${email}`)
     allauth.markEmailAsPrimary(email).then((resp) => {
       if (resp.status === 200) {
-        setEmailAddresses(resp.data)
+        setEmailAddresses(emailsOf(resp))
+        toast.success(`${email} is now your primary address`)
+      } else {
+        reportFailure(resp, "Couldn't change the primary address")
       }
     }).catch((e) => {
-      console.error(e)
-      window.alert(e)
+      toastError(e, "Couldn't change the primary address")
     }).finally(() => {
       setActionLoading(null)
     })
@@ -209,8 +245,9 @@ export default function ChangeEmail() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => deleteEmail(ea.email)}
+                          onClick={() => setPendingDelete(ea.email)}
                           disabled={!!actionLoading}
+                          aria-label={`Remove ${ea.email}`}
                         >
                            {actionLoading === `delete-${ea.email}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                         </Button>
@@ -263,6 +300,17 @@ export default function ChangeEmail() {
           </Form>
         </CardContent>
       </Card>
+
+      <ConfirmActionDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title="Remove this email address?"
+        description={<>You won't be able to sign in or receive mail at <span className="font-medium">{pendingDelete}</span> any more.</>}
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        destructive
+        onConfirm={() => pendingDelete && deleteEmail(pendingDelete)}
+      />
     </div>
   )
 }

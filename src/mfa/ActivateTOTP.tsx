@@ -98,7 +98,7 @@ export default function ActivateTOTP () {
 
           <div className="flex flex-col items-center justify-center space-y-4">
             <div className="bg-white p-4 rounded-lg border">
-                <QRCodeSVG value={totp.meta?.totp_url || ''} size={192} />
+                <QRCodeSVG value={String(totp.meta?.totp_url ?? '')} size={192} />
             </div>
             <div className="text-center space-y-2 w-full">
                 <p className="text-sm text-muted-foreground">
@@ -107,7 +107,7 @@ export default function ActivateTOTP () {
                 <div className="space-y-1">
                     <p className="text-xs font-medium uppercase text-muted-foreground">Secret Key</p>
                     <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold block break-all">
-                        {totp.meta?.secret}
+                        {String(totp.meta?.secret ?? '')}
                     </code>
                     <p className="text-xs text-muted-foreground">
                         You can store this secret to reinstall your authenticator app later.

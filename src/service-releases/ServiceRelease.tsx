@@ -73,7 +73,7 @@ export default function ServiceRelease() {
                         </div>
                       </div>
                       <Badge variant="secondary">
-                        {instance.allowedUsers.length} {instance.allowedUsers.length === 1 ? 'user' : 'users'}
+                        {instance.allowedUsers?.length ?? 0} {instance.allowedUsers?.length === 1 ? 'user' : 'users'}
                       </Badge>
                     </div>
                   </div>

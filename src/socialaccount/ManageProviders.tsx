@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { toastError } from "@/lib/errors"
 
 interface ProviderAccount {
   uid: string
@@ -56,8 +57,7 @@ export default function ManageProviders () {
         setAccounts(resp.data as ProviderAccount[])
       }
     }).catch((e) => {
-      console.error(e)
-      window.alert(e)
+      toastError(e, "Couldn't disconnect the account")
     }).then(() => {
       setResponse((r) => { return { ...r, fetching: false } })
     })

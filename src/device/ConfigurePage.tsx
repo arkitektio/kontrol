@@ -4,6 +4,7 @@ import { useAcceptDeviceCodeMutation, useDeclineDeviceCodeMutation } from "@/gra
 import { useHubsQuery } from "@/graphql/queries/hub.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
+import { toastError } from "@/lib/errors";
 
 import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -208,10 +209,10 @@ export function ConfigurePage() {
               : "A device will appear in your workspace soon."
         );
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
       setSubmitted(true);
+    } catch (e) {
+      // Stay on the form so the user can retry — a failed call is not a denial.
+      toastError(e, "Couldn't approve the app");
     }
   };
 

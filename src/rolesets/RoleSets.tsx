@@ -11,6 +11,8 @@ import { Label } from "../components/ui/label"
 import { PageHeader } from "../components/PageHeader"
 import { Plus, Tags, Pencil, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
+import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,7 @@ export default function RoleSets() {
   const [name, setName] = useState("")
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<RoleSet | null>(null)
 
   if (loading) return <ListPageSkeleton columns={3} count={6} />
   if (error) return <QueryError error={error} resource="organization" />
@@ -98,20 +101,20 @@ export default function RoleSets() {
         toast.success("Role set created")
       }
       setDialogOpen(false)
-    } catch (e: any) {
-      toast.error("Failed to save role set: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't save the role set")
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (rs: RoleSet) => {
-    if (!confirm(`Delete role set "${rs.name}"? The roles themselves are not affected.`)) return
     try {
       await deleteRoleSet({ variables: { input: { id: rs.id } } })
       toast.success("Role set deleted")
-    } catch (e: any) {
-      toast.error("Failed to delete role set: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't delete the role set")
+      return false
     }
   }
 
@@ -135,14 +138,15 @@ export default function RoleSets() {
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <CardTitle className="text-base font-medium truncate">{rs.name}</CardTitle>
               <div className="flex gap-1 shrink-0">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(rs)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(rs)} aria-label={`Edit role set ${rs.name}`}>
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-destructive"
-                  onClick={() => handleDelete(rs)}
+                  onClick={() => setDeleteTarget(rs)}
+                  aria-label={`Delete role set ${rs.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -218,6 +222,17 @@ export default function RoleSets() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={`Delete role set "${deleteTarget?.name ?? ""}"?`}
+        description="The roles themselves are not affected, and members keep the roles they already have."
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        destructive
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+      />
     </div>
   )
 }

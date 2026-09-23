@@ -1,10 +1,11 @@
 import { Link, useParams, useNavigate } from "react-router-dom"
 import { useGetHubQuery, HubsDocument } from "@/graphql/queries/hub.generated"
 import { useDeleteHubMutation, useUpdateHubMutation } from "@/graphql/mutations/hub.generated"
-import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
+import { toastError } from "@/lib/errors"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
-import { Layers, Server, Box, Ticket, ArrowRight, Pencil, Trash2 } from "lucide-react"
+import { Layers, Server, Box, Ticket, ArrowRight, Pencil, Trash2, Activity, Network } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import { formatDistanceToNow } from "date-fns"
+import { HubStatusBadge } from "../HubStatusBadge"
 
 export default function HubOverview() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
@@ -73,7 +76,7 @@ export default function HubOverview() {
       await deleteHub({ variables: { input: { id: hub.id } } })
       navigate(`/organization/${orgId}/hubs`)
     } catch (e) {
-      console.error("Error deleting hub:", e)
+      toastError(e, "Couldn't delete the hub")
     }
   }
 
@@ -84,7 +87,7 @@ export default function HubOverview() {
       setUpdateDialogOpen(false)
       navigate(`/organization/${orgId}/hubs/${encodeURIComponent(newName.trim())}`)
     } catch (e) {
-      console.error("Error updating hub:", e)
+      toastError(e, "Couldn't rename the hub")
     }
   }
 
@@ -99,7 +102,8 @@ export default function HubOverview() {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight">{hub.name}</h1>
             <p className="text-sm text-muted-foreground">{hub.organization.name}</p>
-            <div className="flex gap-2 pt-1">
+            <div className="flex gap-2 pt-1 flex-wrap">
+              <HubStatusBadge online={hub.online} healthy={hub.lastHealthy} />
               <Badge variant="outline">
                 {hub.instances.length} {hub.instances.length === 1 ? "Service" : "Services"}
               </Badge>
@@ -170,6 +174,8 @@ export default function HubOverview() {
         </div>
       </div>
 
+      <HubHealthCard hub={hub} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((section) => (
           <Link key={section.to} to={section.to} className="block">
@@ -194,5 +200,54 @@ export default function HubOverview() {
         ))}
       </div>
     </div>
+  )
+}
+
+
+type HubHealth = NonNullable<ReturnType<typeof useGetHubQuery>["data"]>["hub"]
+
+/** What the hub last said about itself on its health callback (/f/hubhealth/). */
+function HubHealthCard({ hub }: { hub: HubHealth }) {
+  const latest = hub.healthSnapshots[0]
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Activity className="h-4 w-4" />
+          Health
+        </CardTitle>
+        <CardDescription className="text-xs">
+          {hub.lastSeenAt
+            ? `Last reported ${formatDistanceToNow(new Date(hub.lastSeenAt), { addSuffix: true })}${hub.version ? ` · version ${hub.version}` : ""}`
+            : "This hub has not reported its health yet."}
+        </CardDescription>
+      </CardHeader>
+      {hub.lastSeenAt && (
+        <CardContent className="space-y-3 text-sm">
+          <div className="flex items-center gap-2">
+            <Network className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Mesh:</span>
+            {hub.meshConnected == null ? (
+              <span className="text-muted-foreground">not reported</span>
+            ) : hub.meshConnected ? (
+              <span className="font-mono">{hub.meshHost || "connected"}</span>
+            ) : (
+              <span>not connected</span>
+            )}
+          </div>
+          {latest && latest.instances.length > 0 && (
+            <div className="space-y-1">
+              {latest.instances.map((instance) => (
+                <div key={instance.identifier} className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${instance.healthy ? "bg-green-500" : "bg-destructive"}`} aria-hidden />
+                  <span className="font-mono text-xs truncate">{instance.identifier}</span>
+                  {instance.reason && <span className="text-xs text-muted-foreground truncate">{instance.reason}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
   )
 }

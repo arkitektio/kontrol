@@ -52,6 +52,9 @@ fragment ServiceInstance on ManagementServiceInstance {
 fragment ListServiceInstance on ManagementServiceInstance {
   id
   identifier
+  allowedUsers {
+    id
+  }
   release {
     id
     service {

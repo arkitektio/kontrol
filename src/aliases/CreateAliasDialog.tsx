@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select"
-import { Switch } from "../components/ui/switch"
 import { Plus } from "lucide-react"
 
 interface CreateAliasDialogProps {
@@ -36,14 +35,14 @@ export const CreateAliasDialog = ({ onSuccess }: CreateAliasDialogProps) => {
   const [host, setHost] = useState("")
   const [port, setPort] = useState("80")
   const [path, setPath] = useState("")
-  const [kind, setKind] = useState("BACKEND")
-  const [ssl, setSsl] = useState(false)
+  const [kind, setKind] = useState("absolute")
 
   const { data: instancesData } = useListServiceInstancesQuery({})
   const [createAlias] = useCreateAliasMutation()
 
   const handleCreate = async () => {
-    if (!serviceInstanceId || !host || !port || !kind) {
+    const isMesh = kind === "mesh"
+    if (!serviceInstanceId || (!host && !isMesh) || !port || !kind) {
       setError("Please fill in all required fields")
       return
     }
@@ -54,8 +53,8 @@ export const CreateAliasDialog = ({ onSuccess }: CreateAliasDialogProps) => {
       await createAlias({
         variables: { 
           input: { 
-            serviceInstance: serviceInstanceId,
-            host,
+            instance: serviceInstanceId,
+            host: isMesh ? undefined : host,
             port: parseInt(port, 10),
             path: path || undefined,
             kind,
@@ -79,8 +78,7 @@ export const CreateAliasDialog = ({ onSuccess }: CreateAliasDialogProps) => {
     setHost("")
     setPort("80")
     setPath("")
-    setKind("BACKEND")
-    setSsl(false)
+    setKind("absolute")
     setError(null)
   }
 
@@ -116,15 +114,22 @@ export const CreateAliasDialog = ({ onSuccess }: CreateAliasDialogProps) => {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="host">Host *</Label>
-            <Input
-              id="host"
-              placeholder="example.com"
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-            />
-          </div>
+          {kind === "mesh" ? (
+            <p className="text-xs text-muted-foreground">
+              A mesh alias has no fixed host: it resolves to the hub node's MagicDNS name on the
+              organization's mesh, so only clients on the mesh can reach it.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="host">Host *</Label>
+              <Input
+                id="host"
+                placeholder="example.com"
+                value={host}
+                onChange={(e) => setHost(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -145,10 +150,9 @@ export const CreateAliasDialog = ({ onSuccess }: CreateAliasDialogProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="BACKEND">Backend</SelectItem>
-                  <SelectItem value="FRONTEND">Frontend</SelectItem>
-                  <SelectItem value="API">API</SelectItem>
-                  <SelectItem value="WEBSOCKET">WebSocket</SelectItem>
+                  <SelectItem value="absolute">Absolute</SelectItem>
+                  <SelectItem value="relative">Relative</SelectItem>
+                  <SelectItem value="mesh">Mesh (hub's MagicDNS name)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -162,15 +166,6 @@ export const CreateAliasDialog = ({ onSuccess }: CreateAliasDialogProps) => {
               value={path}
               onChange={(e) => setPath(e.target.value)}
             />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="ssl"
-              checked={ssl}
-              onCheckedChange={setSsl}
-            />
-            <Label htmlFor="ssl">Enable SSL (HTTPS)</Label>
           </div>
 
           {error && (

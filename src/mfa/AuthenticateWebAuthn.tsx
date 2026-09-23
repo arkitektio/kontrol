@@ -21,8 +21,8 @@ export default function AuthenticateWebAuthn () {
     setResponse({ ...response, fetching: true, error: undefined })
     try {
       const optResp = await getWebAuthnRequestOptionsForAuthentication()
-      const jsonOptions = optResp.data.request_options
-      const options = parseRequestOptionsFromJSON(jsonOptions)
+      const jsonOptions = (optResp.data as { request_options?: unknown } | undefined)?.request_options
+      const options = parseRequestOptionsFromJSON(jsonOptions as never)
       const credential = await get(options)
       const authResp = await authenticateUsingWebAuthn(credential)
       if (authResp.status === 200) {

@@ -17,6 +17,7 @@ fragment DetailDevice on ManagementDevice {
   id
   name
   nodeId
+  deviceId
   organization {
     id
     name
@@ -36,6 +37,13 @@ fragment ListDevice on ManagementDevice {
   id
   name
   nodeId
+  deviceId
+  organization {
+    id
+  }
+  clients {
+    id
+  }
   deviceGroups {
     ...ListDeviceGroup
   }

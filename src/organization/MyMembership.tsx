@@ -1,7 +1,12 @@
-import { useParams } from "react-router-dom"
-import { UserCircle, Shield, Plus, Clock, Check, X } from "lucide-react"
+import { useState } from "react"
+import { Link, useNavigate, useParams } from "react-router-dom"
+import { UserCircle, Shield, Plus, Clock, Check, X, LogOut } from "lucide-react"
 import { toast } from "sonner"
 import { useMeQuery } from "@/graphql/queries/me.generated"
+import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
+import { useDeleteMembershipMutation } from "@/graphql/mutations/membership.generated"
+import { toastError } from "@/lib/errors"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 import { useRequestRoleMutation, useCancelRoleRequestMutation } from "@/graphql/mutations/role_request.generated"
 import { PageHeader } from "@/components/PageHeader"
 import { BrandHuePicker } from "@/components/BrandHuePicker"
@@ -28,7 +33,11 @@ function statusVariant(status: string): "default" | "secondary" | "destructive" 
  */
 export default function MyMembership() {
   const { orgId } = useParams<{ orgId: string }>()
+  const navigate = useNavigate()
   const { data, loading } = useMeQuery()
+  // Me's memberships carry the list-level org (no amIOwner) — ask the org itself.
+  const { data: orgData } = useOrganizationQuery({ variables: { id: orgId! }, skip: !orgId })
+  const [leaveOpen, setLeaveOpen] = useState(false)
 
   const [requestRole, { loading: requesting }] = useRequestRoleMutation({
     refetchQueries: ["Me", "RoleRequests"],
@@ -36,6 +45,7 @@ export default function MyMembership() {
   const [cancelRequest, { loading: cancelling }] = useCancelRoleRequestMutation({
     refetchQueries: ["Me", "RoleRequests"],
   })
+  const [deleteMembership] = useDeleteMembershipMutation()
 
   if (loading) return <SettingsStackSkeleton header="pageHeader" cards={2} rows={3} />
   const membership = data?.me?.memberships?.find((m) => m.organization.id === orgId)
@@ -70,8 +80,8 @@ export default function MyMembership() {
     try {
       await requestRole({ variables: { input: { organization: org.id, role: roleId } } })
       toast.success("Role requested — the organization owner will review it")
-    } catch (e: any) {
-      toast.error("Failed to request role: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't request the role")
     }
   }
 
@@ -79,8 +89,27 @@ export default function MyMembership() {
     try {
       await cancelRequest({ variables: { input: { id } } })
       toast.success("Request withdrawn")
-    } catch (e: any) {
-      toast.error("Failed to cancel request: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't withdraw the request")
+    }
+  }
+
+  const isOwner = Boolean(orgData?.organization?.amIOwner)
+
+  const handleLeave = async () => {
+    try {
+      // Wait for Me to come back without this org before navigating, so the
+      // shell doesn't briefly treat us as still being a member.
+      await deleteMembership({
+        variables: { input: { id: membership.id } },
+        refetchQueries: ["Me"],
+        awaitRefetchQueries: true,
+      })
+      toast.success(`You left ${org.name || org.slug}`)
+      navigate("/home")
+    } catch (e) {
+      toastError(e, "Couldn't leave the organization")
+      return false
     }
   }
 
@@ -207,6 +236,42 @@ export default function MyMembership() {
 
       {/* Personal brand colour for this organization */}
       <BrandHuePicker organizationId={org.id} />
+
+      {/* Leave — the owner has to hand the organization over first. */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <LogOut className="h-5 w-5" /> Leave organization
+          </CardTitle>
+          <CardDescription>
+            {isOwner
+              ? "You own this organization. Transfer ownership to another member before you leave."
+              : "You will lose access to this organization until you are invited again."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isOwner ? (
+            <Button variant="outline" asChild>
+              <Link to={`/organization/${org.id}/danger-zone`}>Transfer ownership</Link>
+            </Button>
+          ) : (
+            <Button variant="destructive" onClick={() => setLeaveOpen(true)} disabled={!orgData}>
+              Leave organization
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <ConfirmActionDialog
+        open={leaveOpen}
+        onOpenChange={setLeaveOpen}
+        title={`Leave ${org.name || org.slug}?`}
+        description="You lose access to its hubs, apps and data straight away. To come back you need a new invite."
+        confirmLabel="Leave organization"
+        pendingLabel="Leaving..."
+        destructive
+        onConfirm={handleLeave}
+      />
     </div>
   )
 }

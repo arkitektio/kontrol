@@ -188,7 +188,7 @@ export default function Authorize() {
                                             <SelectItem key={org.id} value={org.id}>
                                                  <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8">
-                                                        <AvatarFallback>{org.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                        <AvatarFallback>{(org.name || org.slug).substring(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex flex-col text-left">
                                                         <span className="font-medium">{org.name}</span>

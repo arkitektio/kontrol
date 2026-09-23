@@ -2,7 +2,10 @@ fragment Organization on ManagementOrganization {
   id
   name
   slug
+  description
+  requireDeviceAuth
   amIOwner
+  amIAdmin
   brandHue
   brandChroma
   accessTokenLifetime

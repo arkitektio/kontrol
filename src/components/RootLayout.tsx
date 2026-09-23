@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/providers/ThemeProvider'
 import { ThemeQueryParamSync } from '@/providers/ThemeQueryParamSync'
 import { MembershipHueSync } from '@/providers/MembershipHueSync'
 import LavaBackground from './LavaBackground'
+import { Toaster } from './ui/sonner'
 
 export default function RootLayout() {
 
@@ -18,6 +19,8 @@ export default function RootLayout() {
             <Outlet />
           </ErrorBoundary>
     </SidebarProvider>
+    {/* Every toast in the app (toastError included) renders here; without it they were silently dropped. */}
+    <Toaster richColors closeButton />
     </ThemeProvider>
   )
 }
@@ -32,6 +35,7 @@ export const ErrorLayout = ({ children }: { children: React.ReactNode }) => {
         {children}
       </ErrorBoundary>
     </SidebarProvider>
+    <Toaster richColors closeButton />
     </ThemeProvider>
   )
 }

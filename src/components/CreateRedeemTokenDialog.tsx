@@ -205,7 +205,7 @@ export function CreateRedeemTokenDialog({
               <Label htmlFor="redeem-token-value">Redeem token</Label>
               <div className="flex gap-2">
                 <Input id="redeem-token-value" readOnly value={createdToken.token} />
-                <Button type="button" variant="outline" size="icon" onClick={handleCopy}>
+                <Button type="button" variant="outline" size="icon" onClick={handleCopy} aria-label={copied ? "Copied" : "Copy token"}>
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>

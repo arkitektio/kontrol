@@ -12,6 +12,8 @@ import { CreateInviteDialog } from "./components/CreateInviteDialog"
 import { useMediaUpload } from "./hooks/use-upload"
 import { Pen, Camera } from "lucide-react"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
+import { ConfirmActionDialog } from "./components/ConfirmActionDialog"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -34,6 +36,7 @@ export default function OrganizationProfile() {
   // Local state for editing fields
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState("")
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null)
 
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
@@ -44,6 +47,10 @@ export default function OrganizationProfile() {
 
   const org = data.organization
   const profile = org.profile
+  // `name` is optional on the backend; the handle is always there.
+  const displayName = org.name || org.slug
+  // lok: the profile is owner/admin-editable, but only the owner may create invites.
+  const canEdit = org.amIOwner || org.amIAdmin
 
   const handleCreateProfile = async () => {
     try {
@@ -51,14 +58,14 @@ export default function OrganizationProfile() {
             variables: {
                 input: {
                     organization: org.id,
-                    name: org.name,
+                    name: displayName,
                 }
             }
         });
         toast.success("Organization profile created!");
         refetch();
-    } catch (e: any) {
-        toast.error("Failed to create profile: " + e.message);
+    } catch (e) {
+        toastError(e, "Couldn't create the organization profile");
     }
   };
 
@@ -83,8 +90,7 @@ export default function OrganizationProfile() {
         toast.success("Avatar updated");
         refetch();
     } catch (e) {
-         toast.error("Failed to upload avatar");
-        console.error("Failed to upload avatar", e)
+        toastError(e, "Couldn't upload the avatar");
     }
     e.target.value = "";
   };
@@ -107,8 +113,7 @@ export default function OrganizationProfile() {
         toast.success("Banner updated");
         refetch();
     } catch (e) {
-        toast.error("Failed to upload banner");
-        console.error("Failed to upload banner", e)
+        toastError(e, "Couldn't upload the cover image");
     }
     e.target.value = "";
   };
@@ -128,14 +133,12 @@ export default function OrganizationProfile() {
           setIsEditing(false)
           toast.success("Profile updated")
           refetch();
-      } catch (e: any) {
-          toast.error("Failed to update profile: " + e.message)
+      } catch (e) {
+          toastError(e, "Couldn't update the profile")
       }
   }
 
   const handleCancelInvite = async (inviteId: string) => {
-      if (!confirm("Are you sure you want to cancel this invite?")) return
-
       try {
           await cancelInvite({
               variables: {
@@ -146,14 +149,15 @@ export default function OrganizationProfile() {
           })
           toast.success("Invite canceled")
           refetch()
-      } catch (e: any) {
-          toast.error("Failed to cancel invite: " + e.message)
+      } catch (e) {
+          toastError(e, "Couldn't cancel the invite")
+          return false
       }
   }
 
   const startEditing = () => {
       if (!profile) return;
-      setEditName(profile.name || org.name)
+      setEditName(profile.name || displayName)
       setIsEditing(true)
   }
 
@@ -161,7 +165,7 @@ export default function OrganizationProfile() {
     <div className="container mx-auto py-0 space-y-6">
        {/* Profile Hero Section */}
        <div className="relative mb-10 group/banner">
-            <div className={`h-48 w-full bg-gradient-to-r from-indigo-600/15 via-fuchsia-500/15 to-pink-500/15 dark:from-indigo-500/10 dark:via-fuchsia-500/10 dark:to-pink-500/10 border-b border-border/40 rounded-b-lg overflow-hidden relative  ${profile ? "cursor-pointer" : ""}`} onClick={() => profile && bannerInputRef.current?.click()}>
+            <div className="h-48 w-full bg-gradient-to-r from-indigo-600/15 via-fuchsia-500/15 to-pink-500/15 dark:from-indigo-500/10 dark:via-fuchsia-500/10 dark:to-pink-500/10 border-b border-border/40 rounded-b-lg overflow-hidden relative">
                     {profile?.banner && (
                         <img 
                             src={profile.banner.presignedUrl} 
@@ -169,47 +173,60 @@ export default function OrganizationProfile() {
                             className="w-full h-full object-cover"
                         />
                     )}
-                    {profile && (
-                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/banner:opacity-100 transition-opacity flex items-center justify-center">
+                    {profile && canEdit && (
+                        <button
+                            type="button"
+                            aria-label="Change cover image"
+                            onClick={() => bannerInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/10 opacity-0 group-hover/banner:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                        >
                             <div className="bg-black/50 text-white px-3 py-1 rounded-full flex items-center gap-2 backdrop-blur-sm">
                                 <Camera className="w-4 h-4" />
                                 <span className="text-xs font-medium">Change Cover</span>
                             </div>
-                        </div>
+                        </button>
                     )}
             </div>
-            <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerSelect} />
+            <input ref={bannerInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" className="hidden" aria-hidden tabIndex={-1} onChange={handleBannerSelect} />
 
 
         <div className="container mx-auto px-6 -mt-20 flex flex-row gap-6 items-end relative z-10">
           <div className="relative group/avatar w-40 h-40">
-            <div className="w-40 h-40 rounded-full ring-4 ring-background shadow-xl overflow-hidden bg-muted flex items-center justify-center text-4xl font-semibold select-none bg-white dark:bg-zinc-950 cursor-pointer" onClick={() => profile && avatarInputRef.current?.click()}>
+            <div className="relative w-40 h-40 rounded-full ring-4 ring-background shadow-xl overflow-hidden bg-muted flex items-center justify-center text-4xl font-semibold select-none bg-white dark:bg-zinc-950">
               <Avatar className="h-full w-full">
                 <AvatarImage src={profile?.avatar?.presignedUrl || undefined} className="object-cover" />
-                <AvatarFallback className="text-4xl">{org.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="text-4xl">{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-               {profile && (
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-white">
+               {profile && canEdit && (
+                <button
+                    type="button"
+                    aria-label="Change organization avatar"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover/avatar:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                      <Camera className="w-6 h-6" />
-                </div>
+                </button>
                )}
             </div>
-             <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
+             <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" className="hidden" aria-hidden tabIndex={-1} onChange={handleAvatarSelect} />
           </div>
           
           <div className="flex-1 pb-4 space-y-2 mb-2">
             {!profile ? (
                 <div className="flex flex-col gap-2 items-start h-full justify-end">
-                    <h1 className="text-4xl font-bold tracking-tight text-foreground">{org.name}</h1>
-                    <Button onClick={handleCreateProfile} size="sm">
-                        Create {org.name} Profile
-                    </Button>
+                    <h1 className="text-4xl font-bold tracking-tight text-foreground">{displayName}</h1>
+                    {canEdit && (
+                        <Button onClick={handleCreateProfile} size="sm">
+                            Create {displayName} Profile
+                        </Button>
+                    )}
                 </div>
             ) : isEditing ? (
                  <div className="flex flex-col gap-2 max-w-xl bg-card p-4 rounded-lg border shadow-lg absolute top-10 left-0 z-50 w-full">
                     <div className="space-y-2">
-                        <Label>Display Name</Label>
+                        <Label htmlFor="org-profile-name">Display Name</Label>
                         <Input 
+                            id="org-profile-name"
                             value={editName} 
                             onChange={(e) => setEditName(e.target.value)} 
                             className="text-lg font-bold"
@@ -225,11 +242,13 @@ export default function OrganizationProfile() {
                 <div className="group flex flex-col justify-end h-full">
                     <div className="flex items-center gap-2">
                          <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                            {profile.name || org.name}
+                            {profile.name || displayName}
                         </h1>
-                        <Button variant="ghost" size="icon" onClick={startEditing} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
-                            <Pen className="w-4 h-4" />
-                        </Button>
+                        {canEdit && (
+                            <Button variant="ghost" size="icon" onClick={startEditing} aria-label="Edit display name" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                <Pen className="w-4 h-4" />
+                            </Button>
+                        )}
                     </div>
                     {profile.bio && (
                         <p className="text-muted-foreground text-lg max-w-2xl mt-1">
@@ -245,12 +264,14 @@ export default function OrganizationProfile() {
             )}
            
           </div>
-          <div className="pb-6">
-                <Button variant="outline" onClick={() => setInviteOpen(true)}>
-                    Invite Member
-                </Button>
-                <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} />
-          </div>
+          {org.amIOwner && (
+            <div className="pb-6">
+                  <Button variant="outline" onClick={() => setInviteOpen(true)}>
+                      Invite Member
+                  </Button>
+                  <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -318,7 +339,7 @@ export default function OrganizationProfile() {
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
                                     {i.status}
                                 </span>
-                                {i.status === "PENDING" && (
+                                {i.status === "PENDING" && canEdit && (
                                      <Button 
                                         variant="ghost" 
                                         size="sm" 
@@ -326,7 +347,7 @@ export default function OrganizationProfile() {
                                         onClick={(e) => {
                                             e.preventDefault()
                                             e.stopPropagation()
-                                            handleCancelInvite(i.id)
+                                            setCancelTarget(i.id)
                                         }}
                                      >
                                         Cancel
@@ -351,6 +372,18 @@ export default function OrganizationProfile() {
             )}
         </div>
       </div>
+
+      {/* One page-level confirm, outside the invite <Link> cards. */}
+      <ConfirmActionDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+        title="Cancel this invite?"
+        description="The invite link will stop working. People who already joined keep their membership."
+        confirmLabel="Cancel invite"
+        pendingLabel="Canceling..."
+        destructive
+        onConfirm={() => cancelTarget && handleCancelInvite(cancelTarget)}
+      />
     </div>
   )
 }

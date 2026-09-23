@@ -12,6 +12,7 @@ import {
 } from "./ui/select"
 import { Timer } from "lucide-react"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 
 /**
  * Owner-only card for the organization's access-token lifetime.
@@ -67,8 +68,8 @@ export function AccessTokenLifetimeCard({
         variables: { input: { id: organizationId, accessTokenLifetime: Number(value) } },
       })
       toast.success("Access token lifetime updated")
-    } catch (e: any) {
-      toast.error("Failed to update access token lifetime: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't update the access token lifetime")
     }
   }
 

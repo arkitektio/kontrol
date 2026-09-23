@@ -35,7 +35,7 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
   const [host, setHost] = useState(alias.host || "")
   const [port, setPort] = useState(alias.port?.toString() || "80")
   const [path, setPath] = useState(alias.path || "")
-  const [kind, setKind] = useState(alias.kind || "BACKEND")
+  const [kind, setKind] = useState(alias.kind || "absolute")
 
   const [updateAlias] = useUpdateAliasMutation()
 
@@ -44,13 +44,14 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
       setHost(alias.host || "")
       setPort(alias.port?.toString() || "80")
       setPath(alias.path || "")
-      setKind(alias.kind || "BACKEND")
+      setKind(alias.kind || "absolute")
       setError(null)
     }
   }, [open, alias])
 
   const handleUpdate = async () => {
-    if (!host || !port || !kind) {
+    const isMesh = kind === "mesh"
+    if ((!host && !isMesh) || !port || !kind) {
       setError("Please fill in all required fields")
       return
     }
@@ -62,7 +63,7 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
         variables: { 
           input: { 
             id: alias.id,
-            host,
+            host: isMesh ? undefined : host,
             port: parseInt(port, 10),
             path: path || undefined,
             kind,
@@ -96,15 +97,17 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 py-6">
-          <div className="space-y-2">
-            <Label htmlFor="edit-host">Host *</Label>
-            <Input
-              id="edit-host"
-              placeholder="example.com"
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-            />
-          </div>
+          {kind !== "mesh" && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-host">Host *</Label>
+              <Input
+                id="edit-host"
+                placeholder="example.com"
+                value={host}
+                onChange={(e) => setHost(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -125,10 +128,9 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="BACKEND">Backend</SelectItem>
-                  <SelectItem value="FRONTEND">Frontend</SelectItem>
-                  <SelectItem value="API">API</SelectItem>
-                  <SelectItem value="WEBSOCKET">WebSocket</SelectItem>
+                  <SelectItem value="absolute">Absolute</SelectItem>
+                  <SelectItem value="relative">Relative</SelectItem>
+                  <SelectItem value="mesh">Mesh (hub's MagicDNS name)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -147,7 +149,7 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
           <div className="p-3 bg-muted rounded text-xs">
             <div className="font-semibold mb-1">Preview URL</div>
             <div className="font-mono break-all">
-              {alias.ssl ? "https" : "http"}://{host}{port !== "80" && port !== "443" ? `:${port}` : ""}/{path}
+              {alias.ssl ? "https" : "http"}://{kind === "mesh" ? alias.resolvedHost || "[hub MagicDNS name]" : host}{port !== "80" && port !== "443" ? `:${port}` : ""}/{path}
             </div>
           </div>
 

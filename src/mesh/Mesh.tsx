@@ -14,6 +14,7 @@ import { Switch } from "../components/ui/switch"
 import { Checkbox } from "../components/ui/checkbox"
 import { Badge } from "../components/ui/badge"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 import {
   Dialog,
   DialogContent,
@@ -129,7 +130,7 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
       setNewKeyEphemeral(false)
       setNewKeyTags("")
     } catch (e) {
-      console.error("Error creating auth key:", e)
+      toastError(e, "Couldn't create the auth key")
     }
   }
 
@@ -146,8 +147,8 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
         variables: { input: { id: mesh.id, magicDns, httpsCerts } },
       })
       toast.success("Mesh network settings updated.")
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to update network settings.")
+    } catch (e) {
+      toastError(e, "Couldn't update the mesh network settings")
     }
   }
 
@@ -253,8 +254,8 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="tags" className="text-right">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+                    <Label htmlFor="tags" className="sm:text-right">
                       Tags
                     </Label>
                     <Input
@@ -262,14 +263,14 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
                       placeholder="tag:value, tag2"
                       value={newKeyTags}
                       onChange={(e) => setNewKeyTags(e.target.value)}
-                      className="col-span-3"
+                      className="sm:col-span-3"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="ephemeral" className="text-right">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+                    <Label htmlFor="ephemeral" className="sm:text-right">
                       Ephemeral
                     </Label>
-                    <div className="col-span-3 flex items-center space-x-2">
+                    <div className="sm:col-span-3 flex items-center space-x-2">
                       <Checkbox
                         id="ephemeral"
                         checked={newKeyEphemeral}

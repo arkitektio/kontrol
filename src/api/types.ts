@@ -108,7 +108,7 @@ export type ConnectKommunityPartnerInput = {
 };
 
 export type CreateAliasInput = {
-  host: Scalars['String']['input'];
+  host?: InputMaybe<Scalars['String']['input']>;
   instance: Scalars['ID']['input'];
   kind: Scalars['String']['input'];
   path?: InputMaybe<Scalars['String']['input']>;
@@ -164,6 +164,7 @@ export type CreateOrganizationProfileInput = {
 };
 
 export type CreateProfileInput = {
+  bio?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   user: Scalars['ID']['input'];
 };
@@ -649,13 +650,27 @@ export type ManagementHub = {
   creator: ManagementUser;
   /** The description of the hub. This should be a human readable description of the hub. */
   description?: Maybe<Scalars['String']['output']>;
+  /** The hub's most recent health reports, newest first. */
+  healthSnapshots: Array<ManagementHubHealthSnapshot>;
   id: Scalars['ID']['output'];
   /** The instances of the hub. A service instance is a configured instance of a service. */
   instances: Array<ManagementServiceInstance>;
+  /** Whether the hub's last health report said it was healthy. */
+  lastHealthy?: Maybe<Scalars['Boolean']['output']>;
+  /** When the hub last reported its health. Null if it never has. */
+  lastSeenAt?: Maybe<Scalars['DateTime']['output']>;
+  /** Whether the hub's last health report said its node is on the mesh. Null if it never reported mesh state. */
+  meshConnected?: Maybe<Scalars['Boolean']['output']>;
+  /** The hub node's MagicDNS name (or mesh IP), as last reported by the hub. */
+  meshHost: Scalars['String']['output'];
   /** The name of the hub */
   name: Scalars['String']['output'];
+  /** Whether the hub has reported its health within the last three reporting intervals. */
+  online: Scalars['Boolean']['output'];
   /** The organization that owns this hub. */
   organization: ManagementOrganization;
+  /** The hub software version, as last reported. */
+  version: Scalars['String']['output'];
 };
 
 
@@ -688,7 +703,7 @@ export type ManagementHubDeviceCode = {
   manifest?: Maybe<ManagementHubManifest>;
 };
 
-/** Hub(id, name, organization, identifier, description, creator, client, token, auth_key) */
+/** Hub(id, name, organization, identifier, description, creator, client, token, auth_key, last_seen_at, last_healthy, version, mesh_connected, mesh_host) */
 export type ManagementHubFilter = {
   AND?: InputMaybe<ManagementHubFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -697,6 +712,17 @@ export type ManagementHubFilter = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   organization?: InputMaybe<Scalars['ID']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** One health report a hub posted to /f/hubhealth/. */
+export type ManagementHubHealthSnapshot = {
+  __typename?: 'ManagementHubHealthSnapshot';
+  createdAt: Scalars['DateTime']['output'];
+  /** Did the hub report itself healthy? */
+  healthy: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  /** The per-instance health the hub reported. */
+  instances: Array<ManagementInstanceHealth>;
 };
 
 export type ManagementHubManifest = {
@@ -721,7 +747,7 @@ export type ManagementInstanceAlias = {
   id: Scalars['ID']['output'];
   /** The instance that this alias belongs to. */
   instance: ManagementServiceInstance;
-  /** The kind of alias (relative or absolute). */
+  /** The kind of alias (relative, absolute or mesh). A mesh alias has no host of its own: it resolves to its hub node's MagicDNS name. */
   kind: Scalars['String']['output'];
   /** The layer that this alias belongs to. */
   layer?: Maybe<ManagementLayer>;
@@ -735,6 +761,8 @@ export type ManagementInstanceAlias = {
   port?: Maybe<Scalars['Int']['output']>;
   /** Is this alias publicly reachable? If true, the coordination server can also check the alias's health directly, enabling health checks from the kontrol interface. */
   public: Scalars['Boolean']['output'];
+  /** For a mesh alias, the host it currently resolves to (its hub node's MagicDNS name, or mesh IP). Null for other kinds, or while the hub is not on the mesh. */
+  resolvedHost?: Maybe<Scalars['String']['output']>;
   /** The scope of the alias. E.g 'local' means that the alias can only be used within the local network. */
   scope: Scalars['String']['output'];
   /** Is this alias using SSL? If true, the alias will be accessed via https:// instead of http://. */
@@ -763,6 +791,15 @@ export type ManagementInstanceAliasFilter = {
 export type ManagementInstanceAliasOrdering =
   { id: Ordering; name?: never; }
   |  { id?: never; name: Ordering; };
+
+/** The health one instance reported in a hub health report. */
+export type ManagementInstanceHealth = {
+  __typename?: 'ManagementInstanceHealth';
+  healthy: Scalars['Boolean']['output'];
+  /** The instance identifier the hub reported under. */
+  identifier: Scalars['String']['output'];
+  reason?: Maybe<Scalars['String']['output']>;
+};
 
 /** A single-use magic invite link that allows one person to join an organization. */
 export type ManagementInvite = {
@@ -1034,6 +1071,8 @@ export type ManagementMembership = {
   /** Whether the member has at least one device registered for notifications (e.g. through the companion app). Opting in does nothing until they do. */
   hasNotificationChannel: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
+  /** Whether this member owns the organization. The owner cannot be removed by others; ownership must be transferred first. */
+  isOwner: Scalars['Boolean']['output'];
   organization: ManagementOrganization;
   /** The role requests this member has made in the organization */
   roleRequests: Array<ManagementRoleRequest>;
@@ -1909,6 +1948,7 @@ export type ManagementUsedAliasOrdering =
  */
 export type ManagementUser = {
   __typename?: 'ManagementUser';
+  /** A short-lived URL of the user's avatar (`profile.avatar`), if they have one. */
   avatar?: Maybe<Scalars['String']['output']>;
   /** The communication channels that the user has */
   comChannels: Array<ManagementComChannel>;
@@ -2389,6 +2429,8 @@ export type PotentialMapping = {
 export type PresignedPostCredentials = {
   __typename?: 'PresignedPostCredentials';
   bucket: Scalars['String']['output'];
+  /** The Content-Type the upload form must send; the policy pins it exactly. */
+  contentType: Scalars['String']['output'];
   datalayer: Scalars['String']['output'];
   key: Scalars['String']['output'];
   policy: Scalars['String']['output'];
@@ -2802,6 +2844,8 @@ export type RequestClientReportInput = {
 };
 
 export type RequestMediaUploadInput = {
+  /** MIME type of the file. The upload must send the same Content-Type. Guessed from `key` when omitted. */
+  contentType?: InputMaybe<Scalars['String']['input']>;
   datalayer: Scalars['String']['input'];
   key: Scalars['String']['input'];
 };
@@ -2918,7 +2962,7 @@ export type UnresolveReportInput = {
 };
 
 export type UpdateAliasInput = {
-  host: Scalars['String']['input'];
+  host?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   kind: Scalars['String']['input'];
   path?: InputMaybe<Scalars['String']['input']>;
@@ -2978,6 +3022,7 @@ export type UpdateOrganizationProfileInput = {
 export type UpdateProfileInput = {
   avatar?: InputMaybe<Scalars['ID']['input']>;
   banner?: InputMaybe<Scalars['ID']['input']>;
+  bio?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
 };

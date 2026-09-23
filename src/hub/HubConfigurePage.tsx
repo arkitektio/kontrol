@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
+import { toastError } from "@/lib/errors";
 import { useHubDeviceCodeByCodeQuery } from "@/graphql/queries/hub_device_code.generated"
 import { useAcceptHubDeviceCodeMutation, useDeclineHubDeviceCodeMutation } from "@/graphql/mutations/hub_device_code.generated"
 import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
@@ -27,11 +28,16 @@ type StagingAlias = NonNullable<
 
 /** The bare host shown folded — or the alias name / kind when it has no host. */
 function aliasHost(alias: StagingAlias): string {
+  if (alias.kind === "mesh") return "mesh → hub MagicDNS name";
   return alias.host || alias.name || alias.kind;
 }
 
 /** The full endpoint shown unfolded: a URL for absolute aliases, else its name. */
 function aliasLabel(alias: StagingAlias): string {
+  if (alias.kind === "mesh") {
+    const port = alias.port ? `:${alias.port}` : "";
+    return `${alias.ssl ? "https" : "http"}://<hub>.<org>.<mesh suffix>${port}${alias.path ? `/${alias.path}` : ""} (reachable on the mesh only)`;
+  }
   if (alias.host) {
     const scheme = alias.ssl ? "https" : "http";
     const port = alias.port ? `:${alias.port}` : "";
@@ -118,7 +124,7 @@ export function HubConfigurePage() {
         setSubmitted(true);
       }
     } catch (e) {
-      console.error(e);
+      toastError(e, "Couldn't connect the hub");
     }
   };
 
@@ -135,7 +141,7 @@ export function HubConfigurePage() {
       setAuthorized(false);
       setSubmitted(true);
     } catch (e) {
-      console.error(e);
+      toastError(e, "Couldn't decline the hub request");
     }
   };
 

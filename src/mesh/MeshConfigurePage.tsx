@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { toastError } from "@/lib/errors";
 import { useMeshDeviceCodeByCodeQuery } from "@/graphql/queries/mesh_device_code.generated"
 import { useAcceptMeshDeviceCodeMutation, useDeclineMeshDeviceCodeMutation } from "@/graphql/mutations/mesh_device_code.generated"
 import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
@@ -98,7 +99,7 @@ export function MeshConfigurePage() {
         setSubmitted(true);
       }
     } catch (e) {
-      console.error(e);
+      toastError(e, "Couldn't add the machine to the mesh");
     }
   };
 
@@ -110,7 +111,7 @@ export function MeshConfigurePage() {
       setAuthorized(false);
       setSubmitted(true);
     } catch (e) {
-      console.error(e);
+      toastError(e, "Couldn't decline the mesh request");
     }
   };
 

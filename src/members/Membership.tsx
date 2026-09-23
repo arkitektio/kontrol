@@ -1,6 +1,7 @@
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { useGetMembershipQuery } from "@/graphql/queries/memberships.generated"
-import { useUpdateMembershipMutation } from "@/graphql/mutations/membership.generated"
+import { useDeleteMembershipMutation, useUpdateMembershipMutation } from "@/graphql/mutations/membership.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
@@ -10,7 +11,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Checkbox } from "../components/ui/checkbox"
 import { Label } from "../components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Pencil } from "lucide-react"
+import { Pencil, UserMinus } from "lucide-react"
+import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
+import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -21,6 +26,10 @@ export default function Membership() {
     const { orgId, id } = useParams<{ orgId: string, id: string }>()
     const [isEditing, setIsEditing] = useState(false)
     const [selectedRoles, setSelectedRoles] = useState<string[]>([])
+    const [removeOpen, setRemoveOpen] = useState(false)
+    const navigate = useNavigate()
+    const { isAdmin } = useIsOrgAdmin(orgId)
+    const { data: meData } = useMeQuery()
     
     const { data, loading, error } = useGetMembershipQuery({
         variables: { id: id! }
@@ -30,9 +39,11 @@ export default function Membership() {
         refetchQueries: ["GetMembership"]
     })
 
+    const [deleteMembership] = useDeleteMembershipMutation()
+
     if (loading) return <DetailPageSkeleton sections={2} />
     if (error) return <QueryError error={error} resource="membership" />
-    if (!data?.membership) return <ResourceNotFound resource="membership" id={orgId} />
+    if (!data?.membership) return <ResourceNotFound resource="membership" id={id} />
 
     const membership = data.membership
 
@@ -41,17 +52,49 @@ export default function Membership() {
         setIsEditing(true)
     }
 
-    const handleSaveRoles = () => {
-        updateMembership({
-            variables: {
-                input: {
-                    id: membership.id,
-                    roles: selectedRoles
+    const handleSaveRoles = async () => {
+        try {
+            await updateMembership({
+                variables: {
+                    input: {
+                        id: membership.id,
+                        roles: selectedRoles
+                    }
                 }
-            }
-        }).then(() => {
+            })
             setIsEditing(false)
-        })
+        } catch (e) {
+            toastError(e, "Couldn't update the roles")
+        }
+    }
+
+    // You leave an organization from My Access, not by removing yourself here.
+    // lok also refuses to remove the owner (ownership must be transferred first);
+    // the fragment doesn't say who the owner is, so that case surfaces as its error.
+    const isSelf = membership.user?.id === meData?.me?.id
+    // lok refuses to remove the owner ("Transfer ownership first"), so don't offer it.
+    const canRemove = isAdmin && !isSelf && !membership.isOwner
+
+    const handleRemove = async () => {
+        try {
+            await deleteMembership({
+                variables: { input: { id: membership.id } },
+                // The members list and org overview aren't mounted on this route, so
+                // refetchQueries would skip them. Drop their cached member lists so
+                // they refetch when shown again; this page's own `membership(id)`
+                // entry is left alone, so it doesn't re-fetch a now-missing member.
+                update: (cache) => {
+                    cache.evict({ fieldName: "memberships" })
+                    cache.evict({ id: cache.identify({ __typename: "ManagementOrganization", id: orgId }), fieldName: "memberships" })
+                    cache.gc()
+                },
+            })
+            toast.success(`${membership.user?.username ?? "Member"} was removed from the organization`)
+            navigate(`/organization/${orgId}/members`)
+        } catch (e) {
+            toastError(e, "Couldn't remove the member")
+            return false
+        }
     }
     
     const availableRoles = membership.organization?.roles || []
@@ -84,6 +127,7 @@ export default function Membership() {
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="font-semibold">Roles</h3>
+                            {isAdmin && (
                             <Dialog open={isEditing} onOpenChange={setIsEditing}>
                                 <DialogTrigger asChild>
                                     <Button variant="outline" size="sm" onClick={handleEditClick}>
@@ -149,6 +193,7 @@ export default function Membership() {
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
+                            )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                              {membership.roles.map(r => (
@@ -158,8 +203,33 @@ export default function Membership() {
                              ))}
                         </div>
                     </div>
+                    {canRemove && (
+                        <div className="flex items-center justify-between gap-4 border-t pt-6">
+                            <div>
+                                <h3 className="font-semibold">Remove from organization</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {membership.user?.username} loses access to this organization and its resources.
+                                </p>
+                            </div>
+                            <Button variant="destructive" size="sm" onClick={() => setRemoveOpen(true)}>
+                                <UserMinus className="w-4 h-4 mr-2" />
+                                Remove
+                            </Button>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
+
+            <ConfirmActionDialog
+                open={removeOpen}
+                onOpenChange={setRemoveOpen}
+                title={`Remove ${membership.user?.username ?? "this member"}?`}
+                description="They lose access to this organization immediately. You can invite them again later."
+                confirmLabel="Remove member"
+                pendingLabel="Removing..."
+                destructive
+                onConfirm={handleRemove}
+            />
 
             <div className="mt-6">
                 <SendNotification

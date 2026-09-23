@@ -59,7 +59,6 @@ export type ExtraRequest = RequestInit & {
 
 const customFetch = (uri: any, options: ExtraRequest) => {
   if (options.onProgress) {
-    console.log("uploadFetch", uri, options);
     return uploadFetch(uri, options);
   }
   return fetch(uri, options);
@@ -80,8 +79,6 @@ const uploadToStore = async (
     throw Error("No client configured");
   }
 
-  console.log("uploadToStore", z);
-
   const data = new FormData();
   data.append("key", z.key);
   data.append("bucket", z.bucket);
@@ -90,6 +87,8 @@ const uploadToStore = async (
   data.append("X-Amz-Date", z.xAmzDate);
   data.append("X-Amz-Signature", z.xAmzSignature);
   data.append("Policy", z.policy);
+  // The policy pins this exactly (lok only allows png/jpeg/gif/webp/avif).
+  data.append("Content-Type", z.contentType);
 
   data.append("file", file); // HYPER IMPORTANT TO BE THE LAST ITEM FOR FUCKS SAKE; HOW CAN THIS BE A STANDARD?
 
@@ -101,12 +100,19 @@ const uploadToStore = async (
     signal: options?.signal,
   });
 
-  await x;
-  console.log("done", x, z.store);
+  const response = await x;
+  if (!response.ok) {
+    // The store refuses anything outside the signed policy (size, type) with a 4xx;
+    // fetch doesn't throw on that, and returning the store id would attach an empty object.
+    throw new Error(`Upload rejected by storage (${response.status})`);
+  }
   return `${z.store}`;
 };
 
 
+
+// Mirrors lok's UPLOAD_MAX_BYTES; the presigned policy enforces it regardless.
+export const MAX_MEDIA_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export const useMediaUpload = () => {
   const client = useApolloClient();
@@ -114,6 +120,9 @@ export const useMediaUpload = () => {
 
   const upload = useCallback(
     async (file: File) => {
+      if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
+        throw new Error("Image is larger than 10 MB");
+      }
       const data = await client.mutate<
         RequestMediaUploadMutation,
         RequestMediaUploadMutationVariables
@@ -122,6 +131,7 @@ export const useMediaUpload = () => {
         variables: {
           key: file.name,
           datalayer: "default",
+          contentType: file.type || undefined,
         },
       });
 

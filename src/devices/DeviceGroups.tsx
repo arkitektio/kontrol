@@ -16,6 +16,13 @@ import {
 } from "../components/ui/dialog"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "../components/ui/empty"
 
 import { QueryError } from "@/components/status"
 
@@ -59,6 +66,7 @@ export default function DeviceGroups() {
     } catch (err) {
       console.error("Failed to create device group:", err)
       setCreateError(err instanceof Error ? err.message : "Failed to create device group")
+    } finally {
       setIsCreating(false)
     }
   }
@@ -122,18 +130,27 @@ export default function DeviceGroups() {
               </CardHeader>
               <CardContent>
                 <div className="text-xs text-muted-foreground">
-                  {group.devices?.length || 0} devices
+                  {group.devices?.length ?? 0} device{group.devices?.length === 1 ? "" : "s"}
                 </div>
               </CardContent>
             </Card>
           </Link>
         ))}
-        {deviceGroups.length === 0 && (
-            <div className="col-span-4 text-center text-muted-foreground">
-                No device groups found.
-            </div>
-        )}
       </div>
+
+      {deviceGroups.length === 0 && (
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Boxes />
+            </EmptyMedia>
+            <EmptyTitle>No device groups yet</EmptyTitle>
+            <EmptyDescription>
+              Create a group to organize devices, e.g. by lab or instrument.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      )}
     </div>
   )
 }

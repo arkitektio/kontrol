@@ -33,6 +33,7 @@ import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { useState } from "react"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -70,8 +71,8 @@ export default function Device() {
         toast.success("Device updated")
         setIsEditOpen(false)
         refetch()
-    } catch (e: any) {
-        toast.error("Failed to update device: " + e.message)
+    } catch (e) {
+        toastError(e, "Couldn't update the device")
     }
   }
 
@@ -86,13 +87,13 @@ export default function Device() {
           })
           toast.success("Device deleted")
           navigate("/devices")
-      } catch (e: any) {
-          toast.error("Failed to delete device: " + e.message)
+      } catch (e) {
+          toastError(e, "Couldn't delete the device")
       }
   }
 
   // Helper function to get device icon
-  const getDeviceIcon = (name: string | undefined) => {
+  const getDeviceIcon = (name: string | null | undefined) => {
     const lowerName = name?.toLowerCase() || ""
     if (lowerName.includes("phone") || lowerName.includes("mobile")) {
       return <Smartphone className="h-8 w-8" />
@@ -111,7 +112,7 @@ export default function Device() {
                 </div>
                 <div>
                   <CardTitle className="text-2xl">{device.name}</CardTitle>
-                  <p className="text-muted-foreground text-sm font-mono">{device.nodeId}</p>
+                  <p className="text-muted-foreground text-sm font-mono">{device.deviceId}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -120,7 +121,7 @@ export default function Device() {
                       setIsEditOpen(open)
                   }}>
                       <DialogTrigger asChild>
-                          <Button variant="outline" size="icon">
+                          <Button variant="outline" size="icon" aria-label="Edit device">
                               <Pencil className="h-4 w-4" />
                           </Button>
                       </DialogTrigger>
@@ -144,7 +145,7 @@ export default function Device() {
 
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="icon">
+                          <Button variant="destructive" size="icon" aria-label="Delete device">
                               <Trash2 className="h-4 w-4" />
                           </Button>
                       </AlertDialogTrigger>
@@ -211,7 +212,7 @@ export default function Device() {
                         ))}
                     </div>
                  ) : (
-                    <div className="text-muted-foreground text-sm italic">No clients connected to this device.</div>
+                    <div className="text-muted-foreground text-sm italic">No services running on this device.</div>
                  )}
             </div>
 
@@ -225,7 +226,7 @@ export default function Device() {
                         </div>
                          <div className="flex justify-between">
                             <span className="font-medium">Node ID</span>
-                            <span className="text-muted-foreground font-mono text-sm">{device.nodeId}</span>
+                            <span className="text-muted-foreground font-mono text-sm">{device.deviceId}</span>
                         </div>
                         <div className="flex justify-between items-start">
                             <span className="font-medium">Groups</span>

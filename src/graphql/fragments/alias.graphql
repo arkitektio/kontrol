@@ -6,6 +6,7 @@ fragment InstanceAlias on ManagementInstanceAlias {
   path
   challenge
   kind
+  resolvedHost
   layer {
     id
     name
@@ -27,6 +28,7 @@ fragment ListInstanceAlias on ManagementInstanceAlias {
   path
   challenge
   kind
+  resolvedHost
   layer {
     id
     name

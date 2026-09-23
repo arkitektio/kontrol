@@ -1,5 +1,6 @@
 fragment Membership on ManagementMembership {
   id
+  isOwner
   brandHue
   brandChroma
   allowNotifications

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { useLayersQuery } from "@/graphql/queries/layer.generated"
 import { useDeleteIonscaleLayerMutation, useCreateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
+import { toastError } from "@/lib/errors"
 import { Button } from "../components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import {
@@ -35,7 +36,7 @@ export function MeshControl({ orgId }: { orgId: string }) {
     try {
       await disableMesh({ variables: { input: { id: mesh.id } } })
     } catch (e) {
-      console.error("Error disabling mesh:", e)
+      toastError(e, "Couldn't disable the mesh")
     }
   }
 
@@ -43,7 +44,7 @@ export function MeshControl({ orgId }: { orgId: string }) {
     try {
       await enableMesh({ variables: { input: { organizationId: orgId, name: "default" } } })
     } catch (e) {
-      console.error("Error enabling mesh:", e)
+      toastError(e, "Couldn't enable the mesh")
     }
   }
 

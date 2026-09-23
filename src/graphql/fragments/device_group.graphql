@@ -9,4 +9,7 @@ fragment DetailDeviceGroup on ManagementDeviceGroup {
 fragment ListDeviceGroup on ManagementDeviceGroup {
   id
   name
+  devices {
+    id
+  }
 }

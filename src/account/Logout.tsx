@@ -3,17 +3,18 @@ import { Navigate, Link } from 'react-router-dom'
 import { logout } from '../lib/allauth'
 import { Button } from '../components/ui/button'
 import { LogOut, ArrowLeft } from 'lucide-react'
+import { toastError } from '@/lib/errors'
+import type { APIResponse } from '../lib/allauth'
 
 export default function Logout () {
-  const [response, setResponse] = useState({ fetching: false, content: null })
+  const [response, setResponse] = useState<{ fetching: boolean, content: APIResponse | null }>({ fetching: false, content: null })
 
   function submit () {
     setResponse({ ...response, fetching: true })
     logout().then((content) => {
       setResponse((r) => { return { ...r, content } })
     }).catch((e) => {
-      console.error(e)
-      window.alert(e)
+      toastError(e, "Couldn't sign you out")
     }).then(() => {
       setResponse((r) => { return { ...r, fetching: false } })
     })

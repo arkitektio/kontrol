@@ -1,7 +1,10 @@
-import { Check, Copy, Mail, XCircle } from "lucide-react"
+import { Check, Copy, Mail, UserPlus, XCircle } from "lucide-react"
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
+import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty"
 import { useCancelInviteMutation } from "@/graphql/mutations/invite.generated"
 import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
 import { CreateInviteDialog } from "../components/CreateInviteDialog"
@@ -30,6 +33,7 @@ export default function Invites() {
   const [selectedInvite, setSelectedInvite] = useState<string | null>(null)
   const [recipientEmail, setRecipientEmail] = useState("")
   const [copied, setCopied] = useState<string | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null)
   const [cancelInvite] = useCancelInviteMutation()
   
   const { data, loading, error, refetch } = useOrganizationQuery({
@@ -42,10 +46,12 @@ export default function Invites() {
   if (!data?.organization) return <ResourceNotFound resource="organization" id={orgId} />
 
   const org = data.organization
+  const orgName = org.name || org.slug
+  // lok: only the owner creates invites; owner and admins may cancel them.
+  const mayInvite = org.amIOwner
+  const mayCancel = org.amIOwner || org.amIAdmin
 
   const handleCancel = async (inviteId: string) => {
-    if (!confirm("Are you sure you want to cancel this invite?")) return
-
     try {
       await cancelInvite({
         variables: {
@@ -56,17 +62,22 @@ export default function Invites() {
       })
       toast.success("Invite canceled")
       refetch()
-    } catch (e: any) {
-      toast.error("Failed to cancel invite: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't cancel the invite")
+      return false
     }
   }
 
   const handleCopy = (token: string) => {
     const url = `${window.location.origin}/invite/${token}`
-    navigator.clipboard.writeText(url)
-    setCopied(token)
-    toast.success("Invite link copied to clipboard")
-    setTimeout(() => setCopied(null), 2000)
+    navigator.clipboard.writeText(url).then(
+      () => {
+        setCopied(token)
+        toast.success("Invite link copied to clipboard")
+        setTimeout(() => setCopied(null), 2000)
+      },
+      (e) => toastError(e, "Couldn't copy the invite link"),
+    )
   }
 
   const handleSendEmail = (token: string) => {
@@ -81,8 +92,8 @@ export default function Invites() {
     }
 
     const inviteUrl = `${window.location.origin}/invite/${selectedInvite}`
-    const subject = `You're invited to join ${org.name}`
-    const body = `You've been invited to join ${org.name}.\n\nClick the link below to accept:\n${inviteUrl}`
+    const subject = `You're invited to join ${orgName}`
+    const body = `You've been invited to join ${orgName}.\n\nClick the link below to accept:\n${inviteUrl}`
     
     // Open default email client
     window.location.href = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
@@ -98,8 +109,8 @@ export default function Invites() {
       <PageHeader
         icon={Mail}
         title="Invites"
-        description={<>Manage invitations for {org.name}</>}
-        actions={<Button onClick={() => setInviteOpen(true)}>Invite Member</Button>}
+        description={<>Manage invitations for {orgName}</>}
+        actions={mayInvite ? <Button onClick={() => setInviteOpen(true)}>Invite Member</Button> : undefined}
       />
 
       <Card>
@@ -111,9 +122,27 @@ export default function Invites() {
         </CardHeader>
         <CardContent className="space-y-4">
             {org.invites?.length === 0 && (
-                <div className="text-center py-6 text-muted-foreground">
-                    No active invites
-                </div>
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                            <Mail />
+                        </EmptyMedia>
+                        <EmptyTitle>No invites yet</EmptyTitle>
+                        <EmptyDescription>
+                            {mayInvite
+                                ? "Create an invite link and share it with the people you want to bring in."
+                                : "Only the organization owner can create invites."}
+                        </EmptyDescription>
+                    </EmptyHeader>
+                    {mayInvite && (
+                        <EmptyContent>
+                            <Button onClick={() => setInviteOpen(true)}>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Invite Member
+                            </Button>
+                        </EmptyContent>
+                    )}
+                </Empty>
             )}
             {org.invites?.map(i => (
                 <div
@@ -155,19 +184,17 @@ export default function Invites() {
                           <Mail className="w-4 h-4 mr-2" />
                           Email
                       </Button>
-                      <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleCancel(i.id)
-                          }}
-                      >
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Cancel
-                      </Button>
+                      {mayCancel && i.status === "PENDING" && (
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setCancelTarget(i.id)}
+                        >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Cancel
+                        </Button>
+                      )}
                     </div>
                   
                   {i.acceptedBy && (
@@ -179,7 +206,20 @@ export default function Invites() {
             ))}
         </CardContent>
       </Card>
-      <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} roleSets={org.roleSets} />
+      {mayInvite && (
+        <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} roleSets={org.roleSets} />
+      )}
+
+      <ConfirmActionDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+        title="Cancel this invite?"
+        description="The invite link will stop working. People who already joined keep their membership."
+        confirmLabel="Cancel invite"
+        pendingLabel="Canceling..."
+        destructive
+        onConfirm={() => cancelTarget && handleCancel(cancelTarget)}
+      />
       
       <Dialog open={sendEmailOpen} onOpenChange={setSendEmailOpen}>
         <DialogContent>

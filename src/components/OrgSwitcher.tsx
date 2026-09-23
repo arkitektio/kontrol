@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from "react"
-import { Link } from "react-router-dom"
-import { Check, ChevronsUpDown, Plus } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
+import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,20 +24,32 @@ const CreateOrganizationDialog = lazy(() =>
 )
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { hueStyle } from "@/lib/brand"
+import { useUser } from "@/auth"
 
 /**
  * Header workspace switcher (shadcn sidebar-07 pattern): shows the active
- * organization and lets the user switch it or create a new one. Falls back to
- * the Arkitekt brand mark when there are no organizations (anonymous / new user).
+ * organization and lets the user switch it or create a new one. Anonymous
+ * visitors get the plain Arkitekt brand mark; a signed-in user with no
+ * organizations yet still gets the menu, so "Create organization" is always
+ * one click away.
  */
 export function OrgSwitcher() {
   const { isMobile } = useSidebar()
-  const { organizations, activeOrg, activeOrgId, setActiveOrg, effectiveHueForOrg, effectiveChromaForOrg } =
+  const { organizations, activeOrg, activeOrgId, setActiveOrg, effectiveHueForOrg, effectiveChromaForOrg, loading } =
     useActiveOrganization()
   const [createOrgOpen, setCreateOrgOpen] = useState(false)
   const [dialogMounted, setDialogMounted] = useState(false)
+  const user = useUser()
+  const navigate = useNavigate()
 
-  if (organizations.length === 0) {
+  const openCreate = () => {
+    setDialogMounted(true)
+    setCreateOrgOpen(true)
+  }
+
+  // Brand mark while Me is still loading too, so users with organizations don't
+  // flash the "No organization yet" state on a cold load.
+  if (!user || (loading && organizations.length === 0)) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
@@ -57,7 +69,8 @@ export function OrgSwitcher() {
     )
   }
 
-  const label = activeOrg?.name || activeOrg?.slug || "Select organization"
+  const hasOrgs = organizations.length > 0
+  const label = activeOrg?.name || activeOrg?.slug || (hasOrgs ? "Select organization" : "No organization yet")
 
   return (
     <SidebarMenu>
@@ -76,7 +89,9 @@ export function OrgSwitcher() {
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{label}</span>
-                <span className="text-muted-foreground truncate text-xs">Organization</span>
+                <span className="text-muted-foreground truncate text-xs">
+                  {hasOrgs ? "Organization" : "Create or join one"}
+                </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -90,6 +105,11 @@ export function OrgSwitcher() {
             <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
               Organizations
             </DropdownMenuLabel>
+            {!hasOrgs && (
+              <div className="text-muted-foreground px-2 py-1.5 text-xs">
+                You're not a member of any organization yet.
+              </div>
+            )}
             {organizations.map((org) => (
               <DropdownMenuItem key={org.id} onClick={() => setActiveOrg(org.id)} className="gap-2 p-2">
                 <div
@@ -103,11 +123,17 @@ export function OrgSwitcher() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2" onClick={() => { setDialogMounted(true); setCreateOrgOpen(true) }}>
+            <DropdownMenuItem className="gap-2 p-2" onClick={openCreate}>
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <Plus className="size-4" />
               </div>
               <span className="text-muted-foreground font-medium">Create organization</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2 p-2" onClick={() => navigate("/home")}>
+              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                <Building2 className="size-4" />
+              </div>
+              <span className="text-muted-foreground font-medium">All organizations</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

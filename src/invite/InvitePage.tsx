@@ -1,4 +1,4 @@
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
 import { useInviteByCodeQuery } from "@/graphql/queries/invite.generated"
 import { useAcceptInviteMutation, useDeclineInviteMutation } from "@/graphql/mutations/invite.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
@@ -9,7 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, Building2, XCircle, UserPlus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Building2, XCircle, UserPlus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { toastError } from "@/lib/errors";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStatus } from "@/auth/hooks";
 import { URLs } from "@/auth/routing";
@@ -17,6 +19,7 @@ import { URLs } from "@/auth/routing";
 export function InvitePage() {
   const { code } = useParams<{ code: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const [, status] = useAuthStatus();
 
   const { data: inviteData, loading: inviteLoading, error: inviteError } = useInviteByCodeQuery({
@@ -28,11 +31,16 @@ export function InvitePage() {
   // previewing a public invite has no `me`, and querying it would error needlessly.
   const { data: meData } = useMeQuery({ skip: !status.isAuthenticated });
 
-  const [acceptInvite] = useAcceptInviteMutation();
-  const [declineInvite] = useDeclineInviteMutation();
+  // Me must know about the new membership before we route into the org, or the
+  // org shell would briefly treat us as an outsider.
+  const [acceptInvite, { loading: accepting }] = useAcceptInviteMutation({
+    refetchQueries: ["Me"],
+    awaitRefetchQueries: true,
+  });
+  const [declineInvite, { loading: declining }] = useDeclineInviteMutation();
+  const busy = accepting || declining;
 
-  const [submitted, setSubmitted] = useState(false);
-  const [accepted, setAccepted] = useState(false);
+  const [declined, setDeclined] = useState(false);
 
   if (!code) {
     return <div className="flex h-screen items-center justify-center">No invite code provided</div>;
@@ -86,17 +94,18 @@ export function InvitePage() {
 
   const onAccept = async () => {
     try {
-      await acceptInvite({
+      const result = await acceptInvite({
         variables: {
           input: {
             token: invite.token
           }
         }
       });
-      setAccepted(true);
-      setSubmitted(true);
+      const orgId = result.data?.acceptInvite.organization.id ?? invite.createdFor.id;
+      toast.success(`You joined ${invite.createdFor.name || "the organization"}`);
+      navigate(`/organization/${orgId}`);
     } catch (e) {
-      console.error(e);
+      toastError(e, "Couldn't accept the invitation");
     }
   };
 
@@ -109,34 +118,27 @@ export function InvitePage() {
           }
         }
       });
-      setAccepted(false);
-      setSubmitted(true);
+      setDeclined(true);
     } catch (e) {
-      console.error(e);
+      toastError(e, "Couldn't decline the invitation");
     }
   };
 
   const isExpired = new Date(invite.expiresAt) < new Date();
   const isAlreadyAccepted = invite.status === "ACCEPTED";
 
-  // Success state
-  if (submitted) {
+  // Declined state (accepting navigates straight into the organization)
+  if (declined) {
     return (
       <div className="container flex h-screen items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle>
-              {accepted ? "Invitation Accepted" : "Invitation Declined"}
-            </CardTitle>
-            <CardDescription>
-              {accepted 
-                ? `You are now a member of ${invite.createdFor.name}` 
-                : "You have declined this invitation"}
-            </CardDescription>
+            <CardTitle>Invitation Declined</CardTitle>
+            <CardDescription>You have declined this invitation</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <a href="/">Go to Home</a>
+              <Link to="/home">Go to Home</Link>
             </Button>
           </CardContent>
         </Card>
@@ -247,17 +249,18 @@ export function InvitePage() {
               variant="outline"
               className="flex-1"
               onClick={onDecline}
-              disabled={isExpired || isAlreadyAccepted}
+              disabled={isExpired || isAlreadyAccepted || busy}
             >
+              {declining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Decline
             </Button>
             <Button 
               className="flex-1" 
               onClick={onAccept}
-              disabled={isExpired || isAlreadyAccepted}
+              disabled={isExpired || isAlreadyAccepted || busy}
             >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Accept Invitation
+              {accepting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+              {accepting ? "Joining..." : "Accept Invitation"}
             </Button>
           </div>
         ) : (

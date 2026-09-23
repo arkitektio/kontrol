@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useGetInviteQuery } from "@/graphql/queries/invite.generated"
 import { useCancelInviteMutation } from "@/graphql/mutations/invite.generated"
@@ -6,6 +7,8 @@ import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
+import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { Copy, XCircle, Clock } from "lucide-react"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -16,6 +19,7 @@ export default function Invite() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [cancelInvite] = useCancelInviteMutation()
+  const [cancelOpen, setCancelOpen] = useState(false)
 
   const { data, loading, error, refetch } = useGetInviteQuery({
     variables: { id: id! },
@@ -29,10 +33,11 @@ export default function Invite() {
   const invite = data.invite
   const isPending = invite.status === "PENDING"
   const isAccepted = invite.status === "ACCEPTED"
+  const orgName = invite.createdFor.name || invite.createdFor.slug
+  // lok: the owner or an admin may cancel an invite.
+  const mayCancel = invite.createdFor.amIOwner || invite.createdFor.amIAdmin
 
   const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel this invite?")) return
-
     try {
       await cancelInvite({
         variables: {
@@ -43,15 +48,18 @@ export default function Invite() {
       })
       toast.success("Invite canceled")
       refetch()
-    } catch (e: any) {
-      toast.error("Failed to cancel invite: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't cancel the invite")
+      return false
     }
   }
 
   const copyLink = () => {
       if (invite.inviteUrl) {
-          navigator.clipboard.writeText(invite.inviteUrl)
-          toast.success("Link copied to clipboard")
+          navigator.clipboard.writeText(invite.inviteUrl).then(
+              () => toast.success("Link copied to clipboard"),
+              (e) => toastError(e, "Couldn't copy the link"),
+          )
       }
   }
 
@@ -75,11 +83,11 @@ export default function Invite() {
             <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/50">
                 <Avatar className="h-12 w-12 border">
                     <AvatarImage src={invite.createdFor.profile?.avatar?.presignedUrl || undefined} />
-                     <AvatarFallback>{invite.createdFor.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                     <AvatarFallback>{orgName.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
                      <p className="text-sm text-muted-foreground">Invited to</p>
-                    <div className="font-semibold text-lg">{invite.createdFor.name}</div>
+                    <div className="font-semibold text-lg">{orgName}</div>
                 </div>
             </div>
 
@@ -123,7 +131,7 @@ export default function Invite() {
                         <code className="flex-1 p-2 bg-muted rounded text-xs font-mono break-all whitespace-pre-wrap">
                             {invite.inviteUrl}
                         </code>
-                        <Button variant="outline" size="icon" onClick={copyLink}>
+                        <Button variant="outline" size="icon" onClick={copyLink} aria-label="Copy invite link">
                             <Copy className="w-4 h-4" />
                         </Button>
                     </div>
@@ -162,14 +170,25 @@ export default function Invite() {
         </CardContent>
         <CardFooter className="justify-between border-t pt-6">
             <Button variant="ghost" onClick={() => navigate(-1)}>Back</Button>
-            {isPending && (
-                <Button variant="destructive" onClick={handleCancel}>
+            {isPending && mayCancel && (
+                <Button variant="destructive" onClick={() => setCancelOpen(true)}>
                     <XCircle className="w-4 h-4 mr-2" />
                     Cancel Invite
                 </Button>
             )}
         </CardFooter>
       </Card>
+
+      <ConfirmActionDialog
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        title="Cancel this invite?"
+        description="The invite link will stop working. People who already joined keep their membership."
+        confirmLabel="Cancel invite"
+        pendingLabel="Canceling..."
+        destructive
+        onConfirm={handleCancel}
+      />
     </div>
   )
 }

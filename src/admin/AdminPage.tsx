@@ -5,7 +5,7 @@ import { ClientCard } from "@/components/ClientCard"
 import { PageHeader } from "@/components/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ResourceNotFound } from "@/components/status"
+import { QueryError, ResourceNotFound } from "@/components/status"
 import { SettingsStackSkeleton } from "@/components/skeletons"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
@@ -37,7 +37,11 @@ export default function AdminPage() {
   // Same action list the dashboard shows: apps this org owns that are reporting
   // problems and have not been triaged yet. It sits here too because triaging one
   // is an admin's job, and this is the page they'll be on.
-  const { data: unhealthyData } = useClientsQuery({
+  const {
+    data: unhealthyData,
+    error: unhealthyError,
+    refetch: refetchUnhealthy,
+  } = useClientsQuery({
     variables: {
       filters: { organization: orgId, functional: false, latestReportResolved: false },
       ordering: [{ createdAt: Ordering.Desc }],
@@ -79,7 +83,15 @@ export default function AdminPage() {
 
       <RoleRequestInbox organizationId={org.id} />
 
-      {unhealthyClients.length > 0 ? (
+      {/* Without this an error would fall through to the green "nothing to triage" card. */}
+      {unhealthyError ? (
+        <QueryError
+          compact
+          error={unhealthyError}
+          resource="app reports"
+          onRetry={() => refetchUnhealthy()}
+        />
+      ) : unhealthyClients.length > 0 ? (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">

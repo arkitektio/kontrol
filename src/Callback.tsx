@@ -14,7 +14,6 @@ export default function Callback() {
 
     // Parallel queries
     useEffect(() => {
-        console.log("Auth mounted", auth)
         if (auth.meta.is_authenticated) {
             navigate(nextParam || "/home")
             return

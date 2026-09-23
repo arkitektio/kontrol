@@ -16,8 +16,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog"
-import { useState } from "react"
 import { DeviceContextMenu } from "./DeviceContextMenu"
+import { toastError } from "@/lib/errors"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -26,7 +26,6 @@ import { DetailPageSkeleton } from "@/components/skeletons"
 export default function DeviceGroup() {
   const { groupId, orgId } = useParams<{ groupId: string, orgId: string }>()
   const navigate = useNavigate()
-  const [, setDeleteError] = useState<string | null>(null)
   const { data, loading, error } = useGetDeviceGroupQuery({
     variables: { id: groupId! },
     skip: !groupId,
@@ -35,7 +34,6 @@ export default function DeviceGroup() {
 
   const handleDelete = async () => {
     try {
-      setDeleteError(null)
       await deleteDeviceGroup({
         variables: { 
           input: { 
@@ -46,8 +44,7 @@ export default function DeviceGroup() {
       })
       navigate(`/organization/${orgId}/devices/groups`)
     } catch (err) {
-      console.error("Failed to delete device group:", err)
-      setDeleteError(err instanceof Error ? err.message : "Failed to delete device group")
+      toastError(err, "Couldn't delete the device group")
     }
   }
 
@@ -59,7 +56,7 @@ export default function DeviceGroup() {
   const devices = deviceGroup.devices.flat()
 
     // Helper function to get device icon (duplicated from Devices.tsx effectively, could be utility)
-  const getDeviceIcon = (name: string | undefined) => {
+  const getDeviceIcon = (name: string | null | undefined) => {
     const lowerName = name?.toLowerCase() || ""
     if (lowerName.includes("phone") || lowerName.includes("mobile")) {
       return <Smartphone className="h-4 w-4" />
@@ -112,7 +109,7 @@ export default function DeviceGroup() {
                       <div className="grid gap-2">
                         {devices.map(device => (
                             <DeviceContextMenu key={device.id} device={device}>
-                                <Link to={`/devices/${device.id}`}>
+                                <Link to={orgId ? `/organization/${orgId}/devices/${device.id}` : `/devices/${device.id}`}>
                                     <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                               <div className="p-2 bg-muted rounded-full">
@@ -120,11 +117,14 @@ export default function DeviceGroup() {
                                               </div>
                                               <div>
                                                   <div className="font-medium">{device.name}</div>
-                                                  <div className="text-xs text-muted-foreground font-mono">{device.nodeId}</div>
+                                                  <div className="text-xs text-muted-foreground font-mono">{device.deviceId}</div>
                                               </div>
                                         </div>
-                                        <Badge variant={(device.clients && device.clients.length > 0) ? "default" : "secondary"}>
-                                            {(device.clients && device.clients.length > 0) ? "Connected" : "Offline"}
+                                        {/* A count of registered apps, not liveness — lok has no online signal here. */}
+                                        <Badge variant={device.clients?.length ? "default" : "secondary"}>
+                                            {device.clients?.length
+                                              ? `${device.clients.length} app${device.clients.length !== 1 ? "s" : ""}`
+                                              : "No apps"}
                                         </Badge>
                                     </div>
                                 </Link>

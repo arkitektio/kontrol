@@ -1,6 +1,8 @@
 fragment ListHub  on ManagementHub {
   id
   name 
+  online
+  lastHealthy
   organization {
     id
     name
@@ -16,6 +18,22 @@ fragment ListHub  on ManagementHub {
 fragment Hub on ManagementHub {
   id
   name 
+  online
+  lastHealthy
+  lastSeenAt
+  version
+  meshConnected
+  meshHost
+  healthSnapshots {
+    id
+    healthy
+    createdAt
+    instances {
+      identifier
+      healthy
+      reason
+    }
+  }
   organization {
     id
     name

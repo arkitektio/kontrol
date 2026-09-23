@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useDeleteAliasMutation } from "@/graphql/mutations/alias.generated"
+import { toastError } from "@/lib/errors"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +40,7 @@ export const DeleteAliasDialog = ({ aliasId, aliasUrl, onSuccess }: DeleteAliasD
       setOpen(false)
       onSuccess?.()
     } catch (err) {
-      console.error("Failed to delete alias:", err)
+      toastError(err, "Couldn't delete the alias")
     } finally {
       setIsDeleting(false)
     }

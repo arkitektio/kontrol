@@ -1,60 +1,7 @@
-src/Calculator.tsx: error TS7006: Parameter 'props' implicitly has an 'any' type.
-src/OrganizationProfile.tsx: error TS18049: 'org.name' is possibly 'null' or 'undefined'.
-src/OrganizationProfile.tsx: error TS2322: Type 'string | null | undefined' is not assignable to type 'string'.
-src/OrganizationProfile.tsx: error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'SetStateAction<string>'.
-src/Profile.tsx: error TS2353: Object literal may only specify known properties, and 'bio' does not exist in type 'CreateProfileInput'.
-src/Profile.tsx: error TS2353: Object literal may only specify known properties, and 'bio' does not exist in type 'UpdateProfileInput'.
-src/account/ChangeEmail.tsx: error TS2339: Property 'errors' does not exist on type 'Data'.
-src/account/ChangeEmail.tsx: error TS2339: Property 'errors' does not exist on type 'Data'.
-src/account/ChangeEmail.tsx: error TS2345: Argument of type 'Data | undefined' is not assignable to parameter of type 'SetStateAction<any[]>'.
-src/account/ChangeEmail.tsx: error TS2345: Argument of type 'Data | undefined' is not assignable to parameter of type 'SetStateAction<any[]>'.
-src/account/ChangeEmail.tsx: error TS2345: Argument of type 'Data | undefined' is not assignable to parameter of type 'SetStateAction<any[]>'.
-src/account/ChangeEmail.tsx: error TS2345: Argument of type 'Data | undefined' is not assignable to parameter of type 'SetStateAction<any[]>'.
-src/account/Logout.tsx: error TS2345: Argument of type '(r: { fetching: boolean; content: null; }) => { content: APIResponse; fetching: boolean; }' is not assignable to parameter of type 'SetStateAction<{ fetching: boolean; content: null; }>'.
-src/account/RequestPasswordRequestLoggedIn.tsx: error TS2339: Property 'email' does not exist on type 'Error[]'.
-src/account/RequestPasswordRequestLoggedIn.tsx: error TS2339: Property 'email' does not exist on type 'Error[]'.
-src/aliases/CreateAliasDialog.tsx: error TS2353: Object literal may only specify known properties, and 'serviceInstance' does not exist in type 'CreateAliasInput'.
 src/auth/hooks.ts: error TS7006: Parameter 'auth' implicitly has an 'any' type.
 src/auth/hooks.ts: error TS7006: Parameter 'flow' implicitly has an 'any' type.
 src/auth/routing.tsx: error TS7006: Parameter 'auth' implicitly has an 'any' type.
 src/auth/routing.tsx: error TS7006: Parameter 'flow' implicitly has an 'any' type.
 src/auth/routing.tsx: error TS7031: Binding element 'children' implicitly has an 'any' type.
 src/auth/routing.tsx: error TS7031: Binding element 'children' implicitly has an 'any' type.
-src/components/CreateInviteDialog.tsx: error TS2322: Type 'Control<{ expiresInDays: number; public: boolean; roles?: string[] | undefined; }, any, TFieldValues>' is not assignable to type 'Control<{ expiresInDays: number; public: boolean; roles?: string[] | undefined; }, any, { expiresInDays: number; public: boolean; roles?: string[] | undefined; }>'.
-src/components/CreateInviteDialog.tsx: error TS2322: Type 'Control<{ expiresInDays: number; public: boolean; roles?: string[] | undefined; }, any, TFieldValues>' is not assignable to type 'Control<{ expiresInDays: number; public: boolean; roles?: string[] | undefined; }, any, { expiresInDays: number; public: boolean; roles?: string[] | undefined; }>'.
-src/components/CreateInviteDialog.tsx: error TS2322: Type 'Control<{ expiresInDays: number; public: boolean; roles?: string[] | undefined; }, any, TFieldValues>' is not assignable to type 'Control<{ expiresInDays: number; public: boolean; roles?: string[] | undefined; }, any, { expiresInDays: number; public: boolean; roles?: string[] | undefined; }>'.
-src/components/CreateInviteDialog.tsx: error TS2322: Type 'Resolver<{ public: boolean; expiresInDays?: unknown; roles?: string[] | undefined; }, any, { expiresInDays: number; public: boolean; roles?: string[] | undefined; }>' is not assignable to type 'Resolver<{ expiresInDays: number; public: boolean; roles?: string[] | undefined; }, any, { expiresInDays: number; public: boolean; roles?: string[] | undefined; }>'.
-src/components/CreateInviteDialog.tsx: error TS2345: Argument of type '(values: z.infer<typeof formSchema>) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
 src/components/ProviderIcon.tsx: error TS2769: No overload matches this call.
-src/devices/Device.tsx: error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | undefined'.
-src/devices/DeviceGroup.tsx: error TS2339: Property 'clients' does not exist on type '{ __typename?: "ManagementDevice" | undefined; id: string; name?: string | null | undefined; nodeId: string; deviceGroups: { __typename?: "ManagementDeviceGroup" | undefined; id: string; name: string; }[]; }'.
-src/devices/DeviceGroup.tsx: error TS2339: Property 'clients' does not exist on type '{ __typename?: "ManagementDevice" | undefined; id: string; name?: string | null | undefined; nodeId: string; deviceGroups: { __typename?: "ManagementDeviceGroup" | undefined; id: string; name: string; }[]; }'.
-src/devices/DeviceGroup.tsx: error TS2339: Property 'clients' does not exist on type '{ __typename?: "ManagementDevice" | undefined; id: string; name?: string | null | undefined; nodeId: string; deviceGroups: { __typename?: "ManagementDeviceGroup" | undefined; id: string; name: string; }[]; }'.
-src/devices/DeviceGroup.tsx: error TS2339: Property 'clients' does not exist on type '{ __typename?: "ManagementDevice" | undefined; id: string; name?: string | null | undefined; nodeId: string; deviceGroups: { __typename?: "ManagementDeviceGroup" | undefined; id: string; name: string; }[]; }'.
-src/devices/DeviceGroup.tsx: error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | undefined'.
-src/devices/DeviceGroups.tsx: error TS2339: Property 'devices' does not exist on type '{ __typename?: "ManagementDeviceGroup" | undefined; id: string; name: string; }'.
-src/invite/Invite.tsx: error TS18049: 'invite.createdFor.name' is possibly 'null' or 'undefined'.
-src/mfa/ActivateTOTP.tsx: error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
-src/mfa/ActivateTOTP.tsx: error TS2322: Type '{}' is not assignable to type 'string | string[]'.
-src/mfa/AuthenticateWebAuthn.tsx: error TS18048: 'optResp.data' is possibly 'undefined'.
-src/mfa/AuthenticateWebAuthn.tsx: error TS2339: Property 'request_options' does not exist on type 'Data'.
-src/mfa/RecoveryCodes.tsx: error TS7006: Parameter 'code' implicitly has an 'any' type.
-src/mfa/RecoveryCodes.tsx: error TS7006: Parameter 'index' implicitly has an 'any' type.
-src/oauth/Authorize.tsx: error TS18049: 'org.name' is possibly 'null' or 'undefined'.
-src/service-releases/ServiceRelease.tsx: error TS2339: Property 'allowedUsers' does not exist on type '{ __typename?: "ManagementServiceInstance" | undefined; id: string; identifier: string; release: { __typename?: "ManagementServiceRelease" | undefined; id: string; version: string; service: { ...; }; }; organization: { ...; }; }'.
-src/service-releases/ServiceRelease.tsx: error TS2339: Property 'allowedUsers' does not exist on type '{ __typename?: "ManagementServiceInstance" | undefined; id: string; identifier: string; release: { __typename?: "ManagementServiceRelease" | undefined; id: string; version: string; service: { ...; }; }; organization: { ...; }; }'.
-src/socialaccount/GoogleOneTap.tsx: error TS2345: Argument of type '{ id_token: string; client_id: string; }' is not assignable to parameter of type 'string'.
-src/socialaccount/ProviderSignup.tsx: error TS2339: Property 'errors' does not exist on type 'never'.
-src/socialaccount/ProviderSignup.tsx: error TS2339: Property 'errors' does not exist on type 'never'.
-src/socialaccount/ProviderSignup.tsx: error TS2345: Argument of type '(r: { fetching: boolean; content: null; }) => { content: APIResponse; fetching: boolean; }' is not assignable to parameter of type 'SetStateAction<{ fetching: boolean; content: null; }>'.
-src/usersessions/Sessions.tsx: error TS2339: Property 'created_at' does not exist on type 'never'.
-src/usersessions/Sessions.tsx: error TS2339: Property 'ip' does not exist on type 'never'.
-src/usersessions/Sessions.tsx: error TS2339: Property 'is_current' does not exist on type 'never'.
-src/usersessions/Sessions.tsx: error TS2339: Property 'is_current' does not exist on type 'never'.
-src/usersessions/Sessions.tsx: error TS2339: Property 'last_seen_at' does not exist on type 'never'.
-src/usersessions/Sessions.tsx: error TS2339: Property 'user_agent' does not exist on type 'never'.
-src/usersessions/Sessions.tsx: error TS2345: Argument of type '(r: { fetching: boolean; content: { status: number; data: never[]; }; }) => { content: APIResponse; fetching: boolean; }' is not assignable to parameter of type 'SetStateAction<{ fetching: boolean; content: { status: number; data: never[]; }; }>'.
-src/usersessions/Sessions.tsx: error TS2345: Argument of type 'Data | undefined' is not assignable to parameter of type 'SetStateAction<never[]>'.
-src/usersessions/Sessions.tsx: error TS2345: Argument of type 'Data | undefined' is not assignable to parameter of type 'SetStateAction<never[]>'.
-src/usersessions/Sessions.tsx: error TS7006: Parameter 's' implicitly has an 'any' type.
-src/usersessions/Sessions.tsx: error TS7006: Parameter 'sessions' implicitly has an 'any' type.

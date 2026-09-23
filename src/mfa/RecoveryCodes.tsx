@@ -43,7 +43,7 @@ export default function RecoveryCodes () {
                 <div className="rounded-lg border bg-muted/50 p-6 space-y-2">
                   <h3 className="font-semibold text-sm text-muted-foreground mb-4">Your Recovery Codes</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    {recoveryCodes.data.unused_codes.map((code, index) => (
+                    {recoveryCodes.data.unused_codes.map((code: string, index: number) => (
                       <div 
                         key={index}
                         className="font-mono text-sm bg-background border rounded px-3 py-2 text-center tracking-wider"

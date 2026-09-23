@@ -1,0 +1,9 @@
+mutation RevokeClientSessions($input: RevokeClientSessionsInput!) {
+  revokeClientSessions(input: $input) {
+    id
+  }
+}
+
+mutation RevokeOrganizationSessions($input: RevokeOrganizationSessionsInput!) {
+  revokeOrganizationSessions(input: $input)
+}

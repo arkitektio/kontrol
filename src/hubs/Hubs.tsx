@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom"
 import { useHubsQuery } from "@/graphql/queries/hub.generated"
+import { HubStatusBadge } from "./HubStatusBadge"
 import { useListKommunityPartnerQuery } from "@/graphql/queries/kommunity_partner.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
@@ -118,6 +119,7 @@ export default function Hubs() {
                       {hub.name}
                     </CardTitle>
                   </div>
+                  <HubStatusBadge online={hub.online} healthy={hub.lastHealthy} />
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col gap-3">

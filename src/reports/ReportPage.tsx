@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from "date-fns"
 import {
   Activity,
   AlertTriangle,
@@ -21,28 +20,11 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 import { SettingsStackSkeleton } from "@/components/skeletons"
 import { clientLabel } from "@/lib/clientLabel"
 import { cn } from "@/lib/utils"
+import { absoluteTime, timeAgo } from "@/lib/time"
 import { useLatestClientReportQuery } from "@/graphql/queries/report.generated"
 import type { ListReportFragment } from "@/graphql/fragments/report.generated"
 import { UsedAliasFlow, type AliasFlowEntry } from "../clients/ClientUsedAliasFlow"
 import { ResolveReportAction } from "./ReportResolution"
-
-function timeAgo(iso?: string | null): string {
-    if (!iso) return "never"
-    try {
-        return formatDistanceToNow(new Date(iso), { addSuffix: true })
-    } catch {
-        return "unknown"
-    }
-}
-
-function absolute(iso?: string | null): string {
-    if (!iso) return ""
-    try {
-        return new Date(iso).toLocaleString()
-    } catch {
-        return ""
-    }
-}
 
 type Entry = ListReportFragment["entries"][number]
 
@@ -125,7 +107,7 @@ function ReportTimeline({
                 {ordered.map((r) => (
                     <div
                         key={r.id}
-                        title={`${r.functional ? "Healthy" : "Reporting issues"} — ${absolute(r.createdAt as string)}${r.isResolved ? " (resolved)" : ""}`}
+                        title={`${r.functional ? "Healthy" : "Reporting issues"} — ${absoluteTime(r.createdAt as string)}${r.isResolved ? " (resolved)" : ""}`}
                         className={cn(
                             "h-8 w-6 rounded-sm border transition-colors",
                             r.functional
@@ -251,7 +233,7 @@ export default function ReportPage() {
             }
             description={
                 report
-                    ? `Reported ${timeAgo(report.createdAt as string)} · ${absolute(report.createdAt as string)}`
+                    ? `Reported ${timeAgo(report.createdAt as string)} · ${absoluteTime(report.createdAt as string)}`
                     : "This client has not reported in yet."
             }
             actions={report && !report.isResolved ? <ResolveReportAction report={report} /> : undefined}

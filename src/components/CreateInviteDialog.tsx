@@ -45,7 +45,11 @@ import * as z from "zod";
 import { useCreateInviteMutation } from "@/graphql/mutations/invite.generated"
 import { useState } from "react";
 import { Copy, Check, ChevronsUpDown, X } from "lucide-react";
+import { toastError } from "@/lib/errors";
 
+// `z.coerce` makes the form's input type differ from its parsed output
+// (the number field holds a string until zod coerces it), so the form is typed
+// with both: z.input for field values, z.output for what onSubmit receives.
 const formSchema = z.object({
   expiresInDays: z.coerce.number().min(1).default(1),
   roles: z.array(z.string()).optional(),
@@ -75,7 +79,7 @@ export const CreateInviteDialog = ({
     refetchQueries: ['Organization']
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<z.input<typeof formSchema>, unknown, z.output<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       expiresInDays: 1,
@@ -84,7 +88,7 @@ export const CreateInviteDialog = ({
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.output<typeof formSchema>) => {
     createInvite({
       variables: {
         input: {
@@ -98,7 +102,7 @@ export const CreateInviteDialog = ({
       if (res.data?.createInvite?.token) {
         setCreatedInviteToken(res.data.createInvite.token);
       }
-    });
+    }).catch((e) => toastError(e, "Couldn't create the invite"));
   };
 
   const handleCopy = () => {
@@ -157,7 +161,7 @@ export const CreateInviteDialog = ({
                 <FormItem>
                   <FormLabel>Expires in (days)</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input type="number" {...field} value={field.value as number | string} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

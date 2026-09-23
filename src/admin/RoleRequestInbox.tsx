@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from "date-fns"
 import { Check, Inbox, X } from "lucide-react"
 import { toast } from "sonner"
 
@@ -11,15 +10,8 @@ import {
   useDeclineRoleRequestMutation,
 } from "@/graphql/mutations/role_request.generated"
 import { useRoleRequestsQuery } from "@/graphql/queries/role_request.generated"
-
-function timeAgo(iso?: string | null): string {
-  if (!iso) return "unknown"
-  try {
-    return formatDistanceToNow(new Date(iso), { addSuffix: true })
-  } catch {
-    return "unknown"
-  }
-}
+import { toastError } from "@/lib/errors"
+import { timeAgo } from "@/lib/time"
 
 /**
  * The pending-role-request queue for one organization — the admin page's action
@@ -54,7 +46,7 @@ export function RoleRequestInbox({ organizationId }: { organizationId: string })
       await approve({ variables: { input: { id } } })
       toast.success("Role granted")
     } catch (e) {
-      toast.error("Failed to approve: " + (e as Error).message)
+      toastError(e, "Couldn't approve the request")
     }
   }
 
@@ -63,7 +55,7 @@ export function RoleRequestInbox({ organizationId }: { organizationId: string })
       await decline({ variables: { input: { id } } })
       toast.success("Request declined")
     } catch (e) {
-      toast.error("Failed to decline: " + (e as Error).message)
+      toastError(e, "Couldn't decline the request")
     }
   }
 

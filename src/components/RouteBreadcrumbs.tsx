@@ -1,4 +1,5 @@
 import { useLocation, Link } from "react-router-dom"
+import { gql, useFragment, type DocumentNode } from "@apollo/client"
 import { ChevronRight } from "lucide-react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "./ui/breadcrumb"
 import { useMeQuery } from "@/graphql/queries/me.generated"
@@ -8,6 +9,93 @@ interface BreadcrumbSegment {
   label: string
   path: string
   hidden?: boolean
+  /** Set for an id segment: the crumb resolves the entity's name from the Apollo cache. */
+  entity?: { typename: string; id: string }
+}
+
+// Static segments whose capitalised form reads badly.
+const SEGMENT_LABELS: Record<string, string> = {
+  "2fa": "Two-factor",
+  "danger-zone": "Danger zone",
+  "connect-hub": "Connect hub",
+  "redeem-tokens": "Redeem tokens",
+  "service-instances": "Service instances",
+  "service-instance-mappings": "Instance mappings",
+  "service-releases": "Service releases",
+  "instance-aliases": "Instance aliases",
+  "rolesets": "Role sets",
+  "authkeys": "Auth keys",
+  "me": "My membership",
+  "socialaccount": "Connected accounts",
+  "verify-email": "Verify email",
+}
+
+// Collection segment -> the type of the id that follows it. The detail page has
+// already loaded that entity, so its name is in the cache; the crumb reads it
+// with `useFragment` (no extra request) and falls back to "#<id>" until then.
+const ENTITY_TYPES: Record<string, string> = {
+  members: "ManagementMembership",
+  devices: "ManagementDevice",
+  groups: "ManagementDeviceGroup",
+  clients: "ManagementClient",
+  roles: "ManagementRole",
+  scopes: "ManagementScope",
+  "service-instances": "ManagementServiceInstance",
+  partners: "ManagementKommunityPartner",
+  releases: "ManagementRelease",
+  services: "ManagementService",
+  apps: "ManagementApp",
+  "instance-aliases": "ManagementInstanceAlias",
+  "service-releases": "ManagementServiceRelease",
+  "service-instance-mappings": "ManagementServiceInstanceMapping",
+}
+
+const ENTITY_FRAGMENTS: Record<string, DocumentNode> = {
+  ManagementMembership: gql`fragment CrumbMembership on ManagementMembership { id user { id username } }`,
+  ManagementDevice: gql`fragment CrumbDevice on ManagementDevice { id name }`,
+  ManagementDeviceGroup: gql`fragment CrumbDeviceGroup on ManagementDeviceGroup { id name }`,
+  ManagementClient: gql`fragment CrumbClient on ManagementClient { id name }`,
+  ManagementRole: gql`fragment CrumbRole on ManagementRole { id identifier }`,
+  ManagementScope: gql`fragment CrumbScope on ManagementScope { id identifier }`,
+  ManagementServiceInstance: gql`fragment CrumbServiceInstance on ManagementServiceInstance { id identifier }`,
+  ManagementKommunityPartner: gql`fragment CrumbPartner on ManagementKommunityPartner { id name }`,
+  ManagementRelease: gql`fragment CrumbRelease on ManagementRelease { id name version }`,
+  ManagementService: gql`fragment CrumbService on ManagementService { id name }`,
+  ManagementApp: gql`fragment CrumbApp on ManagementApp { id name }`,
+  ManagementInstanceAlias: gql`fragment CrumbAlias on ManagementInstanceAlias { id name host }`,
+  ManagementServiceRelease: gql`fragment CrumbServiceRelease on ManagementServiceRelease { id version }`,
+  ManagementServiceInstanceMapping: gql`fragment CrumbMapping on ManagementServiceInstanceMapping { id key }`,
+}
+
+type CrumbData = {
+  name?: string | null
+  identifier?: string | null
+  version?: string | null
+  host?: string | null
+  key?: string | null
+  user?: { username?: string | null } | null
+}
+
+function humanize(part: string): string {
+  const label = SEGMENT_LABELS[part] ?? part.replace(/-/g, " ")
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+function EntityCrumbLabel({ typename, id }: { typename: string; id: string }) {
+  const { data } = useFragment<CrumbData>({ fragment: ENTITY_FRAGMENTS[typename], from: { __typename: typename, id } })
+  const label =
+    data?.user?.username ??
+    (data?.name && data?.version ? `${data.name} ${data.version}` : null) ??
+    data?.name ??
+    data?.identifier ??
+    data?.host ??
+    data?.key ??
+    data?.version
+  return <>{label || `#${id}`}</>
+}
+
+function CrumbLabel({ crumb }: { crumb: BreadcrumbSegment }) {
+  return crumb.entity ? <EntityCrumbLabel {...crumb.entity} /> : <>{crumb.label}</>
 }
 
 export const useRouteBreadcrumbs = (): BreadcrumbSegment[] => {
@@ -34,11 +122,20 @@ export const useRouteBreadcrumbs = (): BreadcrumbSegment[] => {
 
   pathParts.forEach((part, index) => {
       currentPath += `/${part}`
-      const isOrgId = index > 0 && pathParts[index - 1] === 'organization'
-      const label = isOrgId
-          ? orgNameById.get(part) ?? part
-          : part.charAt(0).toUpperCase() + part.slice(1)
-      segments.push({ label, path: currentPath })
+      const parent = index > 0 ? pathParts[index - 1] : undefined
+      if (parent === 'organization') {
+          segments.push({ label: orgNameById.get(part) ?? part, path: currentPath })
+          return
+      }
+      // The segment after a collection is an id (hubs are addressed by name, so they read fine as-is).
+      const typename = parent ? ENTITY_TYPES[parent] : undefined
+      if (typename && !SEGMENT_LABELS[part] && part !== 'groups') {
+          segments.push({ label: `#${part}`, path: currentPath, entity: { typename, id: part } })
+          return
+      }
+      // Hub names and other opaque ids stay verbatim; only route words are humanized.
+      const isRouteWord = /^[a-z0-9-]+$/.test(part) && parent !== 'hubs' && !/\d/.test(part)
+      segments.push({ label: isRouteWord || SEGMENT_LABELS[part] ? humanize(part) : part, path: currentPath })
   })
 
   return segments
@@ -65,15 +162,15 @@ export const RouteBreadcrumbs = () => {
             <div key={crumb.path} className="flex items-center gap-1.5">
               <BreadcrumbItem className={isActive ? "" : "hidden md:block"}>
                 {isActive ? (
-                  <span className="text-foreground font-medium">{crumb.label}</span>
+                  <span className="text-foreground font-medium"><CrumbLabel crumb={crumb} /></span>
                 ) : isNavigable ? (
                   <BreadcrumbLink asChild>
                     <Link to={crumb.path} className="transition-colors hover:text-foreground">
-                      {crumb.label}
+                      <CrumbLabel crumb={crumb} />
                     </Link>
                   </BreadcrumbLink>
                 ) : (
-                  <span>{crumb.label}</span>
+                  <span><CrumbLabel crumb={crumb} /></span>
                 )}
               </BreadcrumbItem>
               {!isLast && (

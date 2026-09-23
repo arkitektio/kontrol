@@ -23,12 +23,12 @@ export function OrganizationSidebar() {
     })
     const hubs = hubsData?.hubs ?? []
 
-    // No active org at all → prompt to pick/create one from the account menu.
+    // No active org at all → point at the OrgSwitcher in the sidebar header.
     if (!activeOrgId) {
         return (
             <SidebarGroup>
                 <SidebarGroupContent className="px-2 py-1.5 text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
-                    No organization selected. Pick one from the account menu below.
+                    No organization selected. Pick or create one with the organization switcher at the top of the sidebar.
                 </SidebarGroupContent>
             </SidebarGroup>
         )

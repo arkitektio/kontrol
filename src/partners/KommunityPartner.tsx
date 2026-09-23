@@ -271,7 +271,9 @@ export default function KommunityPartner() {
                 <p className="text-sm text-muted-foreground">
                   {isPreauthorized
                     ? "This partner will provision a hub in the selected organization and may require an external approval hook before it becomes active."
-                    : "This partner manages signup on its own site and will redirect you to complete the account flow."}
+                    : connectUrl
+                      ? "This partner manages signup on its own site and will redirect you to complete the account flow."
+                      : "This partner hasn't published a signup or website link yet, so there is nowhere to connect to. Reach out to the partner directly."}
                 </p>
               </div>
             </div>

@@ -26,7 +26,15 @@ export default function InstanceAlias() {
 
   const alias = data.instanceAlias
 
+  const isMesh = alias.kind === "mesh"
+  // A mesh alias's host is its hub node's MagicDNS name, resolved live by lok.
+  const displayHost = isMesh ? alias.resolvedHost : alias.host
+
   const buildFullUrl = () => {
+    if (isMesh) {
+      const host = alias.resolvedHost || "[hub not on the mesh]"
+      return `${alias.ssl ? "https" : "http"}://${host}${alias.port ? `:${alias.port}` : ""}${alias.path ? `/${alias.path}` : ""}`;
+    }
     if (!alias.host || alias.host === "") {
       const protocol = window.location.protocol;
       const hostname = window.location.hostname;
@@ -74,7 +82,7 @@ export default function InstanceAlias() {
                   <Globe className="h-5 w-5 text-muted-foreground" />
                 )}
                 <CardTitle className="text-2xl">
-                  {alias.host || "[Relative Alias]"}
+                  {displayHost || (isMesh ? "[Mesh Alias]" : "[Relative Alias]")}
                 </CardTitle>
               </div>
               <CardDescription className="font-mono">
@@ -99,7 +107,7 @@ export default function InstanceAlias() {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Host:</span>
-                  <span className="font-mono">{alias.host || "Relative"}</span>
+                  <span className="font-mono">{displayHost || (isMesh ? "Hub not on the mesh" : "Relative")}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Port:</span>

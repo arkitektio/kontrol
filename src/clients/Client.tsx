@@ -7,6 +7,8 @@ import { useDetailClientQuery } from "@/graphql/queries/client.generated"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
 import { CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
+import { RevokeClientSessionsDialog } from "./RevokeClientSessionsDialog"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -18,6 +20,7 @@ export default function Client() {
     variables: { id: id! },
     skip: !id,
   })
+  const { isAdmin } = useIsOrgAdmin(data?.client?.organization?.id)
 
   if (loading) return <DetailPageSkeleton sections={3} />
   if (error) return <QueryError error={error} resource="client" />
@@ -27,8 +30,8 @@ export default function Client() {
 
   return (
     <div className="container mx-auto py-10 relative min-h-screen">
-        <div className="relative z-10 max-w-[30vw] space-y-6">
-            <CardHeader className="flex flex-row items-center gap-4">
+        <div className="relative z-10 w-full max-w-2xl space-y-6">
+            <CardHeader className="flex flex-row flex-wrap items-center gap-4">
 
             
               <Avatar className="h-16 w-16">
@@ -38,7 +41,7 @@ export default function Client() {
               <div>
                 <CardTitle className="text-2xl flex flex-row items-center gap-2"><ClientLabel client={client} />{}
 </CardTitle>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant="outline">{client.organization?.name ?? "Unbound"}</Badge>
                     <span className="text-muted-foreground">by {client.user?.username}</span>
                     <Link
@@ -49,6 +52,11 @@ export default function Client() {
                     </Link>
                 </div>
               </div>
+              {isAdmin && (
+                <div className="ml-auto">
+                  <RevokeClientSessionsDialog clientId={client.id} clientName={clientLabel(client)} />
+                </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
                 {client.release && (
@@ -92,8 +100,8 @@ export default function Client() {
                                 </div>
                             </div>
                         ))}
-                        {(!client.usedAliases || client.usedAliases.length === 0) && (
-                            <div className="text-sm text-muted-foreground">No aliases used</div>
+                        {(!client.scopes || client.scopes.length === 0) && (
+                            <div className="text-sm text-muted-foreground">No scopes granted</div>
                         )}
                     </div>
                 </div>

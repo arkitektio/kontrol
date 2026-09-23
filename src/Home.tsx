@@ -78,6 +78,9 @@ export default function Home() {
                         <Button onClick={openCreateOrg}>
                             <Plus className="mr-2 h-4 w-4" /> Create organization
                         </Button>
+                        <p className="text-muted-foreground mt-4 text-sm">
+                            Joining someone else's organization? Open the invite link they sent you.
+                        </p>
                     </CardContent>
                 </Card>
             ) : (
@@ -88,7 +91,7 @@ export default function Home() {
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Building className="text-muted-foreground h-5 w-5 shrink-0" />
-                                        <span className="truncate">{m.organization.name}</span>
+                                        <span className="truncate">{m.organization.name || m.organization.slug}</span>
                                         <ArrowRight className="text-muted-foreground ml-auto h-4 w-4 shrink-0" />
                                     </CardTitle>
                                     <CardDescription>@{m.organization.slug}</CardDescription>

@@ -1,6 +1,6 @@
 import ProviderIcon from '@/components/ProviderIcon'
 import { useConfig } from '../auth'
-import Button from '../components/Button'
+import { Button } from '@/components/ui/button'
 import { Client, redirectToProvider, settings, type AuthProcessType } from '../lib/allauth'
 
 export default function ProviderList ({callbackURL = "/", process}: { callbackURL?: string, process: AuthProcessType }) {
