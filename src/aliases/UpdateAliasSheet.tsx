@@ -129,8 +129,8 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="absolute">Absolute</SelectItem>
-                  <SelectItem value="relative">Relative</SelectItem>
                   <SelectItem value="mesh">Mesh (hub's MagicDNS name)</SelectItem>
+                  <SelectItem value="docker">Docker (only from the hub's own docker network)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

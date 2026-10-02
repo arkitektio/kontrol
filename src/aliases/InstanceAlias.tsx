@@ -107,7 +107,7 @@ export default function InstanceAlias() {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Host:</span>
-                  <span className="font-mono">{displayHost || (isMesh ? "Hub not on the mesh" : "Relative")}</span>
+                  <span className="font-mono">{displayHost || (isMesh ? "Hub not on the mesh" : "No host")}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Port:</span>

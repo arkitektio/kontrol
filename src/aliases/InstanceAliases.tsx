@@ -30,7 +30,7 @@ export default function InstanceAliases() {
     }
     if (!alias.host || alias.host === "") {
       const path = alias.path || "";
-      return `[relative]/${path}`;
+      return `[no host]/${path}`;
     }
     return `${alias.ssl ? "https" : "http"}://${alias.host}${alias.port ? `:${alias.port}` : ""}${alias.path ? `/${alias.path}` : ""}`;
   }
