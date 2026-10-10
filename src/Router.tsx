@@ -25,6 +25,9 @@ import { NotFoundRoute } from './components/status/NotFoundRoute'
 // prerendering exists to deliver. It is small (a banner and two buttons), so
 // the entry-chunk cost is negligible.
 import Landing from './Landing'
+// Static as well, for a different reason: it only bounces the browser into the
+// desktop app, and a lazy chunk would be a round trip before that hand-off.
+import AuthCallbackRelay from './auth/AuthCallbackRelay'
 
 function lazyDefault(load: () => Promise<{ default: ComponentType<any> }>) {
   return lazy(load)
@@ -88,6 +91,8 @@ const Home = lazyDefault(() => import('./Home'))
 const Invite = lazyDefault(() => import('./invite/Invite'))
 const InvitePage = lazyNamed(() => import('./invite/InvitePage'), 'InvitePage')
 const Invites = lazyDefault(() => import('./invite/Invites'))
+const DeepLinkPage = lazyDefault(() => import('./links/DeepLinkPage'))
+const SmartLinkPage = lazyDefault(() => import('./links/SmartLinkPage'))
 const AdminPage = lazyDefault(() => import('./admin/AdminPage'))
 const Memberships = lazyDefault(() => import('./members/Memberships'))
 const Membership = lazyDefault(() => import('./members/Membership'))
@@ -392,6 +397,17 @@ export function createRoutes() {
                   element: <InvitePage />,
                 },
                 {
+                  // Links into a desktop app, forwarded only for signed-in members of
+                  // the link's organization. Not AuthenticatedRoute: a signed-out
+                  // visitor is told to create an account first, not bounced to login.
+                  path: '/deeplink/:org/:protocol/*',
+                  element: <DeepLinkPage />,
+                },
+                {
+                  path: '/smartlink/:org/:hub/*',
+                  element: <SmartLinkPage />,
+                },
+                {
                   path: '/authorize',
                   element: <AuthenticatedRoute><Authorize /></AuthenticatedRoute>,
                 },
@@ -649,6 +665,13 @@ export function createRoutes() {
             ...route,
             errorElement: <RouterErrorBoundary />,
           })),
+        },
+        {
+          // Third-party logins of hub services return here and are handed on to
+          // the desktop app. Outside the gate: it needs no session, and brings
+          // its own LandingLayout.
+          path: '/auth/callback/:service',
+          element: <AuthCallbackRelay />,
         },
         {
           path: '*',

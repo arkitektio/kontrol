@@ -1,0 +1,32 @@
+query OrganizationDeeplinks($id: ID!) {
+  organization(id: $id) {
+    id
+    slug
+    name
+    deeplinkApps {
+      protocol
+      name
+      installUrl
+      mobile
+    }
+  }
+}
+
+query LinkPreview($organization: String!, $user: ID) {
+  linkPreview(organization: $organization, user: $user) {
+    organization {
+      slug
+      name
+      description
+      avatar {
+        presignedUrl
+      }
+    }
+    inviter {
+      name
+      avatar {
+        presignedUrl
+      }
+    }
+  }
+}

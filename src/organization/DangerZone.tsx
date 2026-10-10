@@ -33,6 +33,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { MeshControl } from "./MeshControl"
 import { RenameOrganizationCard } from "../components/RenameOrganizationCard"
 import { AccessTokenLifetimeCard } from "../components/AccessTokenLifetimeCard"
+import { DeeplinkAppsCard } from "../components/DeeplinkAppsCard"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -205,6 +206,13 @@ export default function DangerZone() {
       <AccessTokenLifetimeCard
         organizationId={org.id}
         accessTokenLifetime={org.accessTokenLifetime}
+      />
+
+      <DeeplinkAppsCard
+        organizationId={org.id}
+        slug={org.slug}
+        deeplinkApps={org.deeplinkApps}
+        publicLinkPreview={org.publicLinkPreview}
       />
 
       {revokeCard}

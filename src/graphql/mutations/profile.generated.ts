@@ -7,13 +7,13 @@ export type CreateProfileMutationVariables = Types.Exact<{
   input: Types.CreateProfileInput;
 }>;
 
-export type CreateProfileMutation = { __typename?: 'Mutation', createProfile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
+export type CreateProfileMutation = { __typename?: 'Mutation', createProfile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, publicLinkPreview: boolean, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
 
 export type UpdateProfileMutationVariables = Types.Exact<{
   input: Types.UpdateProfileInput;
 }>;
 
-export type UpdateProfileMutation = { __typename?: 'Mutation', updateProfile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
+export type UpdateProfileMutation = { __typename?: 'Mutation', updateProfile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, publicLinkPreview: boolean, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
 
 export type DeleteProfileMutationVariables = Types.Exact<{
   input: Types.DeleteProfileInput;

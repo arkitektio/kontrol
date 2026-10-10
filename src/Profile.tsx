@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea"; 
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useMediaUpload } from "@/hooks/use-upload";
 import { Pen, Camera, Image as ImageIcon } from "lucide-react";
 import { useState, useRef } from "react";
@@ -250,6 +252,38 @@ export default function Profile() {
                      </div>
                  </div>
              )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Shared links</CardTitle>
+            <CardDescription>Whether links you share may say who they are from</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-start gap-3">
+              <Switch
+                id="profile-public-link-preview"
+                checked={profile.publicLinkPreview}
+                onCheckedChange={async (next) => {
+                  try {
+                    await updateProfile({ variables: { input: { id: profile.id, publicLinkPreview: next } } });
+                    toast.success(next ? "Your links now show your name" : "Your links no longer show your name");
+                  } catch (e) {
+                    toastError(e, "Couldn't update your link preview");
+                  }
+                }}
+              />
+              <div className="space-y-1">
+                <Label htmlFor="profile-public-link-preview">Show my name and picture on links I share</Label>
+                <p className="text-sm text-muted-foreground">
+                  Off, a link you share never says who sent it. On, a link that carries{" "}
+                  <code>?user_id={user.id}</code> shows your display name and picture to whoever
+                  opens it, even without an account. This only happens for organizations that
+                  chose to be shown on their links, and only while you are a member of them.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

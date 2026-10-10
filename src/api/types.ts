@@ -74,6 +74,12 @@ export type AppFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type ApproveMembershipRequestInput = {
+  id: Scalars['ID']['input'];
+  /** Identifiers of the roles the new member gets. Defaults to `guest`. */
+  roles?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
 export type CancelInviteInput = {
   id: Scalars['ID']['input'];
 };
@@ -196,10 +202,26 @@ export type DeclineInviteInput = {
   token: Scalars['String']['input'];
 };
 
+export type DeclineMembershipRequestInput = {
+  id: Scalars['ID']['input'];
+};
+
 export type DeclineMeshDeviceCodeInput = {
   /** The code the machine displayed. Proves the caller was actually shown this join request; without it, a guessed id is enough to deny someone else's. Optional only until clients are updated to send it. */
   code?: InputMaybe<Scalars['String']['input']>;
   deviceCode: Scalars['ID']['input'];
+};
+
+/** An app this organization's deep links may open. */
+export type DeeplinkAppInput = {
+  /** An https page where the app can be installed. */
+  installUrl?: InputMaybe<Scalars['String']['input']>;
+  /** Whether the app also exists on phones and tablets. */
+  mobile?: Scalars['Boolean']['input'];
+  /** Display name. Defaults to the capitalised protocol. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** The app's URL scheme, e.g. 'orkestrator'. */
+  protocol: Scalars['String']['input'];
 };
 
 export type DeleteAliasInput = {
@@ -449,6 +471,19 @@ export type ManagementComChannelFilter = {
   OR?: InputMaybe<ManagementComChannelFilter>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** An app an organization's deep links may open. */
+export type ManagementDeeplinkApp = {
+  __typename?: 'ManagementDeeplinkApp';
+  /** An https page where the app can be installed, if the organization set one. */
+  installUrl?: Maybe<Scalars['String']['output']>;
+  /** Whether the app also exists on phones and tablets. */
+  mobile: Scalars['Boolean']['output'];
+  /** The app's display name. */
+  name: Scalars['String']['output'];
+  /** The app's URL scheme, e.g. 'orkestrator'. */
+  protocol: Scalars['String']['output'];
 };
 
 /** Device(id, node_id, name, organization) */
@@ -742,12 +777,12 @@ export type ManagementInstanceAlias = {
   __typename?: 'ManagementInstanceAlias';
   /** The challenge of the alias. This is used to verify that the alias is reachable. */
   challenge: Scalars['String']['output'];
-  /** The host of the alias, if its a ABSOLUTE alias (e.g. 'example.com'). If not set, the alias is relative to the layer's domain. */
+  /** The host of the alias (e.g. 'example.com'). Not set for a mesh alias, which resolves to its hub node's MagicDNS name. */
   host?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   /** The instance that this alias belongs to. */
   instance: ManagementServiceInstance;
-  /** The kind of alias (relative, absolute or mesh). A mesh alias has no host of its own: it resolves to its hub node's MagicDNS name. */
+  /** The kind of alias (absolute, mesh or docker). A mesh alias has no host of its own: it resolves to its hub node's MagicDNS name. A docker alias is only reachable from inside the hub's own docker environment. */
   kind: Scalars['String']['output'];
   /** The layer that this alias belongs to. */
   layer?: Maybe<ManagementLayer>;
@@ -755,9 +790,9 @@ export type ManagementInstanceAlias = {
   name?: Maybe<Scalars['String']['output']>;
   /** The organization that owns this alias (via the instance). */
   organization: ManagementOrganization;
-  /** The path of the alias, if its a ABSOLUTE alias (e.g. 'example.com/path'). If not set, the alias is relative to the layer's path. */
+  /** The path of the alias (e.g. 'path' for 'example.com/path'). */
   path?: Maybe<Scalars['String']['output']>;
-  /** The port of the alias, if its a ABSOLUTE alias (e.g. 'example.com:8080'). If not set, the alias is relative to the layer's port. */
+  /** The port of the alias (e.g. 8080 for 'example.com:8080'). If not set, the scheme's default port is used. */
   port?: Maybe<Scalars['Int']['output']>;
   /** Is this alias publicly reachable? If true, the coordination server can also check the alias's health directly, enabling health checks from the kontrol interface. */
   public: Scalars['Boolean']['output'];
@@ -1003,6 +1038,29 @@ export type ManagementLayerOrdering =
   { id: Ordering; name?: never; }
   |  { id?: never; name: Ordering; };
 
+/** The public face of a shared link: which organization it leads into and who shared it. Each part is null unless its subject opted in. */
+export type ManagementLinkPreview = {
+  __typename?: 'ManagementLinkPreview';
+  inviter?: Maybe<ManagementLinkPreviewUser>;
+  organization?: Maybe<ManagementLinkPreviewOrganization>;
+};
+
+/** What a link page may show about the organization a link belongs to. Only for organizations that opted in. */
+export type ManagementLinkPreviewOrganization = {
+  __typename?: 'ManagementLinkPreviewOrganization';
+  avatar?: Maybe<ManagementMediaStore>;
+  description?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  slug: Scalars['String']['output'];
+};
+
+/** What a link page may show about the person who shared a link. Only for users who opted in. */
+export type ManagementLinkPreviewUser = {
+  __typename?: 'ManagementLinkPreviewUser';
+  avatar?: Maybe<ManagementMediaStore>;
+  name: Scalars['String']['output'];
+};
+
 export type ManagementMachine = {
   __typename?: 'ManagementMachine';
   /** Whether the machine is authorized on the tailnet, or null when unknown. */
@@ -1119,6 +1177,19 @@ export type ManagementMembershipFilter = {
 export type ManagementMembershipOrdering =
   { id: Ordering; };
 
+/** A request of a user who is not a member of an organization to become one. Its owner or an admin approves or declines it. */
+export type ManagementMembershipRequest = {
+  __typename?: 'ManagementMembershipRequest';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  /** An optional note from the user explaining the request. */
+  reason?: Maybe<Scalars['String']['output']>;
+  /** The status of the request: pending, approved, or declined. */
+  status: Scalars['String']['output'];
+  /** The user who asks to join. Not a member yet, so they are visible here and nowhere else. */
+  user: ManagementUser;
+};
+
 /** A MeshDeviceCode is used for the device-code flow that lets a machine join an organization's mesh. */
 export type ManagementMeshDeviceCode = {
   __typename?: 'ManagementMeshDeviceCode';
@@ -1212,17 +1283,23 @@ export type ManagementOrganization = {
   brandHue?: Maybe<Scalars['Float']['output']>;
   /** The clients that belong to this organization */
   clients: Array<ManagementClient>;
+  /** The apps kontrol may forward this organization's deep links to. The first entry is the default (on a mobile device, the first with `mobile`); an empty list switches forwarding off. */
+  deeplinkApps: Array<ManagementDeeplinkApp>;
   /** A short description of the organization */
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   /** the invites for this organization */
   invites: Array<ManagementInvite>;
+  /** Pending requests of outsiders to join this organization, oldest first. Empty for anyone but its owner and admins. */
+  membershipRequests: Array<ManagementMembershipRequest>;
   /** the memberships of people */
   memberships: Array<ManagementMembership>;
   /** The name of this organization */
   name?: Maybe<Scalars['String']['output']>;
   /** The profile of the organization */
   profile?: Maybe<ManagementOrganizationProfile>;
+  /** Whether the organization opted in to showing its name, description and logo on link pages to visitors who are not members. */
+  publicLinkPreview: Scalars['Boolean']['output'];
   /** Whether clients created in this organization must present a device_id. None/False means device auth is not required. */
   requireDeviceAuth?: Maybe<Scalars['Boolean']['output']>;
   /** The role sets (named bundles of roles) defined in the organization */
@@ -1335,6 +1412,8 @@ export type ManagementProfile = {
   id: Scalars['ID']['output'];
   /** The name of the user */
   name?: Maybe<Scalars['String']['output']>;
+  /** Whether the user opted in to being shown, by name and picture, on link pages for links they shared. */
+  publicLinkPreview: Scalars['Boolean']['output'];
 };
 
 /** A Public Source is a source of information about a client that is publicly available. E.g. a GitHub repository or a website. */
@@ -1643,7 +1722,7 @@ export type ManagementServiceReleasesArgs = {
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstance = {
   __typename?: 'ManagementServiceInstance';
-  /** The aliases of the instance. An alias is a way to reach the instance. Clients can use these aliases to check if they can reach the instance. An alias can be an absolute alias (e.g. 'example.com') or a relative alias (e.g. 'example.com/path'). If the alias is relative, it will be relative to the layer's domain, port and path. */
+  /** The aliases of the instance. An alias is a way to reach the instance. Clients can use these aliases to check if they can reach the instance. */
   aliases: Array<ManagementInstanceAlias>;
   /** The groups that are allowed to use this instance. */
   allowedGroups: Array<ManagementGroup>;
@@ -2038,6 +2117,8 @@ export type Mutation = {
   acceptInvite: ManagementMembership;
   acceptMeshDeviceCode: ManagementMeshDeviceCode;
   addDeviceToGroup: ManagementDevice;
+  /** Approve a pending request to join an organization. Owner or admins only. */
+  approveMembershipRequest: ManagementMembership;
   approveRoleRequest: ManagementRoleRequest;
   cancelInvite: ManagementInvite;
   cancelRoleRequest: Scalars['ID']['output'];
@@ -2058,6 +2139,8 @@ export type Mutation = {
   declineHubDeviceCode: ManagementHubDeviceCode;
   /** Decline an invite to join an organization. */
   declineInvite: ManagementInvite;
+  /** Decline a pending request to join an organization. Owner or admins only. */
+  declineMembershipRequest: ManagementMembershipRequest;
   declineMeshDeviceCode: ManagementMeshDeviceCode;
   declineRoleRequest: ManagementRoleRequest;
   deleteAlias: Scalars['ID']['output'];
@@ -2076,6 +2159,8 @@ export type Mutation = {
   removeDeviceFromGroup: ManagementDevice;
   requestClientReport: ManagementClient;
   requestMediaUpload: PresignedPostCredentials;
+  /** Ask to become a member of an organization (named by its handle) that the caller is not in. Always answers true. */
+  requestMembership: Scalars['Boolean']['output'];
   requestRole: ManagementRoleRequest;
   resolveReport: ManagementReport;
   revokeClientSessions: ManagementClient;
@@ -2117,6 +2202,11 @@ export type MutationAcceptMeshDeviceCodeArgs = {
 
 export type MutationAddDeviceToGroupArgs = {
   input: AddDeviceToGroupInput;
+};
+
+
+export type MutationApproveMembershipRequestArgs = {
+  input: ApproveMembershipRequestInput;
 };
 
 
@@ -2215,6 +2305,11 @@ export type MutationDeclineInviteArgs = {
 };
 
 
+export type MutationDeclineMembershipRequestArgs = {
+  input: DeclineMembershipRequestInput;
+};
+
+
 export type MutationDeclineMeshDeviceCodeArgs = {
   input: DeclineMeshDeviceCodeInput;
 };
@@ -2302,6 +2397,11 @@ export type MutationRequestClientReportArgs = {
 
 export type MutationRequestMediaUploadArgs = {
   input: RequestMediaUploadInput;
+};
+
+
+export type MutationRequestMembershipArgs = {
+  input: RequestMembershipInput;
 };
 
 
@@ -2477,6 +2577,8 @@ export type Query = {
   kommunityPartners: Array<ManagementKommunityPartner>;
   layer: ManagementLayer;
   layers: Array<ManagementLayer>;
+  /** What a link page may show to anyone holding a link: the organization it leads into and who shared it. Public, and strictly opt-in: a part is null unless its subject chose to be shown. */
+  linkPreview: ManagementLinkPreview;
   machine?: Maybe<ManagementMachine>;
   me: ManagementUser;
   membership: ManagementMembership;
@@ -2654,6 +2756,12 @@ export type QueryLayersArgs = {
   filters?: InputMaybe<ManagementLayerFilter>;
   ordering?: Array<ManagementLayerOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryLinkPreviewArgs = {
+  organization: Scalars['String']['input'];
+  user?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -2850,6 +2958,12 @@ export type RequestMediaUploadInput = {
   key: Scalars['String']['input'];
 };
 
+export type RequestMembershipInput = {
+  /** The organization's handle (slug). */
+  organization: Scalars['String']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type RequestRoleInput = {
   organization: Scalars['ID']['input'];
   reason?: InputMaybe<Scalars['String']['input']>;
@@ -3004,9 +3118,11 @@ export type UpdateOrganizationInput = {
   avatar?: InputMaybe<Scalars['ID']['input']>;
   brandChroma?: InputMaybe<Scalars['Float']['input']>;
   brandHue?: InputMaybe<Scalars['Float']['input']>;
+  deeplinkApps?: InputMaybe<Array<DeeplinkAppInput>>;
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  publicLinkPreview?: InputMaybe<Scalars['Boolean']['input']>;
   requireDeviceAuth?: InputMaybe<Scalars['Boolean']['input']>;
   slug?: InputMaybe<Scalars['String']['input']>;
   syncMine?: Scalars['Boolean']['input'];
@@ -3025,6 +3141,7 @@ export type UpdateProfileInput = {
   bio?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  publicLinkPreview?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateRoleSetInput = {

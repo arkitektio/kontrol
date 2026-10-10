@@ -22,6 +22,7 @@ function funnyMemberLine(count: number): string {
 import { ClientCard } from "./components/ClientCard"
 import { ServiceInstanceCard } from "./components/ServiceInstanceCard"
 import { PageHeader } from "./components/PageHeader"
+import { JoinRequestsCard } from "./components/JoinRequestsCard"
 import { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -86,6 +87,9 @@ export default function OrganizationDashboard() {
       {/* Bento grid: tiles vary in width (col-span) so the page reads as a mosaic
           while each tile stays a self-contained card that flows on its own row height. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
+
+        {/* People asking to join — admins only, and only while someone is waiting */}
+        <JoinRequestsCard organizationId={org.id} className="md:col-span-2 lg:col-span-6" />
 
         {/* Health status — wide tile */}
         {showHealth && (

@@ -9,6 +9,13 @@ fragment Organization on ManagementOrganization {
   brandHue
   brandChroma
   accessTokenLifetime
+  publicLinkPreview
+  deeplinkApps {
+    protocol
+    name
+    installUrl
+    mobile
+  }
   roles {
     id
     identifier

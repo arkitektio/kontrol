@@ -1,0 +1,21 @@
+query MembershipRequests($id: ID!) {
+  organization(id: $id) {
+    id
+    membershipRequests {
+      id
+      reason
+      createdAt
+      user {
+        id
+        username
+        profile {
+          id
+          name
+          avatar {
+            presignedUrl
+          }
+        }
+      }
+    }
+  }
+}
