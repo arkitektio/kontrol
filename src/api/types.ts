@@ -445,6 +445,7 @@ export type ManagementClientFilter = {
   hub?: InputMaybe<Scalars['ID']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   latestReportResolved?: InputMaybe<Scalars['Boolean']['input']>;
+  needsAttention?: InputMaybe<Scalars['Boolean']['input']>;
   organization?: InputMaybe<Scalars['ID']['input']>;
   role?: InputMaybe<ClientRole>;
   search?: InputMaybe<Scalars['String']['input']>;

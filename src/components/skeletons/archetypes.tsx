@@ -349,19 +349,18 @@ export function ProfilePageSkeleton() {
 }
 
 /**
- * The organization dashboard's bento grid — `lg:grid-cols-6` with wide
- * `col-span-4` and narrow `col-span-2` tiles. Bespoke because no other page
- * uses this layout and bending ListPageSkeleton into it would help nobody.
+ * The organization overview at rest: its row of three stat tiles. The blocks
+ * above them (join requests, apps needing attention) only exist while something
+ * is waiting, so they are not part of the skeleton.
  */
 export function DashboardSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <SkeletonPageHeader actions />
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <Skeleton className="h-56 w-full rounded-xl lg:col-span-4" />
-        <Skeleton className="h-56 w-full rounded-xl lg:col-span-2" />
-        <Skeleton className="h-40 w-full rounded-xl lg:col-span-2" />
-        <Skeleton className="h-40 w-full rounded-xl lg:col-span-4" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-xl" />
       </div>
     </div>
   )
