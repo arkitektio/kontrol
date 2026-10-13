@@ -1,4 +1,4 @@
-import { type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { useListDeviceGroupsQuery } from "@/graphql/queries/device_group.generated"
 import { useAddDeviceToGroupMutation, useRemoveDeviceFromGroupMutation } from "@/graphql/mutations/device_group.generated"
 import {
@@ -12,11 +12,13 @@ import {
 } from "../components/ui/context-menu"
 import { FolderPlus, FolderMinus } from "lucide-react"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 
 interface DeviceContextMenuProps {
   device: {
     id: string
     name?: string | null
+    organization: { id: string }
     deviceGroups: { id: string; name: string }[]
   }
   children: ReactNode
@@ -30,7 +32,12 @@ interface DeviceContextMenuProps {
 const REFETCH = ["GetDevice", "GetDeviceGroup", "ListDevices", "ListDeviceGroups"]
 
 export const DeviceContextMenu = ({ device, children, onChanged }: DeviceContextMenuProps) => {
-  const { data: groupsData } = useListDeviceGroupsQuery({})
+  // One menu per device card: only ask for the groups once this one has been opened.
+  const [opened, setOpened] = useState(false)
+  const { data: groupsData, loading: groupsLoading } = useListDeviceGroupsQuery({
+    variables: { filters: { organization: device.organization.id } },
+    skip: !opened,
+  })
   const [addDeviceToGroup] = useAddDeviceToGroupMutation()
   const [removeDeviceFromGroup] = useRemoveDeviceFromGroupMutation()
 
@@ -50,7 +57,7 @@ export const DeviceContextMenu = ({ device, children, onChanged }: DeviceContext
       toast.success(`Added ${deviceLabel} to ${groupName}`)
       onChanged?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add device to group")
+      toastError(err, "Couldn't add the device to the group")
     }
   }
 
@@ -59,16 +66,23 @@ export const DeviceContextMenu = ({ device, children, onChanged }: DeviceContext
       await removeDeviceFromGroup({
         variables: { input: { device: device.id, deviceGroup: groupId } },
         refetchQueries: REFETCH,
+        // The response lists the device's remaining groups, not the one it left.
+        update: (cache) => {
+          cache.evict({
+            id: cache.identify({ __typename: "ManagementDeviceGroup", id: groupId }),
+            fieldName: "devices",
+          })
+        },
       })
       toast.success(`Removed ${deviceLabel} from ${groupName}`)
       onChanged?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to remove device from group")
+      toastError(err, "Couldn't remove the device from the group")
     }
   }
 
   return (
-    <ContextMenu>
+    <ContextMenu onOpenChange={(open) => open && setOpened(true)}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         <ContextMenuSub>
@@ -77,7 +91,9 @@ export const DeviceContextMenu = ({ device, children, onChanged }: DeviceContext
             Add to group
           </ContextMenuSubTrigger>
           <ContextMenuSubContent className="w-48">
-            {availableGroups.length === 0 ? (
+            {groupsLoading && !groupsData ? (
+              <ContextMenuItem disabled>Loading…</ContextMenuItem>
+            ) : availableGroups.length === 0 ? (
               <ContextMenuItem disabled>No other groups</ContextMenuItem>
             ) : (
               availableGroups.map((group) => (

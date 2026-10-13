@@ -45,13 +45,19 @@ import * as z from "zod";
 import { useCreateInviteMutation } from "@/graphql/mutations/invite.generated"
 import { useState } from "react";
 import { Copy, Check, ChevronsUpDown, X } from "lucide-react";
+import { toast } from "sonner";
 import { toastError } from "@/lib/errors";
 
 // `z.coerce` makes the form's input type differ from its parsed output
 // (the number field holds a string until zod coerces it), so the form is typed
 // with both: z.input for field values, z.output for what onSubmit receives.
 const formSchema = z.object({
-  expiresInDays: z.coerce.number().min(1).default(1),
+  expiresInDays: z.coerce
+    .number({ error: "Enter a number of days" })
+    .int("Enter a whole number of days")
+    .min(1, "An invite has to be valid for at least 1 day")
+    .max(365, "An invite can be valid for at most 365 days")
+    .default(1),
   roles: z.array(z.string()).optional(),
   public: z.boolean(),
 });
@@ -75,7 +81,7 @@ export const CreateInviteDialog = ({
   const [copied, setCopied] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
 
-  const [createInvite] = useCreateInviteMutation({
+  const [createInvite, { loading: creating }] = useCreateInviteMutation({
     refetchQueries: ['Organization']
   });
 
@@ -105,12 +111,21 @@ export const CreateInviteDialog = ({
     }).catch((e) => toastError(e, "Couldn't create the invite"));
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (createdInviteToken) {
         const url = `${window.location.origin}/invite/${createdInviteToken}`;
-        navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        // navigator.clipboard requires a secure context (https/localhost).
+        if (!navigator.clipboard) {
+            toast.error("Clipboard is unavailable in this context");
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (e) {
+            toastError(e, "Couldn't copy the invite link");
+        }
     }
   };
 
@@ -141,7 +156,7 @@ export const CreateInviteDialog = ({
                             value={`${window.location.origin}/invite/${createdInviteToken}`}
                         />
                     </div>
-                    <Button type="submit" size="sm" className="px-3" onClick={handleCopy}>
+                    <Button type="button" size="sm" className="px-3" aria-label="Copy invite link" onClick={handleCopy}>
                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                 </div>
@@ -161,7 +176,7 @@ export const CreateInviteDialog = ({
                 <FormItem>
                   <FormLabel>Expires in (days)</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} value={field.value as number | string} />
+                    <Input type="number" min={1} max={365} step={1} {...field} value={field.value as number | string} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -288,7 +303,7 @@ export const CreateInviteDialog = ({
               )}
             />
             <DialogFooter>
-              <Button type="submit">Create Invite</Button>
+              <Button type="submit" disabled={creating}>{creating ? "Creating..." : "Create Invite"}</Button>
             </DialogFooter>
           </form>
         </Form>

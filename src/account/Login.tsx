@@ -51,7 +51,7 @@ export const LoginForm = () => {
         */}
       {nextParam && nextParam !== '/' && (
         <p className="text-muted-foreground rounded-md border px-3 py-2 text-xs">
-          You'll be taken to <code className="text-foreground">{nextParam}</code> after signing in.
+          You'll be taken back to where you left off after signing in.
         </p>
       )}
 

@@ -4,17 +4,12 @@ import { useListDevicesQuery } from "@/graphql/queries/device.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { PageHeader } from "../components/PageHeader"
-import { Laptop, Smartphone, Tablet } from "lucide-react"
+import { Smartphone } from "lucide-react"
 import { DeviceContextMenu } from "./DeviceContextMenu"
+import { DeviceIcon } from "./DeviceIcon"
+import { ListEmpty } from "../components/ListEmpty"
 import { SearchInput } from "../components/SearchInput"
 import { LoadMore } from "../components/LoadMore"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "../components/ui/empty"
 import { toastError } from "@/lib/errors"
 
 import { QueryError } from "@/components/status"
@@ -72,23 +67,16 @@ export default function Devices() {
   const deviceHref = (device: { id: string; organization: { id: string } }) =>
     `/organization/${orgId ?? device.organization.id}/devices/${device.id}`
 
-  // Helper function to get device icon
-  const getDeviceIcon = (name: string | undefined | null) => {
-    const lowerName = name?.toLowerCase() || ""
-    if (lowerName.includes("phone") || lowerName.includes("mobile")) {
-      return <Smartphone className="h-5 w-5" />
-    } else if (lowerName.includes("tablet") || lowerName.includes("ipad")) {
-      return <Tablet className="h-5 w-5" />
-    }
-    return <Laptop className="h-5 w-5" />
-  }
-
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">
       <PageHeader
         icon={Smartphone}
         title="Devices"
-        description="Hardware registered with this organization."
+        description={
+          orgId
+            ? "Hardware registered with this organization."
+            : "Hardware registered with any of your organizations."
+        }
       />
 
       <SearchInput
@@ -110,7 +98,7 @@ export default function Devices() {
                     {device.name}
                   </CardTitle>
                   <div className="text-muted-foreground">
-                      {getDeviceIcon(device.name)}
+                      <DeviceIcon name={device.name} className="h-5 w-5" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -138,19 +126,12 @@ export default function Devices() {
       </div>
 
       {devices.length === 0 ? (
-        <Empty className="border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Smartphone />
-            </EmptyMedia>
-            <EmptyTitle>{search ? "No matching devices" : "No devices yet"}</EmptyTitle>
-            <EmptyDescription>
-              {search
-                ? `Nothing matches “${search}”. Try a different name.`
-                : "Devices appear here once an app registers from them."}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <ListEmpty
+          icon={Smartphone}
+          search={search}
+          title="No devices yet"
+          description="Devices appear here once an app registers from them."
+        />
       ) : (
         <LoadMore hasMore={hasMore} loading={loadingMore} onLoadMore={loadMore} />
       )}

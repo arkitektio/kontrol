@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom"
 import { useDetailReleaseQuery } from "@/graphql/queries/release.generated"
 import { ClientLabel } from "../components/ClientLabel"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Link } from "react-router-dom"
 
@@ -31,8 +31,10 @@ export default function Release() {
             <AvatarFallback>{release.app.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="text-2xl">{release.app.identifier} {release.version}</CardTitle>
-            <p className="text-muted-foreground">{release.app.identifier}</p>
+            <h1 className="text-2xl leading-none font-semibold">{release.app.identifier} {release.version}</h1>
+            <Link to={`/apps/${release.app.id}`} className="text-muted-foreground hover:underline">
+              {release.app.identifier}
+            </Link>
           </div>
         </CardHeader>
         <CardContent>

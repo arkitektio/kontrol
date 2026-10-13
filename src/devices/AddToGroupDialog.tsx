@@ -17,19 +17,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select"
+import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 
 interface AddToGroupDialogProps {
   deviceId: string
+  /** The device's organization: only its groups are offered. */
+  organizationId: string
   currentGroups?: { id: string; name: string }[]
   onSuccess?: () => void
 }
 
-export const AddToGroupDialog = ({ deviceId, currentGroups = [], onSuccess }: AddToGroupDialogProps) => {
+export const AddToGroupDialog = ({ deviceId, organizationId, currentGroups = [], onSuccess }: AddToGroupDialogProps) => {
   const [open, setOpen] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState("")
   const [isAdding, setIsAdding] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { data: groupsData } = useListDeviceGroupsQuery({})
+  const { data: groupsData, loading: groupsLoading } = useListDeviceGroupsQuery({
+    variables: { filters: { organization: organizationId } },
+    skip: !open,
+  })
   const [addDeviceToGroup] = useAddDeviceToGroupMutation()
 
   const deviceGroups = groupsData?.deviceGroups || []
@@ -39,10 +45,10 @@ export const AddToGroupDialog = ({ deviceId, currentGroups = [], onSuccess }: Ad
   )
 
   const handleAddToGroup = async () => {
-    if (!selectedGroupId) return
+    if (!selectedGroupId || isAdding) return
+    const groupName = deviceGroups.find(group => group.id === selectedGroupId)?.name
 
     setIsAdding(true)
-    setError(null)
     try {
       await addDeviceToGroup({
         variables: { 
@@ -51,21 +57,30 @@ export const AddToGroupDialog = ({ deviceId, currentGroups = [], onSuccess }: Ad
             deviceGroup: selectedGroupId 
           }
         },
-        refetchQueries: ['GetDevice', 'GetDeviceGroup', 'ListDeviceGroups']
+        // The response carries the device's groups (with their device ids), so the
+        // cache is already current; this just holds the dialog until the page shows it.
+        refetchQueries: ['GetDevice'],
+        awaitRefetchQueries: true,
       })
+      toast.success(groupName ? `Added to ${groupName}` : "Added to group")
       setOpen(false)
-      setSelectedGroupId("")
       onSuccess?.()
     } catch (err) {
-      console.error("Failed to add device to group:", err)
-      setError(err instanceof Error ? err.message : "Failed to add device to group")
+      toastError(err, "Couldn't add the device to the group")
     } finally {
       setIsAdding(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (isAdding) return
+        if (next) setSelectedGroupId("")
+        setOpen(next)
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Add to Group
@@ -79,9 +94,15 @@ export const AddToGroupDialog = ({ deviceId, currentGroups = [], onSuccess }: Ad
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          {availableGroups.length === 0 ? (
+          {groupsLoading && !groupsData ? (
             <div className="text-sm text-muted-foreground text-center py-6">
-              All device groups already contain this device or no groups exist.
+              Loading groups...
+            </div>
+          ) : availableGroups.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-6">
+              {deviceGroups.length === 0
+                ? "This organization has no device groups yet."
+                : "This device is already in every group."}
             </div>
           ) : (
             <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
@@ -97,14 +118,9 @@ export const AddToGroupDialog = ({ deviceId, currentGroups = [], onSuccess }: Ad
               </SelectContent>
             </Select>
           )}
-          {error && (
-            <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
-              {error}
-            </div>
-          )}
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isAdding}>
             Cancel
           </Button>
           <Button

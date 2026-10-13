@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button"
 import { Separator } from "../components/ui/separator"
 import { UpdateAliasSheet } from "./UpdateAliasSheet"
 import { DeleteAliasDialog } from "./DeleteAliasDialog"
+import { AdminOnly } from "../components/AdminOnly"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -54,6 +55,7 @@ export default function InstanceAlias() {
           <h1 className="text-3xl font-bold tracking-tight">Instance Alias</h1>
           <p className="text-muted-foreground mt-1">Service endpoint configuration</p>
         </div>
+        <AdminOnly orgId={alias.organization?.id} note="Only organization admins can edit or delete an alias.">
         <div className="flex items-center gap-2">
           <UpdateAliasSheet 
             alias={alias} 
@@ -69,6 +71,7 @@ export default function InstanceAlias() {
             }}
           />
         </div>
+        </AdminOnly>
       </div>
 
       <Card>

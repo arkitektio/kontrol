@@ -21,6 +21,9 @@ import {
   SelectValue,
 } from "../components/ui/select"
 import { Edit } from "lucide-react"
+import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
+import { HOST_ERROR, PORT_ERROR, parsePort } from "./aliasValidation"
 
 interface UpdateAliasSheetProps {
   alias: InstanceAliasFragment
@@ -50,9 +53,15 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
   }, [open, alias])
 
   const handleUpdate = async () => {
+    if (isUpdating) return
     const isMesh = kind === "mesh"
-    if ((!host && !isMesh) || !port || !kind) {
-      setError("Please fill in all required fields")
+    const portNumber = parsePort(port)
+    if (!isMesh && !host.trim()) {
+      setError(HOST_ERROR)
+      return
+    }
+    if (portNumber === null) {
+      setError(PORT_ERROR)
       return
     }
 
@@ -63,26 +72,29 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
         variables: { 
           input: { 
             id: alias.id,
-            host: isMesh ? undefined : host,
-            port: parseInt(port, 10),
-            path: path || undefined,
+            host: isMesh ? undefined : host.trim(),
+            port: portNumber,
+            path: path.trim() || undefined,
             kind,
           }
         },
-        refetchQueries: ['DetailInstanceAlias', 'ListInstanceAlias']
+        // The response updates the cached alias (and with it any list); the detail
+        // page is the one mounted, so wait for it before closing.
+        refetchQueries: ['DetailInstanceAlias'],
+        awaitRefetchQueries: true,
       })
+      toast.success("Alias updated")
       setOpen(false)
       onSuccess?.()
     } catch (err) {
-      console.error("Failed to update alias:", err)
-      setError(err instanceof Error ? err.message : "Failed to update alias")
+      toastError(err, "Couldn't update the alias")
     } finally {
       setIsUpdating(false)
     }
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(next) => !isUpdating && setOpen(next)}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
           <Edit className="h-4 w-4 mr-2" />
@@ -96,6 +108,13 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
             Modify the endpoint configuration for this alias.
           </SheetDescription>
         </SheetHeader>
+        <form
+          className="flex flex-1 flex-col"
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleUpdate()
+          }}
+        >
         <div className="space-y-4 py-6">
           {kind !== "mesh" && (
             <div className="space-y-2">
@@ -154,19 +173,20 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
           </div>
 
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
+            <div className="text-sm text-destructive bg-destructive/10 p-2 rounded" role="alert">
               {error}
             </div>
           )}
         </div>
         <SheetFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isUpdating}>
             Cancel
           </Button>
-          <Button onClick={handleUpdate} disabled={isUpdating}>
+          <Button type="submit" disabled={isUpdating}>
             {isUpdating ? "Updating..." : "Update"}
           </Button>
         </SheetFooter>
+        </form>
       </SheetContent>
     </Sheet>
   )

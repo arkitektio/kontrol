@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { QueryError, ResourceNotFound } from "@/components/status"
 import { SettingsStackSkeleton } from "@/components/skeletons"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
 import { useClientsQuery } from "@/graphql/queries/client.generated"
@@ -39,11 +40,12 @@ export default function AdminPage() {
   // is an admin's job, and this is the page they'll be on.
   const {
     data: unhealthyData,
+    loading: unhealthyLoading,
     error: unhealthyError,
     refetch: refetchUnhealthy,
   } = useClientsQuery({
     variables: {
-      filters: { organization: orgId, functional: false, latestReportResolved: false },
+      filters: { organization: orgId, needsAttention: true, latestReportResolved: false },
       ordering: [{ createdAt: Ordering.Desc }],
       pagination: { limit: 8 },
     },
@@ -91,6 +93,9 @@ export default function AdminPage() {
           resource="app reports"
           onRetry={() => refetchUnhealthy()}
         />
+      ) : unhealthyLoading && !unhealthyData ? (
+        // Not the green card: "nothing to triage" isn't known until the query answers.
+        <Skeleton className="h-24 w-full rounded-xl" aria-busy="true" aria-label="Loading app reports" />
       ) : unhealthyClients.length > 0 ? (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardHeader className="flex flex-row items-center justify-between gap-4">

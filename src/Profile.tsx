@@ -10,22 +10,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useMediaUpload } from "@/hooks/use-upload";
-import { Pen, Camera, Image as ImageIcon } from "lucide-react";
+import { Pen, Camera, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errors";
 
-import { ResourceNotFound } from "@/components/status";
+import { QueryError, ResourceNotFound } from "@/components/status";
 
 export default function Profile() {
-  const { data, loading, refetch } = useMeQuery();
-  const [updateProfile] = useUpdateProfileMutation();
-  const [createProfile] = useCreateProfileMutation();
+  const { data, loading, error, refetch } = useMeQuery();
+  const [updateProfile, { loading: updating }] = useUpdateProfileMutation();
+  const [createProfile, { loading: creating }] = useCreateProfileMutation();
   const upload = useMediaUpload();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
+  const [uploading, setUploading] = useState<"avatar" | "banner" | null>(null);
   
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -37,6 +38,10 @@ export default function Profile() {
 
   const user = data?.me;
 
+  if (error && !user) {
+    return <QueryError error={error} resource="profile" onRetry={() => refetch()} />;
+  }
+
   if (!user) {
     return <ResourceNotFound resource="user" />;
   }
@@ -44,6 +49,7 @@ export default function Profile() {
   const profile = user.profile;
 
   const handleCreateProfile = async () => {
+      if (creating) return;
       try {
           await createProfile({
               variables: {
@@ -54,7 +60,7 @@ export default function Profile() {
                   }
               }
           });
-          toast.success("Profile created!");
+          toast.success("Profile created");
           refetch();
       } catch (e) {
           toastError(e, "Couldn't create your profile");
@@ -70,7 +76,9 @@ export default function Profile() {
                       <CardDescription>You don't have a profile yet.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                      <Button onClick={handleCreateProfile}>Create Profile</Button>
+                      <Button onClick={handleCreateProfile} disabled={creating}>
+                          {creating ? "Creating..." : "Create Profile"}
+                      </Button>
                   </CardContent>
               </Card>
           </div>
@@ -79,7 +87,8 @@ export default function Profile() {
 
   const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || uploading) return;
+    setUploading("avatar");
     try {
         const key = await upload(file);
         await updateProfile({
@@ -94,13 +103,16 @@ export default function Profile() {
         refetch();
     } catch (e) {
         toastError(e, "Couldn't upload the avatar");
+    } finally {
+        setUploading(null);
     }
     e.target.value = "";
   };
 
   const handleBannerSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || uploading) return;
+    setUploading("banner");
     try {
         const key = await upload(file);
         await updateProfile({
@@ -115,6 +127,8 @@ export default function Profile() {
         refetch();
     } catch (e) {
         toastError(e, "Couldn't upload the banner");
+    } finally {
+        setUploading(null);
     }
     e.target.value = "";
   };
@@ -126,6 +140,7 @@ export default function Profile() {
   };
 
   const saveProfile = async () => {
+      if (updating) return;
       try {
           await updateProfile({
               variables: {
@@ -158,10 +173,10 @@ export default function Profile() {
                  )}
                  
                  {/* Banner Edit Button */}
-                 <div className="absolute top-4 right-4 opacity-0 group-hover/banner:opacity-100 focus-within:opacity-100 transition-opacity">
-                      <Button type="button" variant="secondary" size="sm" aria-label="Change banner image" onClick={() => bannerInputRef.current?.click()}>
-                          <ImageIcon className="w-4 h-4 mr-2" />
-                          Change Banner
+                 <div className={`absolute top-4 right-4 group-hover/banner:opacity-100 focus-within:opacity-100 transition-opacity ${uploading === "banner" ? "opacity-100" : "opacity-0"}`}>
+                      <Button type="button" variant="secondary" size="sm" aria-label="Change banner image" disabled={uploading !== null} onClick={() => bannerInputRef.current?.click()}>
+                          {uploading === "banner" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />}
+                          {uploading === "banner" ? "Uploading..." : "Change Banner"}
                       </Button>
                  </div>
             </div>
@@ -169,7 +184,7 @@ export default function Profile() {
             {/* Avatar & Info Overlay */}
             <div className="container mx-auto px-6 absolute -bottom-16 left-0 flex flex-row gap-6 items-end w-full">
                 {/* Avatar */}
-                <button type="button" aria-label="Change avatar" className="relative group/avatar w-40 h-40 cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" onClick={() => avatarInputRef.current?.click()}>
+                <button type="button" aria-label="Change avatar" aria-busy={uploading === "avatar"} disabled={uploading !== null} className="relative group/avatar w-40 h-40 cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" onClick={() => avatarInputRef.current?.click()}>
                     <div className="w-40 h-40 rounded-full ring-4 ring-background shadow-xl overflow-hidden bg-muted flex items-center justify-center text-4xl font-semibold select-none bg-white dark:bg-zinc-950">
                         <Avatar className="h-full w-full">
                             <AvatarImage src={profile.avatar?.presignedUrl || undefined} className="object-cover" />
@@ -177,8 +192,8 @@ export default function Profile() {
                         </Avatar>
                     </div>
                     {/* Overlay */}
-                    <div className="absolute inset-0 rounded-full opacity-0 group-hover/avatar:opacity-100 group-focus-visible/avatar:opacity-100 transition-opacity bg-black/50 flex items-center justify-center text-xs text-white font-medium backdrop-blur-sm z-10">
-                        <Camera className="w-6 h-6 mb-1" />
+                    <div className={`absolute inset-0 rounded-full group-hover/avatar:opacity-100 group-focus-visible/avatar:opacity-100 transition-opacity bg-black/50 flex items-center justify-center text-xs text-white font-medium backdrop-blur-sm z-10 ${uploading === "avatar" ? "opacity-100" : "opacity-0"}`}>
+                        {uploading === "avatar" ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6 mb-1" />}
                     </div>
                  </button>
 
@@ -212,15 +227,17 @@ export default function Profile() {
                     </Button>
                 ) : (
                     <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
-                        <Button size="sm" onClick={saveProfile}>Save Changes</Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)} disabled={updating}>Cancel</Button>
+                        <Button type="submit" form="profile-form" size="sm" disabled={updating}>
+                            {updating ? "Saving..." : "Save Changes"}
+                        </Button>
                     </div>
                 )}
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
              {isEditing ? (
-                 <div className="space-y-4">
+                 <form id="profile-form" className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveProfile(); }}>
                      <div className="space-y-2">
                          <label htmlFor="profile-name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Display Name</label>
                          <Input id="profile-name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Display Name" />
@@ -229,7 +246,7 @@ export default function Profile() {
                          <label htmlFor="profile-bio" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Bio</label>
                          <Textarea id="profile-bio" value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Tell us about yourself" className="resize-none min-h-[100px]" />
                      </div>
-                 </div>
+                 </form>
              ) : (
                  <div className="space-y-4">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -265,6 +282,7 @@ export default function Profile() {
               <Switch
                 id="profile-public-link-preview"
                 checked={profile.publicLinkPreview}
+                disabled={updating}
                 onCheckedChange={async (next) => {
                   try {
                     await updateProfile({ variables: { input: { id: profile.id, publicLinkPreview: next } } });

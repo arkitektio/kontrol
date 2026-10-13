@@ -70,7 +70,9 @@ export function AuthenticatedRoute ({ children }) {
   if (status.isAuthenticated) {
     return children
   } else {
-    return <Navigate to={`${URLs.LOGIN_URL}?next=${encodeURIComponent(location.pathname + location.search)}`} />
+    // `replace`, so Back from the login form leaves instead of bouncing here
+    // again; the hash rides along so an anchored deep link survives the detour.
+    return <Navigate replace to={`${URLs.LOGIN_URL}?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`} />
   }
 }
 

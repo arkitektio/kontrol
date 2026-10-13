@@ -1,10 +1,16 @@
 import { useState } from "react"
-import { useParams } from "react-router-dom"
+import { absoluteTime, timeAgo } from "@/lib/time"
+import { useNavigate, useParams } from "react-router-dom"
+import { useLayersQuery } from "@/graphql/queries/layer.generated"
+import { useDeleteMachineMutation } from "@/graphql/mutations/layer.generated"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
+import { AdminOnly } from "@/components/AdminOnly"
+import { toastError } from "@/lib/errors"
 import { useDetailMachineQuery } from "@/graphql/queries/machine.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
-import { Monitor, Globe, Copy, Check } from "lucide-react"
+import { Monitor, Globe, Copy, Check, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -53,8 +59,27 @@ function MagicDnsName({ name }: { name: string }) {
   )
 }
 
+/** `tag:app-*` / `tag:hub-*` mark the node or key of an app or hub; lok manages those. */
+const isSidecar = (tags?: readonly string[] | null) =>
+  (tags ?? []).some((t) => t.startsWith("tag:app-") || t.startsWith("tag:hub-"))
+
 export default function Machine() {
-  const { id } = useParams<{ id: string }>()
+  const { id, orgId } = useParams<{ id: string; orgId: string }>()
+  const navigate = useNavigate()
+  const [removeOpen, setRemoveOpen] = useState(false)
+
+  // The mesh is a per-organization singleton; removal is addressed by it.
+  const { data: layersData } = useLayersQuery({
+    variables: { filters: { organization: orgId || undefined } },
+    skip: !orgId,
+  })
+  const meshId = layersData?.layers?.[0]?.id
+  const [deleteMachine] = useDeleteMachineMutation({
+    update: (cache) => {
+      cache.evict({ id: "ROOT_QUERY", fieldName: "layer" })
+      cache.gc()
+    },
+  })
 
   const { data, loading, error } = useDetailMachineQuery({
     variables: {
@@ -70,8 +95,46 @@ export default function Machine() {
 
   const machine = data.machine
 
+  const handleRemove = async () => {
+    if (!meshId) return false
+    try {
+      await deleteMachine({ variables: { input: { layerId: meshId, machineId: machine.id } } })
+      toast.success(`Removed ${machine.name} from the mesh`)
+      navigate(`/organization/${orgId}/mesh`)
+    } catch (e) {
+      toastError(e, "Couldn't remove the machine")
+      return false
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
+      {orgId && (
+        <div className="flex justify-end">
+          {isSidecar(machine.tags) ? (
+            <p className="text-xs text-muted-foreground">
+              This is the node of an app or hub. To remove it, reject the client or delete the hub.
+            </p>
+          ) : (
+            <AdminOnly orgId={orgId} note="Only organization admins can remove a machine.">
+              <Button variant="destructive" size="sm" onClick={() => setRemoveOpen(true)} disabled={!meshId}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remove from mesh
+              </Button>
+            </AdminOnly>
+          )}
+          <ConfirmActionDialog
+            open={removeOpen}
+            onOpenChange={setRemoveOpen}
+            title={`Remove ${machine.name} from the mesh?`}
+            description="It is disconnected within seconds and loses its address. To come back it has to join again with a new auth key."
+            confirmLabel="Remove machine"
+            pendingLabel="Removing..."
+            destructive
+            onConfirm={handleRemove}
+          />
+        </div>
+      )}
       <Card>
         <CardHeader className="flex flex-col gap-4 border-b">
           <div className="flex items-center gap-4">
@@ -89,6 +152,11 @@ export default function Machine() {
                 {/* Only flag when authorization is KNOWN false — null means "unknown", not unauthorized. */}
                 {machine.authorized === false && <Badge variant="destructive">Unauthorized</Badge>}
               </CardTitle>
+              {machine.authorized === false && (
+                <p className="text-sm text-muted-foreground">
+                  This machine has joined but is not authorized yet, so it cannot reach the others.
+                </p>
+              )}
               {machine.magicDnsName && <p className="text-sm text-muted-foreground">MagicDNS name</p>}
             </div>
           </div>
@@ -109,11 +177,11 @@ export default function Machine() {
                   <DetailRow label="Operating system" value={machine.os} />
                   <DetailRow
                     label="Last seen"
-                    value={machine.lastSeen ? new Date(machine.lastSeen).toLocaleString() : "Never"}
+                    value={machine.connected ? "Now" : machine.lastSeen ? `${timeAgo(machine.lastSeen)} (${absoluteTime(machine.lastSeen)})` : "Never"}
                   />
                   <DetailRow
                     label="Key expiry"
-                    value={machine.keyExpiry ? new Date(machine.keyExpiry).toLocaleString() : null}
+                    value={machine.keyExpiry ? `${timeAgo(machine.keyExpiry)} (${absoluteTime(machine.keyExpiry)})` : null}
                   />
                   {/* null = unknown -> row hidden; only show a definite Yes/No. */}
                   <DetailRow

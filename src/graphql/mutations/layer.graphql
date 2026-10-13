@@ -19,3 +19,11 @@ mutation CreateIonscaleAuthKey($input: CreateIonscaleAuthKeyInput!) {
     ...IonscaleAuthKey
   }
 }
+
+mutation DeleteIonscaleAuthKey($input: DeleteIonscaleAuthKeyInput!) {
+  deleteIonscaleAuthKey(input: $input)
+}
+
+mutation DeleteMachine($input: DeleteMachineInput!) {
+  deleteMachine(input: $input)
+}

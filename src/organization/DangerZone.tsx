@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
+import { useMeQuery } from "@/graphql/queries/me.generated"
 import { useDeleteOrganizationMutation, useChangeOrganizationOwnerMutation } from "@/graphql/mutations/organization.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
@@ -12,14 +13,12 @@ import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { PageHeader } from "../components/PageHeader"
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "../components/ui/alert-dialog"
 import { Input } from "../components/ui/input"
 import {
@@ -44,8 +43,9 @@ export default function DangerZone() {
   const navigate = useNavigate()
   const [confirmText, setConfirmText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [selectedNewOwner, setSelectedNewOwner] = useState("")
-  const [isChangingOwner, setIsChangingOwner] = useState(false)
+  const [ownerOpen, setOwnerOpen] = useState(false)
   const [revokeOpen, setRevokeOpen] = useState(false)
   
   const { data, loading, error } = useOrganizationQuery({
@@ -53,10 +53,20 @@ export default function DangerZone() {
     skip: !orgId,
   })
 
+  const { data: meData } = useMeQuery()
+
+  // Me must come back without this org before we navigate away, or the shell
+  // would briefly treat the deleted organization as still being ours.
   const [deleteOrganization] = useDeleteOrganizationMutation({
-    refetchQueries: ['ListOrganizations', "Me"]
+    refetchQueries: ['ListOrganizations', "Me"],
+    awaitRefetchQueries: true,
   })
-  const [changeOwner] = useChangeOrganizationOwnerMutation()
+  // The mutation returns the organization, so `amIOwner` updates in the cache
+  // and this page re-renders as the admin (or member) view without a reload.
+  const [changeOwner] = useChangeOrganizationOwnerMutation({
+    refetchQueries: ["Me"],
+    awaitRefetchQueries: true,
+  })
   const [revokeSessions] = useRevokeOrganizationSessionsMutation()
 
   if (loading) return <SettingsStackSkeleton header="pageHeader" cards={3} rows={2} />
@@ -66,9 +76,11 @@ export default function DangerZone() {
   const org = data.organization
   // `name` is optional; the handle always exists, so it's what you type to confirm.
   const confirmName = org.name || org.slug
+  // This card is owner-only, so the current owner is the signed-in user.
+  const ownerCandidates = org.memberships.filter((m) => m.user.id !== meData?.me?.id)
 
   const handleDeleteOrganization = async () => {
-    if (confirmText !== confirmName) {
+    if (confirmText !== confirmName || isDeleting) {
       return
     }
 
@@ -81,7 +93,8 @@ export default function DangerZone() {
           }
         }
       })
-      navigate("/")
+      toast.success(`${confirmName} was deleted`)
+      navigate("/home")
     } catch (err) {
       toastError(err, "Couldn't delete the organization")
       setIsDeleting(false)
@@ -90,10 +103,10 @@ export default function DangerZone() {
 
   const handleChangeOwnership = async () => {
     if (!selectedNewOwner) {
-      return
+      return false
     }
+    const newOwner = ownerCandidates.find((m) => m.user.id === selectedNewOwner)
 
-    setIsChangingOwner(true)
     try {
       await changeOwner({
         variables: {
@@ -103,12 +116,11 @@ export default function DangerZone() {
           },
         }
       })
-      setIsChangingOwner(false)
       setSelectedNewOwner("")
-      window.location.reload()
+      toast.success(`${newOwner?.user.username ?? "The selected member"} now owns ${confirmName}`)
     } catch (err) {
       toastError(err, "Couldn't change the owner")
-      setIsChangingOwner(false)
+      return false
     }
   }
 
@@ -155,7 +167,7 @@ export default function DangerZone() {
         </div>
       </CardHeader>
       <CardContent>
-        <Button variant="outline" onClick={() => setRevokeOpen(true)}>
+        <Button variant="destructive" onClick={() => setRevokeOpen(true)}>
           Revoke all sessions
         </Button>
         <ConfirmActionDialog
@@ -241,26 +253,38 @@ export default function DangerZone() {
             Select a new owner for the organization. The new owner will have full control.
           </p>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="border-yellow-500/50 hover:bg-yellow-500/5">
-                Change Owner
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Change Organization Ownership</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Select a new owner for {confirmName}. The new owner will have full control of the organization.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-4 py-4">
+          <Button
+            variant="outline"
+            className="border-yellow-500/50 hover:bg-yellow-500/5"
+            onClick={() => setOwnerOpen(true)}
+          >
+            Change Owner
+          </Button>
+          <ConfirmActionDialog
+            open={ownerOpen}
+            onOpenChange={(open) => {
+              setOwnerOpen(open)
+              if (!open) setSelectedNewOwner("")
+            }}
+            title="Change Organization Ownership"
+            description={`Select a new owner for ${confirmName}. The new owner will have full control of the organization, and you will no longer be able to change these settings.`}
+            confirmLabel="Change Owner"
+            pendingLabel="Changing..."
+            disabled={!selectedNewOwner}
+            onConfirm={handleChangeOwnership}
+          >
+            <div className="space-y-4 py-4">
+              {ownerCandidates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  There is no other member to hand the organization to. Invite someone first.
+                </p>
+              ) : (
                 <Select value={selectedNewOwner} onValueChange={setSelectedNewOwner}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a member to transfer ownership to" />
                   </SelectTrigger>
                   <SelectContent>
-                    {org.memberships.map(membership => (
+                    {ownerCandidates.map(membership => (
                       <SelectItem key={membership.id} value={membership.user.id}>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-5 w-5">
@@ -273,18 +297,9 @@ export default function DangerZone() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setSelectedNewOwner("")}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleChangeOwnership}
-                  disabled={!selectedNewOwner || isChangingOwner}
-                >
-                  {isChangingOwner ? "Changing..." : "Change Owner"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              )}
+            </div>
+          </ConfirmActionDialog>
         </CardContent>
       </Card>
 
@@ -311,12 +326,17 @@ export default function DangerZone() {
             <li>Delete all clients and their configurations</li>
           </ul>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="lg">
-                Delete Organization
-              </Button>
-            </AlertDialogTrigger>
+          <Button variant="destructive" size="lg" onClick={() => setDeleteOpen(true)}>
+            Delete Organization
+          </Button>
+          <AlertDialog
+            open={deleteOpen}
+            onOpenChange={(open) => {
+              if (isDeleting) return
+              setDeleteOpen(open)
+              if (!open) setConfirmText("")
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete "{confirmName}"?</AlertDialogTitle>
@@ -324,28 +344,38 @@ export default function DangerZone() {
                   This action cannot be undone. To confirm, type the organization name below:
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-mono bg-muted px-3 py-2 rounded text-foreground">
-                    {confirmName}
-                  </p>
-                  <Input
-                    placeholder="Type organization name to confirm"
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                  />
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleDeleteOrganization()
+                }}
+              >
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-mono bg-muted px-3 py-2 rounded text-foreground">
+                      {confirmName}
+                    </p>
+                    <Input
+                      placeholder="Type organization name to confirm"
+                      aria-label="Organization name"
+                      autoComplete="off"
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      disabled={isDeleting}
+                    />
+                  </div>
                 </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setConfirmText("")}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteOrganization}
-                  disabled={confirmText !== confirmName || isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isDeleting ? "Deleting..." : "Delete Organization"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
+                <AlertDialogFooter>
+                  <AlertDialogCancel type="button" disabled={isDeleting}>Cancel</AlertDialogCancel>
+                  <Button
+                    type="submit"
+                    variant="destructive"
+                    disabled={confirmText !== confirmName || isDeleting}
+                  >
+                    {isDeleting ? "Deleting..." : "Delete Organization"}
+                  </Button>
+                </AlertDialogFooter>
+              </form>
             </AlertDialogContent>
           </AlertDialog>
         </CardContent>

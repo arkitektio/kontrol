@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom"
 import { useDeteilScopeQuery } from "@/graphql/queries/scope.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
+import { Command } from "../components/Command"
 import { ServiceInstanceCard } from "../components/ServiceInstanceCard"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -24,7 +25,7 @@ export default function Scope() {
     <div className="container mx-auto py-10 space-y-6">
         <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
               <div>
-                <CardTitle className="text-2xl">{scope.identifier || "Unnamed Scope"}</CardTitle>
+                <h1 className="text-2xl leading-none font-semibold">{scope.identifier || "Unnamed Scope"}</h1>
                 <div className="flex items-center gap-2 mt-1">
                     <span className="text-muted-foreground">{scope.description}</span>
                 </div>
@@ -43,9 +44,9 @@ export default function Scope() {
                  <h3 className="font-semibold text-lg">Details</h3>
                  <Card>
                     <CardContent className="pt-6 grid gap-2">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center gap-4">
                             <span className="font-medium">ID</span>
-                            <span className="text-muted-foreground font-mono text-sm">{scope.id}</span>
+                            <Command label="Copy id">{scope.id}</Command>
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium">Identifier</span>

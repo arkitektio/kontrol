@@ -7,7 +7,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle, Check, Pencil, Trash2, X } from 'lucide-react'
+import { toast } from 'sonner'
 import * as allauth from '../lib/allauth'
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog'
+import { toastError } from '@/lib/errors'
 
 export async function loader () {
   const resp = await allauth.getAuthenticators()
@@ -90,6 +93,7 @@ export default function ListWebAuthn () {
       .filter(authenticator => authenticator.type === allauth.AuthenticatorType.WEBAUTHN))
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Key | null>(null)
 
   // Apply the change locally first and roll it back if the server disagrees —
   // renaming a key should not cost a round-trip of blank UI.
@@ -113,11 +117,24 @@ export default function ListWebAuthn () {
     setFetching(false)
   }
 
+  // Not optimistic: the row stays until the server confirms, behind the open dialog.
   async function deleteKey (key: Key) {
-    await optimisticSetKeys(keys.filter((k) => k.id !== key.id), async () => {
+    setError(null)
+    try {
       const resp = await allauth.deleteWebAuthnCredential([key.id])
-      return (resp.status === 200)
-    })
+      if (resp.status === 200) {
+        setKeys(keys.filter((k) => k.id !== key.id))
+        toast.success('Key deleted')
+        return
+      }
+      // 401: reauthentication required — the auth context routes to that flow.
+      if (resp.status !== 401) {
+        toastError(resp.errors?.[0]?.message ?? `The server answered ${resp.status}`, "Couldn't delete the key")
+      }
+    } catch (e) {
+      toastError(e, "Couldn't delete the key")
+    }
+    return false
   }
 
   async function onSave (key: Key, name: string) {
@@ -171,7 +188,7 @@ export default function ListWebAuthn () {
                     onCancel={() => setEditId(null)}
                     onSave={(name) => onSave(key, name)}
                     onEdit={() => setEditId(key.id)}
-                    onDelete={() => deleteKey(key)}
+                    onDelete={() => setDeleteTarget(key)}
                   />
                 ))}
               </TableBody>
@@ -187,6 +204,21 @@ export default function ListWebAuthn () {
           </Button>
         </CardFooter>
       </Card>
+
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={`Delete "${deleteTarget?.name ?? ''}"?`}
+        description={
+          deleteTarget?.is_passwordless
+            ? 'You will no longer be able to sign in with this passkey. This cannot be undone, but you can register it again.'
+            : 'You will no longer be able to use this security key to sign in. This cannot be undone, but you can register it again.'
+        }
+        confirmLabel='Delete key'
+        pendingLabel='Deleting...'
+        destructive
+        onConfirm={() => deleteTarget && deleteKey(deleteTarget)}
+      />
     </div>
   )
 }

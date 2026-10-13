@@ -4,12 +4,13 @@ import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Button } from "../components/ui/button"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { CreateInviteDialog } from "../components/CreateInviteDialog"
 import { Badge } from "../components/ui/badge"
 import { PageHeader } from "../components/PageHeader"
 import { Search, ShieldCheck, UserPlus, Users } from "lucide-react"
-import { Input } from "../components/ui/input"
+import { SearchInput } from "../components/SearchInput"
+import { LoadMore } from "../components/LoadMore"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty"
 
 import { QueryError } from "@/components/status"
@@ -26,20 +27,14 @@ export default function Memberships() {
   // mutations use. Deliberately not `org.amIOwner`: an admin who isn't the owner
   // may resolve role requests, so they get the link too.
   const { isAdmin: mayAdminister } = useIsOrgAdmin(orgId)
+  // SearchInput debounces; this is the value it last reported (untrimmed, so
+  // it doesn't fight the box over trailing spaces).
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const debouncedSearch = search.trim()
   // "Load more" grows the limit rather than paging with fetchMore: without a
   // merge typePolicy each offset would land in its own cache entry.
   const [limit, setLimit] = useState(PAGE_SIZE)
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search.trim())
-      setLimit(PAGE_SIZE)
-    }, 250)
-    return () => clearTimeout(t)
-  }, [search])
-  
   const { data: orgData } = useOrganizationQuery({
     variables: { id: orgId! },
     skip: !orgId,
@@ -65,6 +60,8 @@ export default function Memberships() {
   const org = orgData?.organization
   // lok lets only the owner create invites.
   const mayInvite = Boolean(org?.amIOwner)
+  // The list only carries role identifiers; the organization has their descriptions.
+  const roleDescriptions = new Map(org?.roles.map((r) => [r.id, r.description]))
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">
@@ -90,17 +87,16 @@ export default function Memberships() {
         />
 
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          aria-label="Search members"
-          placeholder="Search by username"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <SearchInput
+        value={search}
+        onChange={(value) => {
+          setSearch(value)
+          setLimit(PAGE_SIZE)
+        }}
+        placeholder="Search by username"
+        delay={250}
+        className="sm:max-w-sm"
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {memberships.map((membership) => (
@@ -119,7 +115,7 @@ export default function Memberships() {
               </CardHeader>
               <CardContent>
                   <div className="flex flex-wrap gap-2">
-                     {membership.roles.map(r => <Badge variant="secondary" key={r.id}>{r.identifier}</Badge>)}
+                     {membership.roles.map(r => <Badge variant="secondary" key={r.id} title={roleDescriptions.get(r.id) || undefined}>{r.identifier}</Badge>)}
                   </div>
               </CardContent>
             </Card>
@@ -149,18 +145,13 @@ export default function Memberships() {
           </Empty>
         )}
       </div>
-      {hasMore && (
-        <div className="flex justify-center">
-          <Button variant="outline" disabled={loading} onClick={() => setLimit((l) => l + PAGE_SIZE)}>
-            {loading ? "Loading..." : "Load more"}
-          </Button>
-        </div>
-      )}
+      <LoadMore hasMore={hasMore} loading={loading} onLoadMore={() => setLimit((l) => l + PAGE_SIZE)} />
       {org && mayInvite && <CreateInviteDialog 
         open={inviteOpen} 
         onOpenChange={setInviteOpen} 
         organizationId={org.id} 
         availableRoles={org.roles}
+        roleSets={org.roleSets}
       />}
     </div>
   )

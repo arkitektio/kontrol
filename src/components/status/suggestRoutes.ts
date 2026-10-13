@@ -5,6 +5,8 @@
  * `/organization/<id>/member` → `…/members`.
  */
 
+import { isNavigablePath } from "@/routeRegistry"
+
 export interface RouteSuggestion {
   path: string
   label: string
@@ -93,7 +95,8 @@ export function suggestRoutes(
       if (lastSeg && candLast === lastSeg) score = Math.max(score, 0.95)
       return { ...c, score }
     })
-    .filter((c) => c.score >= threshold && c.path !== requested)
+    // The lists above are hand-kept; never suggest a path the router does not declare.
+    .filter((c) => c.score >= threshold && c.path !== requested && isNavigablePath(c.path))
     .sort((a, b) => b.score - a.score)
 
   // De-dupe by label so the global and org "Services" don't both show up.

@@ -9,6 +9,7 @@ import { Switch } from "./ui/switch"
 import { ArrowUp, Link2, X } from "lucide-react"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
+import { Command } from "./Command"
 import {
   MAX_DEEPLINK_APPS,
   isAllowedProtocolName,
@@ -235,19 +236,19 @@ export function DeeplinkAppsCard({
         </div>
 
         {slug ? (
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p>
-              Deeplink:{" "}
-              <code className="break-all">
-                {origin}/deeplink/{slug}/{apps[0]?.protocol ?? "<protocol>"}/&lt;path&gt;
-              </code>
-            </p>
-            <p>
-              Smartlink (opens the default; on a phone, the mobile default):{" "}
-              <code className="break-all">
-                {origin}/smartlink/{slug}/&lt;hub&gt;/&lt;identifier&gt;/&lt;object&gt;
-              </code>
-            </p>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <div className="space-y-1">
+              <p>Deeplink:</p>
+              <Command label="Copy deeplink template">
+                {`${origin}/deeplink/${slug}/${apps[0]?.protocol ?? "<protocol>"}/<path>`}
+              </Command>
+            </div>
+            <div className="space-y-1">
+              <p>Smartlink (opens the default; on a phone, the mobile default):</p>
+              <Command label="Copy smartlink template">
+                {`${origin}/smartlink/${slug}/<hub>/<identifier>/<object>`}
+              </Command>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">

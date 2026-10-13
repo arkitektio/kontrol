@@ -8,7 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
 import { CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
+import { useMeQuery } from "@/graphql/queries/me.generated"
 import { RevokeClientSessionsDialog } from "./RevokeClientSessionsDialog"
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
+import { PriorAccessState } from "@/api/types"
+import { timeAgo } from "@/lib/time"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -21,6 +25,9 @@ export default function Client() {
     skip: !id,
   })
   const { isAdmin } = useIsOrgAdmin(data?.client?.organization?.id)
+  // Already in the cache for the shell. The member who approved an app may
+  // reject it, like the organization's admins (mirrors `revokeClientSessions`).
+  const { data: meData } = useMeQuery()
 
   if (loading) return <DetailPageSkeleton sections={3} />
   if (error) return <QueryError error={error} resource="client" />
@@ -39,10 +46,12 @@ export default function Client() {
                 <AvatarFallback>{clientInitials(client)}</AvatarFallback>
               </Avatar>
               <div>
-                <CardTitle className="text-2xl flex flex-row items-center gap-2"><ClientLabel client={client} />{}
-</CardTitle>
+                <CardTitle className="text-2xl flex flex-row items-center gap-2"><ClientLabel client={client} /></CardTitle>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant="outline">{client.organization?.name ?? "Unbound"}</Badge>
+                    {client.accessState === PriorAccessState.Active && <Badge variant="secondary">Active</Badge>}
+                    {client.accessState === PriorAccessState.Revoked && <Badge variant="destructive">Rejected</Badge>}
+                    {client.accessState === PriorAccessState.Expired && <Badge variant="outline">No active session</Badge>}
                     <span className="text-muted-foreground">by {client.user?.username}</span>
                     <Link
                         to={`/organization/${client.organization?.id}/clients/${client.id}/report`}
@@ -52,13 +61,40 @@ export default function Client() {
                     </Link>
                 </div>
               </div>
-              {isAdmin && (
+              {client.accessState !== PriorAccessState.Revoked && (isAdmin || (!!client.user && client.user.id === meData?.me?.id)) && (
                 <div className="ml-auto">
-                  <RevokeClientSessionsDialog clientId={client.id} clientName={clientLabel(client)} />
+                  <RevokeClientSessionsDialog
+                    clientId={client.id}
+                    clientName={clientLabel(client)}
+                    isApp={!!client.release}
+                    hasDevice={!!client.device}
+                  />
                 </div>
               )}
             </CardHeader>
             <CardContent className="space-y-6">
+                {client.accessState === PriorAccessState.Revoked && (
+                    <Alert variant="destructive">
+                        <AlertTitle>This client was rejected</AlertTitle>
+                        <AlertDescription>
+                            Its sessions are revoked and it has no access. It stays that way until someone
+                            approves it again from the app&apos;s own connect flow.
+                        </AlertDescription>
+                    </Alert>
+                )}
+                {client.accessState === PriorAccessState.Expired && (
+                    <Alert>
+                        <AlertTitle>No active session</AlertTitle>
+                        <AlertDescription>
+                            This client&apos;s session ran out (or it never finished connecting). It has to be
+                            approved again before it can reconnect.
+                        </AlertDescription>
+                    </Alert>
+                )}
+                <p className="text-sm text-muted-foreground">
+                    Last report: {timeAgo(client.lastReportedAt)}
+                    {client.functional ? "" : " · reported as not working — see the latest report"}
+                </p>
                 {client.release && (
                     <div>
                         <h3 className="font-semibold mb-2">Release</h3>
@@ -79,7 +115,7 @@ export default function Client() {
 
                 
                 {client.device && (
-                    <Link to={`/devices/${client.device.id}`}>
+                    <Link to={client.organization ? `/organization/${client.organization.id}/devices/${client.device.id}` : `/devices/${client.device.id}`}>
                         <h3 className="font-semibold mb-2">Device</h3>
                         <div className="p-2 border rounded-md">
                             <div className="font-medium">{client.device.name || "Unnamed Device"}</div>
@@ -92,7 +128,6 @@ export default function Client() {
                     <div className="grid gap-2">
                         {client.scopes?.map(scope => (
                             <div key={scope.id} className="p-2 border rounded-md">
-                                <div className="font-medium"></div>
                                  <Link to={`/organization/${client.organization?.id}/scopes/${scope.id}`}>{scope.identifier}
                                 </Link>
                                 <div className="text-xs text-muted-foreground">

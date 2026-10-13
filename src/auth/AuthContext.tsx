@@ -67,7 +67,7 @@ function LoadingError () {
   return (
     <NetworkErrorPage
       variant="page"
-      message="Could not load the authentication status from the server (the allauth session endpoint did not answer)."
+      message="Could not check whether you are signed in: the server did not answer."
     />
   )
 }

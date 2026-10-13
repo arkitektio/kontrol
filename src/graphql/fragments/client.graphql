@@ -12,6 +12,7 @@ fragment DetailClient on ManagementClient {
   }
   lastReportedAt
   functional
+  accessState
   kind
   release {
     ...ListRelease

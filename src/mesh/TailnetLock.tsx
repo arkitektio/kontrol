@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { useState, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { useLayersQuery } from "@/graphql/queries/layer.generated"
 import { useTailnetLockQuery } from "@/graphql/queries/tailnet_lock.generated"
 import {
@@ -25,42 +25,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog"
-import { ShieldCheck, Copy, Check, AlertTriangle, Circle, CircleCheck } from "lucide-react"
-
-/** A shell command with a copy button. Copies the raw command, not the prompt. */
-function Command({ children }: { children: string }) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = async () => {
-    // navigator.clipboard requires a secure context (https/localhost) — degrade gracefully.
-    if (!navigator.clipboard) {
-      toast.error("Clipboard is unavailable in this context")
-      return
-    }
-    try {
-      await navigator.clipboard.writeText(children)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      toast.error("Failed to copy")
-    }
-  }
-
-  return (
-    <div className="flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2">
-      <code className="min-w-0 flex-1 font-mono text-sm break-all whitespace-pre-wrap">{children}</code>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 shrink-0"
-        onClick={handleCopy}
-        aria-label="Copy command"
-      >
-        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-      </Button>
-    </div>
-  )
-}
+import { ShieldCheck, AlertTriangle, Circle, CircleCheck } from "lucide-react"
+import { Command } from "../components/Command"
+import { AdminOnly } from "../components/AdminOnly"
 
 /**
  * One step of the setup. `done` drives the marker so the page reads as progress
@@ -104,7 +71,7 @@ function Step({
   )
 }
 
-function TailnetLockDetail({ meshId }: { meshId: string }) {
+function TailnetLockDetail({ meshId, orgId }: { meshId: string; orgId?: string }) {
   const { data, loading, error } = useTailnetLockQuery({ variables: { id: meshId } })
 
   const refetch = { refetchQueries: ["TailnetLock"] }
@@ -190,7 +157,8 @@ function TailnetLockDetail({ meshId }: { meshId: string }) {
             done={lock.capabilityEnabled}
             active
             action={
-              lock.capabilityEnabled ? (
+              <AdminOnly orgId={orgId} note="Only organization admins can change this.">
+                {lock.capabilityEnabled ? (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" disabled={disabling}>
@@ -217,7 +185,8 @@ function TailnetLockDetail({ meshId }: { meshId: string }) {
                 <Button size="sm" onClick={handleEnable} disabled={enabling}>
                   {enabling ? "Granting..." : "Grant capability"}
                 </Button>
-              )
+              )}
+              </AdminOnly>
             }
           >
             <p>
@@ -329,7 +298,7 @@ export default function TailnetLock() {
         title="Tailnet lock"
         description="Require every machine's key to be signed by a key authority your organization holds, so a compromised control plane cannot add machines to your network."
       />
-      <TailnetLockDetail meshId={mesh.id} />
+      <TailnetLockDetail meshId={mesh.id} orgId={orgId} />
     </>
   )
 }

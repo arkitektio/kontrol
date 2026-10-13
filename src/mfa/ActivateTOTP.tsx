@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { useActivateTotpForm } from '@/hooks/use-next'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import { Command } from '@/components/Command'
 
 export async function loader () {
   const resp = await allauth.getTOTPAuthenticator()
@@ -106,9 +107,9 @@ export default function ActivateTOTP () {
                 </p>
                 <div className="space-y-1">
                     <p className="text-xs font-medium uppercase text-muted-foreground">Secret Key</p>
-                    <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold block break-all">
-                        {String(totp.meta?.secret ?? '')}
-                    </code>
+                    <div className="text-left">
+                        <Command label="Copy secret">{String(totp.meta?.secret ?? '')}</Command>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                         You can store this secret to reinstall your authenticator app later.
                     </p>

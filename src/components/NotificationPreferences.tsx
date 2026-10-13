@@ -5,6 +5,7 @@ import { Switch } from "./ui/switch"
 import { Label } from "./ui/label"
 import { Bell, Smartphone } from "lucide-react"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 
 /**
  * Lets the current member decide whether one organization may push notifications
@@ -36,8 +37,8 @@ export function NotificationPreferences({ organizationId }: { organizationId: st
           ? `${orgName} can now send you notifications`
           : `${orgName} will no longer send you notifications`,
       )
-    } catch (e: any) {
-      toast.error("Failed to save your notification preference: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't save your notification preference")
     }
   }
 
@@ -61,7 +62,7 @@ export function NotificationPreferences({ organizationId }: { organizationId: st
               Allow notifications from this organization
             </Label>
             <p className="text-sm text-muted-foreground">
-              Admins of {orgName} can then send messages to the devices you registered.
+              Any member of {orgName} can then send messages to the devices you registered.
             </p>
           </div>
           <Switch

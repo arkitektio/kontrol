@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AlertCircle, Loader2, LogOut, Monitor, MonitorSmartphone, Smartphone } from 'lucide-react'
+import { AlertCircle, LogOut, Monitor, MonitorSmartphone, Smartphone } from 'lucide-react'
 import { toast } from 'sonner'
 import { useConfig } from '../auth'
 import * as allauth from '../lib/allauth'
@@ -62,7 +62,7 @@ export default function Sessions () {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [ending, setEnding] = useState<number | null>(null)
+  const [endTarget, setEndTarget] = useState<Session | null>(null)
   const [confirmOthersOpen, setConfirmOthersOpen] = useState(false)
 
   // State is only set once the request settles, so the mount effect can call this.
@@ -111,10 +111,9 @@ export default function Sessions () {
   }
 
   async function endOne (session: Session) {
-    setEnding(session.id)
     const ok = await endSessions([session], "Couldn't end the session")
-    setEnding(null)
-    if (ok) toast.success('Session ended')
+    if (!ok) return false
+    toast.success('Session ended')
   }
 
   async function endOthers () {
@@ -212,10 +211,8 @@ export default function Sessions () {
                         variant='ghost'
                         size='sm'
                         className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                        disabled={ending !== null}
-                        onClick={() => endOne(session)}
+                        onClick={() => setEndTarget(session)}
                       >
-                        {ending === session.id && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                         End session
                       </Button>
                     )}
@@ -240,6 +237,21 @@ export default function Sessions () {
         pendingLabel='Ending...'
         destructive
         onConfirm={endOthers}
+      />
+
+      <ConfirmActionDialog
+        open={endTarget !== null}
+        onOpenChange={(open) => !open && setEndTarget(null)}
+        title='End this session?'
+        description={
+          endTarget
+            ? `${describeUserAgent(endTarget.user_agent).label} (${endTarget.ip}) will be signed out straight away.`
+            : undefined
+        }
+        confirmLabel='End session'
+        pendingLabel='Ending...'
+        destructive
+        onConfirm={() => endTarget && endOne(endTarget)}
       />
     </div>
   )

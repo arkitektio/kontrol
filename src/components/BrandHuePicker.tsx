@@ -6,6 +6,7 @@ import { Button } from "./ui/button"
 import { Slider } from "./ui/slider"
 import { Palette } from "lucide-react"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 import {
   applyBrand,
   brandSwatch,
@@ -70,8 +71,8 @@ export function BrandHuePicker({ organizationId }: { organizationId: string }) {
         variables: { input: { organization: organizationId, brandHue: hue, brandChroma: chroma } },
       })
       toast.success("Your colour for this organization was saved")
-    } catch (e: any) {
-      toast.error("Failed to save colour: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't save your colour")
     }
   }
 
@@ -90,8 +91,8 @@ export function BrandHuePicker({ organizationId }: { organizationId: string }) {
           ? "Reset to the organization default"
           : "Reset to the default colour",
       )
-    } catch (e: any) {
-      toast.error("Failed to reset colour: " + e.message)
+    } catch (e) {
+      toastError(e, "Couldn't reset your colour")
     }
   }
 

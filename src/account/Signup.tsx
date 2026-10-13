@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { useSiteConfig } from "@/site/config"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, KeyRound } from "lucide-react"
+import { toast } from "sonner"
 
 const signupSchema = z.object({
   username: z.string(),
@@ -126,6 +127,11 @@ const SignupForm = () => {
       // 401 = signup ok but email verification pending (not yet authenticated).
       // Send to login, preserving `next` so they return to the invite after auth.
       if (content.status === 401) {
+        toast.success("Account created", {
+          description: isEmailLogin
+            ? `We sent a verification link to ${values.username}. Confirm it, then sign in.`
+            : "Check your email for a verification link, then sign in.",
+        })
         navigate(loginHref)
         return
       }

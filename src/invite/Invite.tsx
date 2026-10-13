@@ -8,6 +8,7 @@ import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
+import { absoluteTime, timeAgo } from "@/lib/time"
 import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { Copy, XCircle, Clock } from "lucide-react"
 
@@ -54,6 +55,16 @@ export default function Invite() {
     }
   }
 
+  const isExpired = new Date(invite.expiresAt) < new Date()
+
+  const goBack = () => {
+      // `idx` is react-router's history position; 0 means this page was opened
+      // directly, so "back" would leave the app.
+      const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
+      if (idx > 0) navigate(-1)
+      else navigate(`/organization/${invite.createdFor.id}/invites`)
+  }
+
   const copyLink = () => {
       if (invite.inviteUrl) {
           navigator.clipboard.writeText(invite.inviteUrl).then(
@@ -75,8 +86,8 @@ export default function Invite() {
       <Card>
         <CardHeader>
           <CardTitle>Organization Invitation</CardTitle>
-          <CardDescription>
-            Created on {new Date(invite.createdAt).toLocaleDateString()}
+          <CardDescription title={absoluteTime(invite.createdAt)}>
+            Created {timeAgo(invite.createdAt)}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -103,10 +114,10 @@ export default function Invite() {
                      </div>
                 </div>
                  <div>
-                     <p className="text-sm font-medium text-muted-foreground mb-1">Expires On</p>
+                     <p className="text-sm font-medium text-muted-foreground mb-1">{isExpired ? "Expired" : "Expires"}</p>
                      <div className="flex items-center gap-2">
                          <Clock className="w-4 h-4 text-muted-foreground" />
-                         <span>{new Date(invite.expiresAt).toLocaleDateString()} {new Date(invite.expiresAt).toLocaleTimeString()}</span>
+                         <span title={absoluteTime(invite.expiresAt)}>{timeAgo(invite.expiresAt)}</span>
                      </div>
                 </div>
             </div>
@@ -169,7 +180,7 @@ export default function Invite() {
 
         </CardContent>
         <CardFooter className="justify-between border-t pt-6">
-            <Button variant="ghost" onClick={() => navigate(-1)}>Back</Button>
+            <Button variant="ghost" onClick={goBack}>Back</Button>
             {isPending && mayCancel && (
                 <Button variant="destructive" onClick={() => setCancelOpen(true)}>
                     <XCircle className="w-4 h-4 mr-2" />

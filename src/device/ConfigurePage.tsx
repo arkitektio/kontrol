@@ -5,6 +5,7 @@ import { useHubsQuery } from "@/graphql/queries/hub.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
 import { toastError } from "@/lib/errors";
+import { QueryError } from "@/components/status";
 
 import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -54,13 +55,13 @@ export function ConfigurePage() {
   const { control, watch, setValue } = useForm<ConfigureFormData>();
   const selectedHub = watch("hub");
 
-  const { data: deviceCodeData, loading, error } = useDeviceCodeByCodeQuery({
+  const { data: deviceCodeData, loading, error, refetch: refetchCode } = useDeviceCodeByCodeQuery({
     variables: { code: code || "" },
     skip: !code,
   });
   const { data: compData } = useHubsQuery();
   const { data: meData } = useMeQuery();
-  const { data: validationData, loading: validating } = useValidateDeviceCodeQuery({
+  const { data: validationData, loading: validating, error: validationError } = useValidateDeviceCodeQuery({
     variables: {
       deviceCode: deviceCodeData?.deviceCodeByCode?.id || "",
       hub: selectedHub,
@@ -69,8 +70,16 @@ export function ConfigurePage() {
     skip: !deviceCodeData?.deviceCodeByCode?.id || !selectedHub,
   });
 
-  const [acceptDeviceCode] = useAcceptDeviceCodeMutation();
-  const [declineDeviceCode] = useDeclineDeviceCodeMutation();
+  // The organization's client lists are cached; drop them so the new app
+  // shows up on an already-open dashboard without a reload.
+  const [acceptDeviceCode, { loading: accepting }] = useAcceptDeviceCodeMutation({
+    update: (cache) => {
+      cache.evict({ id: "ROOT_QUERY", fieldName: "clients" });
+      cache.gc();
+    },
+  });
+  const [declineDeviceCode, { loading: declining }] = useDeclineDeviceCodeMutation();
+  const busy = accepting || declining;
   const [declinedRequirements, setDeclinedRequirements] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
@@ -78,7 +87,7 @@ export function ConfigurePage() {
   const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
   const [allowMesh, setAllowMesh] = useState(true);
 
-  const { effectiveHueForOrg, effectiveChromaForOrg } = useActiveOrganization();
+  const { effectiveHueForOrg, effectiveChromaForOrg, activeOrgId } = useActiveOrganization();
 
   // Preselect, in order: the hub the device asked for (`?hub=`), the hub this app
   // was last approved into on this device (most recently seen first), the first hub.
@@ -137,10 +146,16 @@ export function ConfigurePage() {
     );
   }
 
-  if (error || !deviceCodeData?.deviceCodeByCode) {
+  // A failed request is not an expired link: say so, and offer a retry.
+  if (error) {
+    return <QueryError error={error} resource="authorization request" onRetry={() => refetchCode()} />;
+  }
+
+  if (!deviceCodeData?.deviceCodeByCode) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-muted-foreground">This authorization link is invalid or has expired.</p>
+      <div className="flex flex-col items-center justify-center gap-1 py-16 text-center">
+        <p className="text-sm font-medium">This authorization link is invalid or has expired.</p>
+        <p className="text-sm text-muted-foreground">Start connecting again from the app to get a new link.</p>
       </div>
     );
   }
@@ -156,6 +171,14 @@ export function ConfigurePage() {
   );
   const hasValidation = !!validationData && !!selectedHub && !validating;
   const canAllow = hasValidation && validationData!.validateDeviceCode.valid;
+  // Why "Allow access" is disabled, once a hub is picked and the check has run.
+  const blockedReason = !selectedHub || validating
+    ? null
+    : validationError
+      ? `Couldn't check this request against the hub: ${validationError.message}`
+      : validationData && !validationData.validateDeviceCode.valid
+        ? validationData.validateDeviceCode.reason || "This app can't be connected to the selected hub."
+        : null;
 
   // Devices are keyed per organization. `existingDevice` is only known once validation
   // has resolved for the selected workspace; until then we don't know whether accepting
@@ -219,9 +242,10 @@ export function ConfigurePage() {
   const onDeny = async () => {
     try {
       await declineDeviceCode({ variables: { input: { deviceCode: deviceCode.id, code } } });
-    } finally {
       setAuthorized(false);
       setSubmitted(true);
+    } catch (e) {
+      toastError(e, "Couldn't decline the request");
     }
   };
 
@@ -238,7 +262,7 @@ export function ConfigurePage() {
               {authorized ? <Check className="size-8" strokeWidth={2.5} /> : <X className="size-8" strokeWidth={2.5} />}
             </div>
             <div className="space-y-1.5">
-              <h1 className="text-xl font-semibold">{authorized ? "Access granted" : "Access denied"}</h1>
+              <h1 className="text-xl font-semibold">{authorized ? "Access granted" : "Request declined"}</h1>
               <p className="text-muted-foreground text-sm">
                 You can close this tab and return to the application.
               </p>
@@ -534,8 +558,11 @@ export function ConfigurePage() {
                 </div>
               ) : (
                 <p className="text-muted-foreground text-sm">
-                  No hubs available.{" "}
-                  <Link to="/" className="underline">Set one up first.</Link>
+                  You have no hub to connect this app to.{" "}
+                  <Link to={activeOrgId ? `/organization/${activeOrgId}/connect-hub` : "/home"} className="underline">
+                    Connect one first
+                  </Link>
+                  , then open this link again.
                 </p>
               )}
 
@@ -567,12 +594,16 @@ export function ConfigurePage() {
                 </p>
               )}
 
+              {blockedReason && (
+                <p className="text-destructive text-sm" role="alert">{blockedReason}</p>
+              )}
+
               <div className="flex gap-2 pt-1">
-                <Button variant="outline" className="flex-1" onClick={onDeny}>
-                  Deny
+                <Button variant="outline" className="flex-1" onClick={onDeny} disabled={busy}>
+                  {declining ? "Declining..." : "Decline"}
                 </Button>
-                <Button className="flex-1" onClick={onAllow} disabled={!canAllow}>
-                  {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Allow access"}
+                <Button className="flex-1" onClick={onAllow} disabled={busy || !canAllow}>
+                  {validating || accepting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accept"}
                 </Button>
               </div>
             </div>

@@ -9,9 +9,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, Building2, XCircle, UserPlus, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Building2, XCircle, UserPlus, Loader2, MailX } from "lucide-react";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errors";
+import { absoluteTime, timeAgo } from "@/lib/time";
+import { QueryError, StatusPage } from "@/components/status";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStatus } from "@/auth/hooks";
 import { URLs } from "@/auth/routing";
@@ -22,7 +24,7 @@ export function InvitePage() {
   const navigate = useNavigate();
   const [, status] = useAuthStatus();
 
-  const { data: inviteData, loading: inviteLoading, error: inviteError } = useInviteByCodeQuery({
+  const { data: inviteData, loading: inviteLoading, error: inviteError, refetch } = useInviteByCodeQuery({
     variables: { code: code || "" },
     skip: !code,
   });
@@ -42,8 +44,22 @@ export function InvitePage() {
 
   const [declined, setDeclined] = useState(false);
 
+  // A dead end either way: say what is wrong with the link and offer the way home.
+  const invalidInvite = (
+    <StatusPage
+      icon={MailX}
+      title="This invite link isn't valid"
+      description="The link may be incomplete, or the invite was cancelled or has expired. Ask whoever invited you for a new one."
+      actions={
+        <Button asChild>
+          <Link to="/home">Go to Home</Link>
+        </Button>
+      }
+    />
+  );
+
   if (!code) {
-    return <div className="flex h-screen items-center justify-center">No invite code provided</div>;
+    return invalidInvite;
   }
 
   if (inviteLoading) {
@@ -85,11 +101,10 @@ export function InvitePage() {
         </div>
       );
     }
-    return (
-      <div className="flex h-screen items-center justify-center">
-        {inviteError ? `Error: ${inviteError.message}` : "Invalid or expired invite code"}
-      </div>
-    );
+    if (inviteError) {
+      return <QueryError error={inviteError} resource="invite" onRetry={() => refetch()} />;
+    }
+    return invalidInvite;
   }
 
   const onAccept = async () => {
@@ -197,15 +212,15 @@ export function InvitePage() {
 
             <div>
               <p className="text-sm font-medium">Created</p>
-              <p className="text-sm text-muted-foreground">
-                {new Date(invite.createdAt).toLocaleDateString()}
+              <p className="text-sm text-muted-foreground" title={absoluteTime(invite.createdAt)}>
+                {timeAgo(invite.createdAt)}
               </p>
             </div>
 
             <div>
-              <p className="text-sm font-medium">Expires</p>
-              <p className="text-sm text-muted-foreground">
-                {new Date(invite.expiresAt).toLocaleDateString()}
+              <p className="text-sm font-medium">{isExpired ? "Expired" : "Expires"}</p>
+              <p className="text-sm text-muted-foreground" title={absoluteTime(invite.expiresAt)}>
+                {timeAgo(invite.expiresAt)}
               </p>
             </div>
           </CardContent>

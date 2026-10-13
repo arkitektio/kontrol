@@ -1,22 +1,16 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
 import { useGetDeviceGroupQuery } from "@/graphql/queries/device_group.generated"
 import { useDeleteDeviceGroupMutation } from "@/graphql/mutations/device_group.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
-import { Laptop, Trash2, Smartphone, Tablet } from "lucide-react"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../components/ui/alert-dialog"
+import { Trash2 } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
+import { Command } from "../components/Command"
+import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { DeviceContextMenu } from "./DeviceContextMenu"
+import { DeviceIcon } from "./DeviceIcon"
 import { toastError } from "@/lib/errors"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -31,6 +25,7 @@ export default function DeviceGroup() {
     skip: !groupId,
   })
   const [deleteDeviceGroup] = useDeleteDeviceGroupMutation()
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const handleDelete = async () => {
     try {
@@ -40,11 +35,16 @@ export default function DeviceGroup() {
             id: groupId!
           }
         },
-        refetchQueries: ['ListDeviceGroups']
+        update: (cache) => {
+          cache.evict({ id: cache.identify({ __typename: "ManagementDeviceGroup", id: groupId! }) })
+          cache.gc()
+        },
       })
+      toast.success("Device group deleted")
       navigate(`/organization/${orgId}/devices/groups`)
     } catch (err) {
       toastError(err, "Couldn't delete the device group")
+      return false
     }
   }
 
@@ -55,52 +55,31 @@ export default function DeviceGroup() {
   const deviceGroup = data.deviceGroup
   const devices = deviceGroup.devices.flat()
 
-    // Helper function to get device icon (duplicated from Devices.tsx effectively, could be utility)
-  const getDeviceIcon = (name: string | null | undefined) => {
-    const lowerName = name?.toLowerCase() || ""
-    if (lowerName.includes("phone") || lowerName.includes("mobile")) {
-      return <Smartphone className="h-4 w-4" />
-    } else if (lowerName.includes("tablet") || lowerName.includes("ipad")) {
-      return <Tablet className="h-4 w-4" />
-    }
-    return <Laptop className="h-4 w-4" />
-  }
-
   return (
     <div className="container mx-auto py-10 space-y-6">
         <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
               <div>
-                <CardTitle className="text-2xl">{deviceGroup.name || "Unnamed Group"}</CardTitle>
+                <h1 className="text-2xl leading-none font-semibold">{deviceGroup.name || "Unnamed Group"}</h1>
                 <div className="flex items-center gap-2 mt-1">
                     <span className="text-muted-foreground">{devices.length} device{devices.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
-               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Group
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete "{deviceGroup.name}"?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. The devices in this group will not be deleted, only the group itself.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Group
+              </Button>
         </CardHeader>
+
+        <ConfirmActionDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          title={`Delete ${deviceGroup.name || "this group"}?`}
+          description="Only the group is deleted. Its devices stay registered and keep their other groups. This cannot be undone."
+          confirmLabel="Delete group"
+          pendingLabel="Deleting..."
+          destructive
+          onConfirm={handleDelete}
+        />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-4">
@@ -113,7 +92,7 @@ export default function DeviceGroup() {
                                     <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                               <div className="p-2 bg-muted rounded-full">
-                                                    {getDeviceIcon(device.name)}
+                                                    <DeviceIcon name={device.name} className="h-4 w-4" />
                                               </div>
                                               <div>
                                                   <div className="font-medium">{device.name}</div>
@@ -140,9 +119,9 @@ export default function DeviceGroup() {
                  <h3 className="font-semibold text-lg">Details</h3>
                  <Card>
                     <CardContent className="pt-6 grid gap-2">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center gap-4">
                             <span className="font-medium">ID</span>
-                            <span className="text-muted-foreground font-mono text-sm">{deviceGroup.id}</span>
+                            <Command label="Copy id">{deviceGroup.id}</Command>
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium">Name</span>

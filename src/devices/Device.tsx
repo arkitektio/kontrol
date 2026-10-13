@@ -1,13 +1,17 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
 import { useGetDeviceQuery } from "@/graphql/queries/device.generated"
 import { useUpdateDeviceMutation, useDeleteDeviceMutation } from "@/graphql/mutations/device.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { useRemoveDeviceFromGroupMutation } from "@/graphql/mutations/device_group.generated"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { Laptop, Smartphone, Tablet, Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, X } from "lucide-react"
 import { AddToGroupDialog } from "./AddToGroupDialog"
+import { DeviceIcon } from "./DeviceIcon"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Button } from "../components/ui/button"
 import { ClientLabel } from "../components/ClientLabel"
+import { Command } from "../components/Command"
+import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { clientInitials } from "../lib/clientLabel"
 import {
     Dialog,
@@ -18,17 +22,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../components/ui/dialog"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "../components/ui/alert-dialog"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { useState } from "react"
@@ -40,16 +33,20 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 import { DetailPageSkeleton } from "@/components/skeletons"
 
 export default function Device() {
-  const { id } = useParams<{ id: string }>()
+  // Mounted at /devices/:id and at /organization/:orgId/devices/:id.
+  const { id, orgId } = useParams<{ id: string; orgId?: string }>()
   const navigate = useNavigate()
   const { data, loading, error, refetch } = useGetDeviceQuery({
     variables: { id: id! },
     skip: !id,
   })
 
-  const [updateDevice] = useUpdateDeviceMutation()
+  const [updateDevice, { loading: saving }] = useUpdateDeviceMutation()
   const [deleteDevice] = useDeleteDeviceMutation()
+  const [removeDeviceFromGroup] = useRemoveDeviceFromGroupMutation()
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [removingGroupId, setRemovingGroupId] = useState<string | null>(null)
   const [name, setName] = useState("")
 
   if (loading) return <DetailPageSkeleton sections={2} />
@@ -57,14 +54,16 @@ export default function Device() {
   if (!data?.device) return <ResourceNotFound resource="device" id={id} />
 
   const device = data.device
+  const trimmedName = name.trim()
 
   const handleUpdate = async () => {
+    if (!trimmedName || saving) return
     try {
         await updateDevice({
             variables: {
                 input: {
                     id: device.id,
-                    name: name
+                    name: trimmedName
                 }
             }
         })
@@ -83,24 +82,39 @@ export default function Device() {
                   input: {
                       id: device.id
                   }
-              }
+              },
+              update: (cache) => {
+                  cache.evict({ id: cache.identify({ __typename: "ManagementDevice", id: device.id }) })
+                  cache.gc()
+              },
           })
           toast.success("Device deleted")
-          navigate("/devices")
+          navigate(orgId ? `/organization/${orgId}/devices` : "/devices")
       } catch (e) {
           toastError(e, "Couldn't delete the device")
+          return false
       }
   }
 
-  // Helper function to get device icon
-  const getDeviceIcon = (name: string | null | undefined) => {
-    const lowerName = name?.toLowerCase() || ""
-    if (lowerName.includes("phone") || lowerName.includes("mobile")) {
-      return <Smartphone className="h-8 w-8" />
-    } else if (lowerName.includes("tablet") || lowerName.includes("ipad")) {
-      return <Tablet className="h-8 w-8" />
-    }
-    return <Laptop className="h-8 w-8" />
+  const handleRemoveFromGroup = async (group: { id: string; name: string }) => {
+      setRemovingGroupId(group.id)
+      try {
+          await removeDeviceFromGroup({
+              variables: { input: { device: device.id, deviceGroup: group.id } },
+              // The response carries the device's remaining groups, not the one it left.
+              update: (cache) => {
+                  cache.evict({
+                      id: cache.identify({ __typename: "ManagementDeviceGroup", id: group.id }),
+                      fieldName: "devices",
+                  })
+              },
+          })
+          toast.success(`Removed from ${group.name}`)
+      } catch (e) {
+          toastError(e, "Couldn't remove the device from the group")
+      } finally {
+          setRemovingGroupId(null)
+      }
   }
 
   return (
@@ -108,15 +122,16 @@ export default function Device() {
         <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
               <div className="flex items-center gap-4">
                 <div className="h-16 w-16 flex items-center justify-center bg-muted/20 rounded-full border">
-                  {getDeviceIcon(device.name)}
+                  <DeviceIcon name={device.name} className="h-8 w-8" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">{device.name}</CardTitle>
+                  <h1 className="text-2xl leading-none font-semibold">{device.name || "Unnamed device"}</h1>
                   <p className="text-muted-foreground text-sm font-mono">{device.deviceId}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                   <Dialog open={isEditOpen} onOpenChange={(open) => {
+                      if (saving) return
                       if (open) setName(device.name || "")
                       setIsEditOpen(open)
                   }}>
@@ -126,48 +141,62 @@ export default function Device() {
                           </Button>
                       </DialogTrigger>
                       <DialogContent>
-                          <DialogHeader>
-                              <DialogTitle>Edit Device</DialogTitle>
-                              <DialogDescription>Update the device details.</DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                              <div className="grid gap-2">
-                                  <Label htmlFor="name">Name</Label>
-                                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                          <form onSubmit={(e) => {
+                              e.preventDefault()
+                              handleUpdate()
+                          }}>
+                              <DialogHeader>
+                                  <DialogTitle>Edit Device</DialogTitle>
+                                  <DialogDescription>Update the device details.</DialogDescription>
+                              </DialogHeader>
+                              <div className="grid gap-4 py-4">
+                                  <div className="grid gap-2">
+                                      <Label htmlFor="name">Name</Label>
+                                      <Input
+                                          id="name"
+                                          value={name}
+                                          onChange={(e) => setName(e.target.value)}
+                                          aria-invalid={!trimmedName}
+                                      />
+                                      {!trimmedName && (
+                                          <p className="text-sm text-destructive">Enter a name for the device.</p>
+                                      )}
+                                  </div>
                               </div>
-                          </div>
-                          <DialogFooter>
-                              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                              <Button onClick={handleUpdate}>Save Changes</Button>
-                          </DialogFooter>
+                              <DialogFooter>
+                                  <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)} disabled={saving}>Cancel</Button>
+                                  <Button type="submit" disabled={saving || !trimmedName}>
+                                      {saving ? "Saving..." : "Save Changes"}
+                                  </Button>
+                              </DialogFooter>
+                          </form>
                       </DialogContent>
                   </Dialog>
 
-                  <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="icon" aria-label="Delete device">
-                              <Trash2 className="h-4 w-4" />
-                          </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete the device
-                                  and remove it from all groups.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                  </AlertDialog>
-                  
-                  <AddToGroupDialog deviceId={device.id} currentGroups={device.deviceGroups} onSuccess={() => refetch()} />
+                  <AddToGroupDialog
+                      deviceId={device.id}
+                      organizationId={device.organization.id}
+                      currentGroups={device.deviceGroups}
+                  />
+
+                  <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                  </Button>
               </div>
         </CardHeader>
-        
+
+        <ConfirmActionDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            title={`Delete ${device.name || "this device"}?`}
+            description="The device is permanently deleted and removed from all its groups. This cannot be undone."
+            confirmLabel="Delete device"
+            pendingLabel="Deleting..."
+            destructive
+            onConfirm={handleDelete}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-4">
                  <h3 className="font-semibold text-lg">Clients</h3>
@@ -191,8 +220,8 @@ export default function Device() {
                     <div className="text-muted-foreground text-sm italic">No clients connected to this device.</div>
                  )}
             </div>
-            
-                 
+
+
              <div className="space-y-4">
                  <h3 className="font-semibold text-lg">Services</h3>
                  {device.serviceInstances && device.serviceInstances.length > 0 ? (
@@ -220,20 +249,37 @@ export default function Device() {
                  <h3 className="font-semibold text-lg">Details</h3>
                  <Card>
                     <CardContent className="pt-6 grid gap-2">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center gap-4">
                             <span className="font-medium">ID</span>
-                            <span className="text-muted-foreground font-mono text-sm">{device.id}</span>
+                            <Command label="Copy id">{device.id}</Command>
                         </div>
-                         <div className="flex justify-between">
-                            <span className="font-medium">Node ID</span>
-                            <span className="text-muted-foreground font-mono text-sm">{device.deviceId}</span>
+                         <div className="flex justify-between items-center gap-4">
+                            <span className="font-medium shrink-0">Node ID</span>
+                            <Command label="Copy node id">{device.deviceId}</Command>
                         </div>
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start gap-4">
                             <span className="font-medium">Groups</span>
                              <div className="flex flex-wrap gap-1 justify-end">
                                 {device.deviceGroups && device.deviceGroups.length > 0 ? (
                                     device.deviceGroups.map(group => (
-                                         <Badge key={group.id} variant="outline" className="text-xs">{group.name}</Badge>
+                                         <Badge key={group.id} variant="outline" className="text-xs gap-1 pr-1">
+                                            <Link
+                                                to={`/organization/${device.organization.id}/devices/groups/${group.id}`}
+                                                className="hover:underline"
+                                            >
+                                                {group.name}
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                className="rounded-sm text-muted-foreground hover:text-destructive disabled:opacity-50"
+                                                aria-label={`Remove from ${group.name}`}
+                                                title={`Remove from ${group.name}`}
+                                                disabled={removingGroupId !== null}
+                                                onClick={() => handleRemoveFromGroup(group)}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                         </Badge>
                                     ))
                                 ) : (
                                     <span className="text-muted-foreground text-sm">None</span>

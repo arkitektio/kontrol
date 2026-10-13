@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { useListServiceInstanceMappingsQuery } from "@/graphql/queries/service_instance_mapping.generated"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { ClientLabel } from "../components/ClientLabel"
@@ -16,7 +16,11 @@ import { ListPageSkeleton } from "@/components/skeletons"
 
 export default function ServiceInstanceMappings() {
   const [search, setSearch] = useState("")
-  const { data, loading, error, refetch } = useListServiceInstanceMappingsQuery({})
+  // Also mounted at the top-level /service-instance-mappings route, with no orgId.
+  const { orgId } = useParams<{ orgId?: string }>()
+  const { data, loading, error, refetch } = useListServiceInstanceMappingsQuery({
+    variables: orgId ? { filters: { organization: orgId } } : undefined,
+  })
 
   if (loading) return <ListPageSkeleton columns={4} count={8} />
   if (error) return <QueryError error={error} onRetry={() => refetch()} />
@@ -39,7 +43,7 @@ export default function ServiceInstanceMappings() {
       ) : (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {mappings.map((mapping) => (
-          <Link key={mapping.id} to={`/service-instance-mappings/${mapping.id}`}>
+          <Link key={mapping.id} to={orgId ? `/organization/${orgId}/service-instance-mappings/${mapping.id}` : `/service-instance-mappings/${mapping.id}`}>
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">

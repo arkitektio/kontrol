@@ -80,7 +80,8 @@ function JoinRequest({ orgSlug }: { orgSlug: string }) {
   if (requested) {
     return (
       <p className="text-center text-sm text-muted-foreground">
-        Request sent. Open this link again once you're in.
+        Request sent. An admin of the organization has to approve it; you get in as soon as
+        they do. Open this link again then.
       </p>
     )
   }

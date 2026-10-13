@@ -11,6 +11,7 @@ import {
 } from "@/graphql/mutations/membership_request.generated"
 import { useMembershipRequestsQuery } from "@/graphql/queries/membership_request.generated"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
+import { QueryError } from "@/components/status"
 import { toastError } from "@/lib/errors"
 import { timeAgo } from "@/lib/time"
 
@@ -27,9 +28,11 @@ import { timeAgo } from "@/lib/time"
  */
 export function JoinRequestsCard({ organizationId, className }: { organizationId: string; className?: string }) {
   const { isAdmin } = useIsOrgAdmin(organizationId)
-  const { data } = useMembershipRequestsQuery({
+  const { data, error, refetch } = useMembershipRequestsQuery({
     variables: { id: organizationId },
     skip: !isAdmin,
+    // Requests arrive from other people; keep the card current while it is open.
+    pollInterval: 60_000,
   })
 
   // The member count and avatars on the dashboard come from SidebarOrganization.
@@ -39,6 +42,13 @@ export function JoinRequestsCard({ organizationId, className }: { organizationId
   const busy = approving || declining
 
   const requests = data?.organization.membershipRequests ?? []
+  if (isAdmin && error && !data) {
+    return (
+      <div className={className}>
+        <QueryError compact error={error} resource="join requests" onRetry={() => refetch()} />
+      </div>
+    )
+  }
   if (!isAdmin || requests.length === 0) return null
 
   const handleApprove = async (id: string, name: string) => {

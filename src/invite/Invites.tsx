@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
+import { absoluteTime, timeAgo } from "@/lib/time"
 import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty"
 import { useCancelInviteMutation } from "@/graphql/mutations/invite.generated"
@@ -25,6 +26,13 @@ import { Label } from "../components/ui/label"
 import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { SettingsStackSkeleton } from "@/components/skeletons"
+
+/** "Expires in 2 days" / "Expired 3 hours ago" / "No expiry". */
+function inviteExpiry(expiresAt?: string | null): string {
+  if (!expiresAt) return "No expiry"
+  const expired = new Date(expiresAt).getTime() < Date.now()
+  return `${expired ? "Expired" : "Expires"} ${timeAgo(expiresAt)}`
+}
 
 export default function Invites() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -98,7 +106,7 @@ export default function Invites() {
     // Open default email client
     window.location.href = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     
-    toast.success("Opening email client...")
+    toast.success("Opening your mail app")
     setSendEmailOpen(false)
     setRecipientEmail("")
     setSelectedInvite(null)
@@ -160,6 +168,9 @@ export default function Invites() {
                           'bg-muted text-muted-foreground'
                       }`}>
                           {i.status}
+                      </span>
+                      <span className="text-xs text-muted-foreground" title={absoluteTime(i.expiresAt)}>
+                        {inviteExpiry(i.expiresAt)}
                       </span>
                     </div>
                     <div className="text-sm text-muted-foreground font-mono break-all">
@@ -224,9 +235,10 @@ export default function Invites() {
       <Dialog open={sendEmailOpen} onOpenChange={setSendEmailOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Send Invite via Email</DialogTitle>
+            <DialogTitle>Email this invite</DialogTitle>
             <DialogDescription>
-              Enter the email address of the person you want to invite.
+              Enter the email address of the person you want to invite. This opens a draft with the
+              invite link in your mail app — kontrol does not send the email itself.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -255,7 +267,7 @@ export default function Invites() {
               Cancel
             </Button>
             <Button onClick={handleSendEmailSubmit}>
-              Send Email
+              Open in your mail app
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toastError } from "@/lib/errors";
 import { useHubDeviceCodeByCodeQuery } from "@/graphql/queries/hub_device_code.generated"
 import { useAcceptHubDeviceCodeMutation, useDeclineHubDeviceCodeMutation } from "@/graphql/mutations/hub_device_code.generated"
@@ -7,6 +7,7 @@ import { useMeQuery } from "@/graphql/queries/me.generated"
 import { type HubDeviceCodeFragment } from "@/graphql/fragments/hub_device_code.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
 import { HUB_ADMIN_REQUIRED } from "@/hooks/useIsOrgAdmin"
+import { QueryError } from "@/components/status"
 
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -52,7 +53,7 @@ export function HubConfigurePage() {
   const { control, watch, setValue } = useForm<ConfigureFormData>();
   const selectedOrganization = watch("organization");
 
-  const { data: hubDeviceCodeData, loading: hubDeviceCodeLoading, error: hubDeviceCodeError } = useHubDeviceCodeByCodeQuery({
+  const { data: hubDeviceCodeData, loading: hubDeviceCodeLoading, error: hubDeviceCodeError, refetch: refetchCode } = useHubDeviceCodeByCodeQuery({
     variables: { code: code || "" },
     skip: !code,
   });
@@ -60,12 +61,21 @@ export function HubConfigurePage() {
   const { data: orgData } = useListOrganizationsQuery();
   const { data: meData } = useMeQuery();
 
-  const [acceptHubDeviceCode] = useAcceptHubDeviceCodeMutation();
-  const [declineHubDeviceCode] = useDeclineHubDeviceCodeMutation();
+  // The hub lists and the sidebar's "Connect a hub" entry are cached per
+  // organization; drop them so the new hub shows up without a reload.
+  const [acceptHubDeviceCode, { loading: accepting }] = useAcceptHubDeviceCodeMutation({
+    update: (cache) => {
+      cache.evict({ id: "ROOT_QUERY", fieldName: "hubs" });
+      cache.gc();
+    },
+  });
+  const [declineHubDeviceCode, { loading: declining }] = useDeclineHubDeviceCodeMutation();
+  const busy = accepting || declining;
 
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
-  const navigate = useNavigate();
+  // Where the connected hub lives, for the link on the result screen.
+  const [connectedHubPath, setConnectedHubPath] = useState<string | null>(null);
 
   // Preset the active organization. Adding a hub is an admin operation, so bias
   // the preselection towards an org the user may actually deploy into — landing on
@@ -92,10 +102,16 @@ export function HubConfigurePage() {
 
   const hubDeviceCode = hubDeviceCodeData?.hubDeviceCodeByCode;
 
-  if (hubDeviceCodeError || !hubDeviceCode) {
+  // A failed request is not an expired link: say so, and offer a retry.
+  if (hubDeviceCodeError) {
+    return <QueryError error={hubDeviceCodeError} resource="authorization request" onRetry={() => refetchCode()} />;
+  }
+
+  if (!hubDeviceCode) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-muted-foreground">This authorization link is invalid or has expired.</p>
+      <div className="flex flex-col items-center justify-center gap-1 py-16 text-center">
+        <p className="text-sm font-medium">This authorization link is invalid or has expired.</p>
+        <p className="text-sm text-muted-foreground">Run the connect command on the hub server again to get a new link.</p>
       </div>
     );
   }
@@ -116,13 +132,10 @@ export function HubConfigurePage() {
           }
         }
       });
-      if (data.data?.acceptHubDeviceCode) {
-        navigate(`/organization/${selectedOrganization}`);
-      }
-      else {
-        setAuthorized(true);
-        setSubmitted(true);
-      }
+      const hub = data.data?.acceptHubDeviceCode;
+      if (hub) setConnectedHubPath(`/organization/${selectedOrganization}/hubs/${hub.id}`);
+      setAuthorized(true);
+      setSubmitted(true);
     } catch (e) {
       toastError(e, "Couldn't connect the hub");
     }
@@ -159,11 +172,18 @@ export function HubConfigurePage() {
               {authorized ? <Check className="size-8" strokeWidth={2.5} /> : <X className="size-8" strokeWidth={2.5} />}
             </div>
             <div className="space-y-1.5">
-              <h1 className="text-xl font-semibold">{authorized ? "Hub authorized" : "Request denied"}</h1>
+              <h1 className="text-xl font-semibold">{authorized ? "Hub connected" : "Request declined"}</h1>
               <p className="text-muted-foreground text-sm">
-                You can close this tab and return to the application.
+                {authorized
+                  ? "Return to the terminal where you started: the hub server picks up from here. You can close this tab."
+                  : "The hub was not connected. You can close this tab."}
               </p>
             </div>
+            {authorized && connectedHubPath && (
+              <Button asChild variant="outline" size="sm">
+                <Link to={connectedHubPath}>Open the hub</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -188,7 +208,7 @@ export function HubConfigurePage() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg leading-tight font-semibold break-words">{manifest?.identifier || "Unknown hub"}</p>
-                <p className="text-muted-foreground text-sm">Hub hub</p>
+                <p className="text-muted-foreground text-sm">Hub</p>
               </div>
             </div>
           </div>
@@ -289,6 +309,17 @@ export function HubConfigurePage() {
 
             {/* Where to assign + actions */}
             <div className="space-y-4 border-t pt-5">
+              {orgData && orgData.organizations.length === 0 && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>No organization yet</AlertTitle>
+                  <AlertDescription>
+                    A hub belongs to an organization, and you are not a member of one.{" "}
+                    <Link to="/home" className="underline">Create one</Link>, then open this link again.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {orgData?.organizations && orgData.organizations.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Assign to organization</p>
@@ -325,11 +356,11 @@ export function HubConfigurePage() {
               {/* Decline stays open to any member: turning an enrolment down is not
                   a privileged act, and it lets the hub server stop polling. */}
               <div className="flex gap-2 pt-1">
-                <Button variant="outline" className="flex-1" onClick={onCancel}>
-                  Decline
+                <Button variant="outline" className="flex-1" onClick={onCancel} disabled={busy}>
+                  {declining ? "Declining..." : "Decline"}
                 </Button>
-                <Button className="flex-1" onClick={onAllow} disabled={!selectedOrganization || !mayAddHub}>
-                  Accept
+                <Button className="flex-1" onClick={onAllow} disabled={busy || !selectedOrganization || !mayAddHub}>
+                  {accepting ? "Connecting..." : "Accept"}
                 </Button>
               </div>
             </div>

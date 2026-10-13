@@ -10,19 +10,16 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "../components/ui/empty"
+import { ListEmpty } from "../components/ListEmpty"
+import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 
 import { QueryError } from "@/components/status"
 
@@ -46,8 +43,23 @@ export default function DeviceGroups() {
 
   const deviceGroups = data?.deviceGroups || []
 
+  // Every way of opening the dialog goes through here, so it always starts clean.
+  const setCreateOpen = (open: boolean) => {
+    if (isCreating) return
+    if (open) {
+      setGroupName("")
+      setCreateError(null)
+    }
+    setCreateDialogOpen(open)
+  }
+
   const handleCreateGroup = async () => {
-    if (!groupName.trim() || !orgId) return
+    const name = groupName.trim()
+    if (!orgId || isCreating) return
+    if (!name) {
+      setCreateError("Enter a name for the group.")
+      return
+    }
 
     setIsCreating(true)
     setCreateError(null)
@@ -55,17 +67,17 @@ export default function DeviceGroups() {
       await createDeviceGroup({
         variables: { 
           input: { 
-            name: groupName,
+            name,
             organization: orgId
           }
         },
-        refetchQueries: ['ListDeviceGroups']
+        refetchQueries: ['ListDeviceGroups'],
+        awaitRefetchQueries: true,
       })
-      setGroupName("")
+      toast.success("Device group created")
       setCreateDialogOpen(false)
     } catch (err) {
-      console.error("Failed to create device group:", err)
-      setCreateError(err instanceof Error ? err.message : "Failed to create device group")
+      toastError(err, "Couldn't create the device group")
     } finally {
       setIsCreating(false)
     }
@@ -81,7 +93,7 @@ export default function DeviceGroups() {
         title="Device Groups"
         description="Organize devices into groups."
         actions={
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <Dialog open={createDialogOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -95,25 +107,39 @@ export default function DeviceGroups() {
                 Create a new group to organize your devices.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="e.g. Production Devices"
-                />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleCreateGroup()
+              }}
+            >
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={groupName}
+                    onChange={(e) => {
+                      setGroupName(e.target.value)
+                      setCreateError(null)
+                    }}
+                    placeholder="e.g. Production Devices"
+                    aria-invalid={Boolean(createError)}
+                  />
+                </div>
+                {createError && (
+                  <p className="text-sm text-destructive">{createError}</p>
+                )}
               </div>
-              {createError && (
-                <p className="text-sm text-destructive">{createError}</p>
-              )}
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={handleCreateGroup} disabled={isCreating}>
-                {isCreating ? "Creating..." : "Create Group"}
-              </Button>
-            </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} disabled={isCreating}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? "Creating..." : "Create Group"}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
         }
@@ -139,17 +165,17 @@ export default function DeviceGroups() {
       </div>
 
       {deviceGroups.length === 0 && (
-        <Empty className="border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Boxes />
-            </EmptyMedia>
-            <EmptyTitle>No device groups yet</EmptyTitle>
-            <EmptyDescription>
-              Create a group to organize devices, e.g. by lab or instrument.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <ListEmpty
+          icon={Boxes}
+          title="No device groups yet"
+          description="Create a group to organize devices, e.g. by lab or instrument."
+          action={
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Group
+            </Button>
+          }
+        />
       )}
     </div>
   )

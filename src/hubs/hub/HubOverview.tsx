@@ -2,21 +2,12 @@ import { Link, useParams, useNavigate } from "react-router-dom"
 import { useGetHubQuery, HubsDocument } from "@/graphql/queries/hub.generated"
 import { useDeleteHubMutation, useUpdateHubMutation } from "@/graphql/mutations/hub.generated"
 import { toastError } from "@/lib/errors"
+import { toast } from "sonner"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import { Layers, Server, Box, Ticket, ArrowRight, Pencil, Trash2, Activity, Network } from "lucide-react"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 import {
   Dialog,
   DialogContent,
@@ -31,17 +22,25 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { HubStatusBadge } from "../HubStatusBadge"
+import { AdminOnly } from "../../components/AdminOnly"
 
 export default function HubOverview() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
   const navigate = useNavigate()
-  const { data } = useGetHubQuery({ variables: { id: name! }, skip: !name })
+  // Health is pushed by the hub once a minute; keep the page current while it is open.
+  const { data } = useGetHubQuery({ variables: { id: name! }, skip: !name, pollInterval: 30_000 })
   const hub = data?.hub
 
   const [deleteHub] = useDeleteHubMutation({
     refetchQueries: [{ query: HubsDocument, variables: { filters: { organization: orgId || undefined } } }],
+    // The sidebar and the dashboard keep their own hub lists.
+    update: (cache) => {
+      cache.evict({ id: "ROOT_QUERY", fieldName: "hubs" })
+      cache.gc()
+    },
   })
-  const [updateHub] = useUpdateHubMutation()
+  const [updateHub, { loading: renaming }] = useUpdateHubMutation()
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
   const [newName, setNewName] = useState("")
 
@@ -74,9 +73,11 @@ export default function HubOverview() {
   const handleDelete = async () => {
     try {
       await deleteHub({ variables: { input: { id: hub.id } } })
+      toast.success(`Deleted ${hub.name}`)
       navigate(`/organization/${orgId}/hubs`)
     } catch (e) {
       toastError(e, "Couldn't delete the hub")
+      return false
     }
   }
 
@@ -84,8 +85,10 @@ export default function HubOverview() {
     if (!newName.trim()) return
     try {
       await updateHub({ variables: { input: { id: hub.id, name: newName.trim() } } })
+      // The hub is addressed by id, so the URL stays; the mutation returns the
+      // hub, which updates the cached name everywhere.
       setUpdateDialogOpen(false)
-      navigate(`/organization/${orgId}/hubs/${encodeURIComponent(newName.trim())}`)
+      toast.success("Hub renamed")
     } catch (e) {
       toastError(e, "Couldn't rename the hub")
     }
@@ -113,6 +116,7 @@ export default function HubOverview() {
             </div>
           </div>
         </div>
+        <AdminOnly orgId={orgId} note="Only organization admins can rename or delete a hub.">
         <div className="flex gap-2">
           <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
             <DialogTrigger asChild>
@@ -126,7 +130,14 @@ export default function HubOverview() {
                 <DialogTitle>Rename Hub</DialogTitle>
                 <DialogDescription>Enter a new name for this hub.</DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <form
+                id="rename-hub"
+                className="grid gap-4 py-4"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleUpdate()
+                }}
+              >
                 <div className="grid gap-2">
                   <Label htmlFor="name">Hub Name</Label>
                   <Input
@@ -134,44 +145,37 @@ export default function HubOverview() {
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Enter hub name"
+                    autoFocus
                   />
                 </div>
-              </div>
+              </form>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setUpdateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleUpdate} disabled={!newName.trim()}>
-                  Rename
+                <Button type="submit" form="rename-hub" disabled={renaming || !newName.trim() || newName.trim() === hub.name}>
+                  {renaming ? "Renaming..." : "Rename"}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Hub</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this hub? This action cannot be undone. All associated service
-                  instances and clients will be removed from this hub.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+          <ConfirmActionDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            title={`Delete ${hub.name}?`}
+            description="This cannot be undone. The hub's service instances and clients are removed with it, its apps stop working, and its node leaves the mesh."
+            confirmLabel="Delete hub"
+            pendingLabel="Deleting..."
+            destructive
+            onConfirm={handleDelete}
+          />
         </div>
+        </AdminOnly>
       </div>
 
       <HubHealthCard hub={hub} />
@@ -219,7 +223,7 @@ function HubHealthCard({ hub }: { hub: HubHealth }) {
         <CardDescription className="text-xs">
           {hub.lastSeenAt
             ? `Last reported ${formatDistanceToNow(new Date(hub.lastSeenAt), { addSuffix: true })}${hub.version ? ` · version ${hub.version}` : ""}`
-            : "This hub has not reported its health yet."}
+            : "This hub has not reported its health yet. A running hub server reports once a minute; this page updates on its own."}
         </CardDescription>
       </CardHeader>
       {hub.lastSeenAt && (
@@ -228,11 +232,11 @@ function HubHealthCard({ hub }: { hub: HubHealth }) {
             <Network className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Mesh:</span>
             {hub.meshConnected == null ? (
-              <span className="text-muted-foreground">not reported</span>
+              <span className="text-muted-foreground">not reported (the hub server did not say)</span>
             ) : hub.meshConnected ? (
               <span className="font-mono">{hub.meshHost || "connected"}</span>
             ) : (
-              <span>not connected</span>
+              <span>not connected — apps cannot reach it over the mesh until the hub server rejoins</span>
             )}
           </div>
           {latest && latest.instances.length > 0 && (
@@ -241,7 +245,7 @@ function HubHealthCard({ hub }: { hub: HubHealth }) {
                 <div key={instance.identifier} className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${instance.healthy ? "bg-green-500" : "bg-destructive"}`} aria-hidden />
                   <span className="font-mono text-xs truncate">{instance.identifier}</span>
-                  {instance.reason && <span className="text-xs text-muted-foreground truncate">{instance.reason}</span>}
+                  {instance.reason && <span className="text-xs text-muted-foreground truncate" title={instance.reason}>{instance.reason}</span>}
                 </div>
               ))}
             </div>

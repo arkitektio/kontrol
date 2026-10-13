@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { errorMessage, toastError } from "@/lib/errors"
 
 const CREATE_REDEEM_TOKEN_MUTATION = gql`
   mutation CreateRedeemTokenDialog($input: CreateRedeemTokenInput!) {
@@ -143,7 +144,12 @@ export function CreateRedeemTokenDialog({
     onOpenChange(nextOpen)
   }
 
+  // Empty means "no expiration"; anything else has to be a whole number of days.
+  const expiresTrimmed = expiresInDays.trim()
+  const expiresInvalid = expiresTrimmed !== "" && !(/^\d+$/.test(expiresTrimmed) && Number(expiresTrimmed) >= 1)
+
   const handleCreate = async () => {
+    if (creating || expiresInvalid) return
     if (!effectiveHubId) {
       setCreateError("Please select a hub")
       return
@@ -152,7 +158,7 @@ export function CreateRedeemTokenDialog({
     setCreateError(null)
 
     try {
-      const expiresValue = expiresInDays.trim() === "" ? null : Number(expiresInDays)
+      const expiresValue = expiresTrimmed === "" ? null : Number(expiresTrimmed)
       const result = await createRedeemToken({
         variables: {
           input: {
@@ -168,9 +174,8 @@ export function CreateRedeemTokenDialog({
         toast.success("Redeem token created")
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to create redeem token"
-      setCreateError(message)
-      toast.error(message)
+      setCreateError(errorMessage(error))
+      toastError(error, "Couldn't create the redeem token")
     }
   }
 
@@ -179,10 +184,19 @@ export function CreateRedeemTokenDialog({
       return
     }
 
-    await navigator.clipboard.writeText(createdToken.token)
-    setCopied(true)
-    toast.success("Redeem token copied")
-    window.setTimeout(() => setCopied(false), 2000)
+    // navigator.clipboard requires a secure context (https/localhost).
+    if (!navigator.clipboard) {
+      toast.error("Clipboard is unavailable in this context")
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(createdToken.token)
+      setCopied(true)
+      toast.success("Redeem token copied")
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch (e) {
+      toastError(e, "Couldn't copy the redeem token")
+    }
   }
 
   return (
@@ -192,7 +206,7 @@ export function CreateRedeemTokenDialog({
           <DialogTitle>{createdToken ? "Redeem Token Created" : "Create Redeem Token"}</DialogTitle>
           <DialogDescription>
             {createdToken
-              ? "Copy this token and use it when redeeming a client."
+              ? "Copy this token and pass it to the app's own connect or redeem command. It lets the app connect to the hub once without a browser approval."
               : hubId
                 ? "Create a redeem token for this hub."
                 : "Create a redeem token for one of this organization's hubs."}
@@ -223,7 +237,13 @@ export function CreateRedeemTokenDialog({
             </DialogFooter>
           </div>
         ) : (
-          <div className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              handleCreate()
+            }}
+          >
             {hubId ? (
               <div className="grid gap-2">
                 <Label>Hub</Label>
@@ -268,11 +288,19 @@ export function CreateRedeemTokenDialog({
               <Input
                 id="expires-in-days"
                 min="1"
+                step="1"
                 placeholder="Leave empty for no expiration"
                 type="number"
                 value={expiresInDays}
                 onChange={(event) => setExpiresInDays(event.target.value)}
+                aria-invalid={expiresInvalid || undefined}
+                aria-describedby={expiresInvalid ? "expires-in-days-error" : undefined}
               />
+              {expiresInvalid ? (
+                <p id="expires-in-days-error" className="text-sm text-destructive">
+                  Enter a whole number of days (1 or more), or leave it empty for no expiration.
+                </p>
+              ) : null}
             </div>
 
             {createError ? <p className="text-sm text-destructive">{createError}</p> : null}
@@ -281,11 +309,11 @@ export function CreateRedeemTokenDialog({
               <Button type="button" variant="outline" onClick={() => handleClose(false)}>
                 Cancel
               </Button>
-              <Button type="button" disabled={creating || loadingHubs} onClick={handleCreate}>
+              <Button type="submit" disabled={creating || loadingHubs || expiresInvalid}>
                 {creating ? "Creating..." : "Create token"}
               </Button>
             </DialogFooter>
-          </div>
+          </form>
         )}
       </DialogContent>
     </Dialog>

@@ -1,7 +1,6 @@
 import { useParams, Link } from "react-router-dom"
 import { useGetServiceInstanceQuery } from "@/graphql/queries/service_instance.generated"
-import { useCreateAliasMutation } from "@/graphql/mutations/alias.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { Separator } from "../components/ui/separator"
@@ -11,47 +10,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../components/ui/tooltip"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../components/ui/dialog"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select"
 import { Plus, ArrowRight } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
-import { toastError } from "@/lib/errors"
+import { Command } from "../components/Command"
+import { CreateAliasDialog } from "../aliases/CreateAliasDialog"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
+import { AdminOnly } from "../components/AdminOnly"
 
 export default function ServiceInstance() {
   const params = useParams<{ id: string; instanceId?: string }>()
   const id = params.instanceId || params.id
-  const { data, loading, error, refetch } = useGetServiceInstanceQuery({
+  const { data, loading, error } = useGetServiceInstanceQuery({
     variables: { id: id! },
     skip: !id,
   })
-  const [createAlias, { loading: creatingAlias }] = useCreateAliasMutation()
-  
-  const [createAliasOpen, setCreateAliasOpen] = useState(false)
-  const [aliasHost, setAliasHost] = useState("")
-  const [aliasPort, setAliasPort] = useState("80")
-  const [aliasPath, setAliasPath] = useState("")
-  const [aliasKind, setAliasKind] = useState("absolute")
 
   if (loading) return <DetailPageSkeleton sections={3} />
   if (error) return <QueryError error={error} resource="instance" />
@@ -61,39 +35,6 @@ export default function ServiceInstance() {
 
   // There is deliberately no delete here: lok has no mutation to delete a service
   // instance (instances are registered by their hub).
-  const isMesh = aliasKind === "mesh"
-  const port = parseInt(aliasPort, 10)
-  const canCreateAlias = (isMesh || aliasHost.trim() !== "") && Number.isInteger(port)
-
-  const resetAliasForm = () => {
-    setAliasHost("")
-    setAliasPort("80")
-    setAliasPath("")
-    setAliasKind("absolute")
-  }
-
-  const handleCreateAlias = async () => {
-    try {
-      await createAlias({
-        variables: {
-          input: {
-            instance: instance.id,
-            host: isMesh ? undefined : aliasHost.trim(),
-            port,
-            path: aliasPath || undefined,
-            kind: aliasKind,
-          },
-        },
-        refetchQueries: ["ListInstanceAlias"],
-      })
-      toast.success("Alias created")
-      setCreateAliasOpen(false)
-      resetAliasForm()
-      refetch()
-    } catch (e) {
-      toastError(e, "Couldn't create the alias")
-    }
-  }
 
   return (
     <div className="container mx-auto py-10 relative min-h-screen">
@@ -103,85 +44,22 @@ export default function ServiceInstance() {
               <div className="flex items-center gap-4">
                   
                 <div>
-                  <CardTitle className="text-2xl">{instance.identifier}</CardTitle>
+                  <h1 className="text-2xl leading-none font-semibold">{instance.identifier}</h1>
                   <p className="text-muted-foreground text-sm font-mono text-xs mt-1">{instance.release.service.identifier} v{instance.release.version}</p>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Dialog open={createAliasOpen} onOpenChange={setCreateAliasOpen}>
-                  <DialogTrigger asChild>
+<AdminOnly orgId={instance.organization?.id} note="Only organization admins can add an alias.">
+                <CreateAliasDialog
+                  instanceId={instance.id}
+                  trigger={
                     <Button variant="outline" size="sm">
                       <Plus className="h-4 w-4 mr-2" />
                       Alias
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create Alias</DialogTitle>
-                      <DialogDescription>
-                        Add a new alias for this service instance.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="kind">Kind</Label>
-                        <Select value={aliasKind} onValueChange={setAliasKind}>
-                          <SelectTrigger id="kind">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="absolute">Absolute</SelectItem>
-                            <SelectItem value="mesh">Mesh (hub's MagicDNS name)</SelectItem>
-                            <SelectItem value="docker">Docker (only from the hub's own docker network)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {isMesh ? (
-                        <p className="text-xs text-muted-foreground">
-                          A mesh alias has no fixed host: it resolves to the hub node's MagicDNS name on the
-                          organization's mesh, so only clients on the mesh can reach it.
-                        </p>
-                      ) : (
-                        <div className="grid gap-2">
-                          <Label htmlFor="host">Host</Label>
-                          <Input
-                            id="host"
-                            value={aliasHost}
-                            onChange={(e) => setAliasHost(e.target.value)}
-                            placeholder="example.com"
-                          />
-                        </div>
-                      )}
-                      <div className="grid gap-2">
-                        <Label htmlFor="port">Port</Label>
-                        <Input
-                          id="port"
-                          type="number"
-                          value={aliasPort}
-                          onChange={(e) => setAliasPort(e.target.value)}
-                          placeholder="80"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="path">Path (optional)</Label>
-                        <Input
-                          id="path"
-                          value={aliasPath}
-                          onChange={(e) => setAliasPath(e.target.value)}
-                          placeholder="api/v1"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setCreateAliasOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateAlias} disabled={!canCreateAlias || creatingAlias}>
-                        {creatingAlias ? "Creating..." : "Create"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                  }
+                />
+                </AdminOnly>
               </div>
         </CardHeader>
         
@@ -268,9 +146,9 @@ export default function ServiceInstance() {
                  <h3 className="font-semibold text-lg">Details</h3>
                  <Card>
                     <CardContent className="pt-6 grid gap-2">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center gap-4">
                             <span className="font-medium">ID</span>
-                            <span className="text-muted-foreground font-mono text-sm">{instance.id}</span>
+                            <Command label="Copy id">{instance.id}</Command>
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium">Version</span>

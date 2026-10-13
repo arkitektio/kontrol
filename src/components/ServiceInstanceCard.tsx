@@ -5,17 +5,18 @@ import { Link } from 'react-router-dom';
 import { Badge } from './ui/badge';
 
 export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanceFragment }) => {
+  const logo = instance.release.service.logo?.presignedUrl
 
   return (
     <Link to={`/organization/${instance.organization.id}/service-instances/${instance.id}`} >
-      <Card className="group grid grid-cols-3 grid-cols-reverse hover:shadow-lg transition-shadow overflow-hidden p-0 h-40">
+      <Card className="group grid grid-cols-3 hover:shadow-lg transition-shadow overflow-hidden p-0 h-40">
         {/* Content Section */}
-        <div className="col-span-2 flex flex-col p-4 justify-between gap-4 relative">
+        <div className={`${logo ? "col-span-2" : "col-span-3"} min-w-0 flex flex-col p-4 justify-between gap-4 relative`}>
           <div className="space-y-1.5">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-lg hover:text-primary transition-colors truncate">
-                    {instance.identifier.slice(0, 20)}
+              <div className="min-w-0">
+                <h3 className="font-semibold text-lg hover:text-primary transition-colors truncate" title={instance.identifier}>
+                    {instance.identifier}
                 </h3>
                 <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                     
@@ -30,12 +31,12 @@ export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanc
           </div>
         </div>
         {/* Logo Section */}
-        <div className="col-span-1 relative right-0 top-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 right-0">
+        {logo && (
+          <div className="col-span-1 relative right-0 top-0 w-full h-full overflow-hidden pointer-events-none">
+            <img src={logo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute w-full h-full bg-gradient-to-r from-card via-card/80 to-transparent" />
           </div>
-          <div className="absolute w-full h-full bg-gradient-to-r from-card via-card/80 to-transparent" />
-
-        </div>
+        )}
       </Card>
     </Link>
   );

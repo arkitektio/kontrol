@@ -13,10 +13,13 @@ import { matchesSearch } from "../components/matchesSearch"
 import { QueryError } from "@/components/status"
 
 import { ListPageSkeleton } from "@/components/skeletons"
+import { useIsAnyOrgAdmin } from "@/hooks/useIsOrgAdmin"
 
 export default function InstanceAliases() {
   const [search, setSearch] = useState("")
   const { data, loading, error, refetch } = useListInstanceAliasQuery({})
+  // Creating an alias takes the admin role in the instance's organization.
+  const { isAdmin } = useIsAnyOrgAdmin()
 
   if (loading) return <ListPageSkeleton columns={3} count={6} />
   if (error) return <QueryError error={error} onRetry={() => refetch()} />
@@ -52,7 +55,7 @@ export default function InstanceAliases() {
         title="Instance Aliases"
         description="Service instance endpoints and aliases."
         // The create mutation refetches ListInstanceAlias itself.
-        actions={<CreateAliasDialog />}
+        actions={isAdmin ? <CreateAliasDialog /> : undefined}
       />
 
       <div className="space-y-4">

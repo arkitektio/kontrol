@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
   useLoaderData,
-  useNavigate
+  useNavigate,
+  useSearchParams
 } from 'react-router-dom'
 import { getEmailVerification, verifyEmail } from '../lib/allauth'
 import { Button } from "@/components/ui/button"
@@ -21,12 +22,14 @@ export default function VerifyEmail () {
   const [error, setError] = useState<string | null>(null)
 
   const navigate = useNavigate()
+  // Same as VerifyEmailByCode: land on the deep link the user was heading for.
+  const next = useSearchParams()[0].get("next")
 
   function submit () {
     setLoading(true)
     verifyEmail(key).then((content) => {
       if (content.status === 200 || content.status === 401) {
-          navigate('/account/email')
+          navigate(next || '/account/email')
       } else {
           setError("Failed to verify email.")
       }

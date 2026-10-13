@@ -1,6 +1,6 @@
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { useGetServiceInstanceMappingQuery } from "@/graphql/queries/service_instance_mapping.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { ClientLabel } from "../components/ClientLabel"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -24,15 +24,31 @@ export default function ServiceInstanceMapping() {
     <div className="container mx-auto py-10 space-y-6">
       <Card>
         <CardHeader>
-            <CardTitle className="text-2xl">{mapping.key}</CardTitle>
+            <h1 className="text-2xl leading-none font-semibold">{mapping.key}</h1>
         </CardHeader>
         <CardContent>
             <div className="grid gap-2">
                 <div>
-                    <span className="font-semibold">Client:</span> <ClientLabel client={mapping.client} className="align-middle" />
+                    <span className="font-semibold">Client:</span>{" "}
+                    {mapping.client.organization ? (
+                        <Link
+                            to={`/organization/${mapping.client.organization.id}/clients/${mapping.client.id}`}
+                            className="text-primary hover:underline"
+                        >
+                            <ClientLabel client={mapping.client} className="align-middle" />
+                        </Link>
+                    ) : (
+                        <ClientLabel client={mapping.client} className="align-middle" />
+                    )}
                 </div>
                 <div>
-                    <span className="font-semibold">Instance:</span> {mapping.instance.identifier}
+                    <span className="font-semibold">Instance:</span>{" "}
+                    <Link
+                        to={`/organization/${mapping.instance.organization.id}/service-instances/${mapping.instance.id}`}
+                        className="text-primary hover:underline"
+                    >
+                        {mapping.instance.identifier}
+                    </Link>
                 </div>
                 <div>
                     <span className="font-semibold">Optional:</span> {mapping.optional ? "Yes" : "No"}

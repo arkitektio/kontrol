@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { PageHeader } from "../components/PageHeader"
-import { Layers, ArrowRight, Server } from "lucide-react"
+import { AdminOnly } from "../components/AdminOnly"
+import { Layers, ArrowRight, Server, Plug } from "lucide-react"
 
 import { QueryError } from "@/components/status"
 
@@ -36,6 +37,20 @@ export default function Hubs() {
         icon={Layers}
         title="Hubs"
         description="Pre-configured stacks of services and clients for this organization."
+        // With no hub yet the page below is the call to action; afterwards this
+        // is the only way to another one.
+        actions={
+          hubs.length > 0 ? (
+            <AdminOnly orgId={orgId}>
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/organization/${orgId}/connect-hub`}>
+                  <Plug className="h-4 w-4 mr-2" />
+                  Connect a hub
+                </Link>
+              </Button>
+            </AdminOnly>
+          ) : undefined
+        }
       />
 
       {hubs.length === 0 ? (

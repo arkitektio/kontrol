@@ -17,10 +17,21 @@ import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
 
 /**
- * Admin action: revoke every token this client holds. The app is signed out
- * everywhere and has to be approved again before it can reconnect.
+ * Reject a client (its approver, or an organization admin). For an app this ends
+ * the whole installation: every session of the same app, member and device, and
+ * its node on the mesh. It has to be approved again before it can reconnect.
  */
-export const RevokeClientSessionsDialog = ({ clientId, clientName }: { clientId: string; clientName: string }) => {
+export const RevokeClientSessionsDialog = ({
+  clientId,
+  clientName,
+  isApp = true,
+  hasDevice = true,
+}: {
+  clientId: string
+  clientName: string
+  isApp?: boolean
+  hasDevice?: boolean
+}) => {
   const [open, setOpen] = useState(false)
   const [revoke, { loading }] = useRevokeClientSessionsMutation()
 
@@ -29,10 +40,10 @@ export const RevokeClientSessionsDialog = ({ clientId, clientName }: { clientId:
     e.preventDefault()
     try {
       await revoke({ variables: { input: { client: clientId } } })
-      toast.success(`Revoked all sessions of ${clientName}`)
+      toast.success(`Rejected ${clientName}`)
       setOpen(false)
     } catch (err) {
-      toastError(err, "Couldn't revoke the client's sessions")
+      toastError(err, "Couldn't reject the client")
     }
   }
 
@@ -41,15 +52,19 @@ export const RevokeClientSessionsDialog = ({ clientId, clientName }: { clientId:
       <AlertDialogTrigger asChild>
         <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
           <LogOut className="h-4 w-4 mr-2" />
-          Revoke sessions
+          Reject
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Revoke all sessions of {clientName}?</AlertDialogTitle>
+          <AlertDialogTitle>Reject {clientName}?</AlertDialogTitle>
           <AlertDialogDescription>
-            Every access and refresh token this app holds is invalidated immediately. The app
-            stops working until it is approved again — someone will have to re-run its
+            {!isApp
+              ? "Every access and refresh token this client holds is invalidated immediately, and its node is removed from the mesh."
+              : hasDevice
+                ? "This ends every session of this app on this device, including the ones bound to other hubs, and removes its node from the mesh immediately."
+                : "This app did not register a device, so this ends every install of it that the same member approved without one, and removes their nodes from the mesh immediately."}{" "}
+            It stops working until it is approved again — someone will have to re-run its
             connect / device-code flow.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -60,7 +75,7 @@ export const RevokeClientSessionsDialog = ({ clientId, clientName }: { clientId:
             disabled={loading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {loading ? "Revoking..." : "Revoke sessions"}
+            {loading ? "Rejecting..." : "Reject"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { toastError } from "@/lib/errors"
 
 /**
  * Sends a one-off push notification to a single member's registered devices.
@@ -63,12 +64,12 @@ export function SendNotification({
         setTitle("")
         setMessage("")
       }
-    } catch (e: any) {
+    } catch (e) {
       // A refusal usually means the card was gating on stale data — the member
       // muted the org, or unregistered their device, in a session of their own.
       // `refetchQueries` only runs on success, so pull the truth in by hand.
       client.refetchQueries({ include: ["GetMembership"] })
-      toast.error("Failed to send notification: " + e.message)
+      toastError(e, "Couldn't send the notification")
     }
   }
 

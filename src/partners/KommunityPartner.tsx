@@ -10,6 +10,7 @@ import { Textarea } from "../components/ui/textarea";
 import { AlertCircle, ArrowUpRight, BadgeCheck, FileSignature, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import { errorMessage, toastError } from "@/lib/errors";
 import { HUB_ADMIN_REQUIRED } from "@/hooks/useIsOrgAdmin";
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -53,6 +54,8 @@ export default function KommunityPartner() {
   const navigate = useNavigate();
   const [licenseSignature, setLicenseSignature] = useState("");
   const [connectError, setConnectError] = useState<string | null>(null);
+  // True once the request reached the server, i.e. a hub may have been created.
+  const [connectAttempted, setConnectAttempted] = useState(false);
 
   const { data, loading, error } = useGetKommunityPartnerQuery({
     variables: { id: id! },
@@ -88,24 +91,25 @@ export default function KommunityPartner() {
 
   const handleConnectPreauthorizedPartner = async () => {
     setConnectError(null);
+    setConnectAttempted(false);
 
     if (!organization) {
       const message = "You must be a member of this organization before connecting a partner.";
       setConnectError(message);
-      toast.error(message);
+      toastError(message, "Can't connect this partner yet");
       return;
     }
 
     if (!mayAddHub) {
       setConnectError(HUB_ADMIN_REQUIRED);
-      toast.error(HUB_ADMIN_REQUIRED);
+      toastError(HUB_ADMIN_REQUIRED, "Can't connect this partner yet");
       return;
     }
 
     if (requiresSignature && !licenseSignature.trim()) {
       const message = "You must sign the partner license agreement before continuing.";
       setConnectError(message);
-      toast.error(message);
+      toastError(message, "Can't connect this partner yet");
       return;
     }
     try {
@@ -125,13 +129,13 @@ export default function KommunityPartner() {
       }
 
       toast.success(
-        `Connected ${partner.name} to ${organization?.name || hub.organization.name || "your organization"}.`,
+        `Connected ${partner.name} to ${organization?.name || hub.organization.name || "your organization"}`,
       );
       navigate(`/organization/${hub.organization.id}/hubs/${hub.id}`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Partner connection failed.";
-      setConnectError(message);
-      toast.error(message);
+      setConnectAttempted(true);
+      setConnectError(errorMessage(error));
+      toastError(error, `Couldn't connect ${partner.name}`);
     }
   };
 
@@ -208,10 +212,12 @@ export default function KommunityPartner() {
               {connectError && (
                 <Alert variant="destructive">
                   <AlertCircle />
-                  <AlertTitle>Partner Approval Failed</AlertTitle>
+                  <AlertTitle>{connectAttempted ? "Couldn't connect this partner" : "Can't connect yet"}</AlertTitle>
                   <AlertDescription>
                     <p>{connectError}</p>
-                    <p>If the partner hook rejected this request, the created hub has already been removed automatically.</p>
+                    {connectAttempted && (
+                      <p>If the partner hook rejected this request, the created hub has already been removed automatically.</p>
+                    )}
                   </AlertDescription>
                 </Alert>
               )}

@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom"
 import { useDetailServiceReleaseQuery } from "@/graphql/queries/service_release.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Link } from "react-router-dom"
 import { Badge } from "../components/ui/badge"
@@ -31,7 +31,7 @@ export default function ServiceRelease() {
             <AvatarFallback>{release.service.name.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="text-2xl">{release.service.name}</CardTitle>
+            <h1 className="text-2xl leading-none font-semibold">{release.service.name}</h1>
             <p className="text-muted-foreground">Version {release.version}</p>
             <Badge variant="outline" className="mt-2">{release.service.identifier}</Badge>
           </div>

@@ -14,7 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 
 interface ProviderAccount {
   uid: string
@@ -37,30 +39,43 @@ export default function ManageProviders () {
     fetching: false, 
     content: { status: 200, data: [] } 
   })
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [disconnectTarget, setDisconnectTarget] = useState<ProviderAccount | null>(null)
 
   useEffect(() => {
     setResponse((r) => { return { ...r, fetching: true } })
     allauth.getProviderAccounts().then((resp) => {
       if (resp.status === 200) {
         setAccounts(resp.data as ProviderAccount[])
+      } else {
+        setLoadError(resp.errors?.[0]?.message ?? `The server answered ${resp.status}`)
       }
+    }).catch((e) => {
+      console.error(e)
+      setLoadError(e instanceof Error ? e.message : String(e))
     }).then(() => {
       setResponse((r) => { return { ...r, fetching: false } })
     })
   }, [])
 
-  function disconnect (account: ProviderAccount) {
-    setResponse({ ...response, fetching: true })
-    allauth.disconnectProviderAccount(account.provider.id, account.uid).then((resp) => {
+  /** Resolves false when the disconnect failed, so the confirm dialog stays open. */
+  async function disconnect (account: ProviderAccount) {
+    try {
+      const resp = await allauth.disconnectProviderAccount(account.provider.id, account.uid)
       setResponse((r) => { return { ...r, content: resp as ResponseContent } })
       if (resp.status === 200) {
         setAccounts(resp.data as ProviderAccount[])
+        toast.success(`${account.provider.name} disconnected`)
+        return
       }
-    }).catch((e) => {
+      // 401: reauthentication required — the auth context routes to that flow.
+      if (resp.status !== 401) {
+        toastError(resp.errors?.[0]?.message ?? `The server answered ${resp.status}`, "Couldn't disconnect the account")
+      }
+    } catch (e) {
       toastError(e, "Couldn't disconnect the account")
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
-    })
+    }
+    return false
   }
 
   return (
@@ -100,7 +115,15 @@ export default function ManageProviders () {
             </Alert>
           )}
 
-          {response.fetching && accounts.length === 0 ? (
+          {loadError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Couldn't load your connected accounts</AlertTitle>
+              <AlertDescription>{loadError}</AlertDescription>
+            </Alert>
+          )}
+
+          {loadError && accounts.length === 0 ? null : response.fetching && accounts.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">Loading accounts...</span>
@@ -138,22 +161,12 @@ export default function ManageProviders () {
                         </TableCell>
                         <TableCell className="text-right">
                           <Button 
-                            onClick={() => disconnect(account)} 
-                            disabled={response.fetching}
+                            onClick={() => setDisconnectTarget(account)} 
                             variant="destructive"
                             size="sm"
                           >
-                            {response.fetching ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Disconnecting...
-                              </>
-                            ) : (
-                              <>
-                                <Unlink className="mr-2 h-4 w-4" />
-                                Disconnect
-                              </>
-                            )}
+                            <Unlink className="mr-2 h-4 w-4" />
+                            Disconnect
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -165,6 +178,17 @@ export default function ManageProviders () {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmActionDialog
+        open={disconnectTarget !== null}
+        onOpenChange={(open) => !open && setDisconnectTarget(null)}
+        title={`Disconnect ${disconnectTarget?.provider.name ?? "this account"}?`}
+        description={`You will no longer be able to sign in with ${disconnectTarget?.display || "this account"}. You can connect it again later.`}
+        confirmLabel="Disconnect"
+        pendingLabel="Disconnecting..."
+        destructive
+        onConfirm={() => disconnectTarget && disconnect(disconnectTarget)}
+      />
 
       <Card>
         <CardHeader>

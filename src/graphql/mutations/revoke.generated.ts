@@ -6,7 +6,7 @@ export type RevokeClientSessionsMutationVariables = Types.Exact<{
   input: Types.RevokeClientSessionsInput;
 }>;
 
-export type RevokeClientSessionsMutation = { __typename?: 'Mutation', revokeClientSessions: { __typename?: 'ManagementClient', id: string } };
+export type RevokeClientSessionsMutation = { __typename?: 'Mutation', revokeClientSessions: { __typename?: 'ManagementClient', id: string, accessState: Types.PriorAccessState } };
 
 export type RevokeOrganizationSessionsMutationVariables = Types.Exact<{
   input: Types.RevokeOrganizationSessionsInput;
@@ -14,7 +14,7 @@ export type RevokeOrganizationSessionsMutationVariables = Types.Exact<{
 
 export type RevokeOrganizationSessionsMutation = { __typename?: 'Mutation', revokeOrganizationSessions: number };
 
-export const RevokeClientSessionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RevokeClientSessions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RevokeClientSessionsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"revokeClientSessions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode;
+export const RevokeClientSessionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RevokeClientSessions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RevokeClientSessionsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"revokeClientSessions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"accessState"}}]}}]}}]} as unknown as DocumentNode;
 export type RevokeClientSessionsMutationFn = Apollo.MutationFunction<RevokeClientSessionsMutation, RevokeClientSessionsMutationVariables>;
 
 /**

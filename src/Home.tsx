@@ -12,6 +12,18 @@ const CreateOrganizationDialog = lazy(() =>
     import("./components/CreateOrganizationDialog").then((m) => ({ default: m.CreateOrganizationDialog })),
 )
 
+/** Organization slugs this browser sent a join request for (see links/LinkForward). */
+function pendingJoinRequests(): string[] {
+    const prefix = "kontrol-join-requested:"
+    try {
+        return Object.keys(localStorage)
+            .filter((key) => key.startsWith(prefix))
+            .map((key) => key.slice(prefix.length))
+    } catch {
+        return []
+    }
+}
+
 /**
  * Where signing in lands you: every organization you belong to, and a way to
  * make another one.
@@ -34,6 +46,7 @@ export default function Home() {
 
     const user = data?.me
     const memberships = user?.memberships ?? []
+    const pendingJoins = pendingJoinRequests()
 
     const createDialog = dialogMounted && (
         <Suspense fallback={null}>
@@ -62,6 +75,7 @@ export default function Home() {
                 )}
             </div>
 
+            {/* Join requests are only remembered in this browser (see links/LinkForward). */}
             {memberships.length === 0 ? (
                 <Card className="bg-primary/5 border-primary/20">
                     <CardHeader>
@@ -79,8 +93,15 @@ export default function Home() {
                             <Plus className="mr-2 h-4 w-4" /> Create organization
                         </Button>
                         <p className="text-muted-foreground mt-4 text-sm">
-                            Joining someone else's organization? Open the invite link they sent you.
+                            Joining someone else&apos;s organization? Open the invite link they sent you,
+                            or ask one of its admins for one.
                         </p>
+                        {pendingJoins.length > 0 && (
+                            <p className="text-muted-foreground mt-2 text-sm">
+                                You asked to join {pendingJoins.join(", ")}. An admin there has to approve
+                                it; the organization appears here once they do.
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
             ) : (

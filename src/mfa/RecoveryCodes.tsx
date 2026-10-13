@@ -1,10 +1,12 @@
 import { useLoaderData } from 'react-router-dom'
-import { Printer, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Printer, AlertCircle, CheckCircle2, Copy, Download } from 'lucide-react'
+import { toast } from 'sonner'
 
 import * as allauth from '../lib/allauth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toastError } from '@/lib/errors'
 
 export async function loader () {
   const resp = await allauth.getRecoveryCodes()
@@ -16,6 +18,31 @@ export default function RecoveryCodes () {
 
   const handlePrint = () => {
     window.print()
+  }
+
+  const codesText = (): string => (recoveryCodes.data?.unused_codes ?? []).join('\n')
+
+  const handleCopy = async () => {
+    // navigator.clipboard requires a secure context (https/localhost).
+    if (!navigator.clipboard) {
+      toast.error('Clipboard is unavailable in this context')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(codesText())
+      toast.success('Recovery codes copied')
+    } catch (e) {
+      toastError(e, "Couldn't copy the recovery codes")
+    }
+  }
+
+  const handleDownload = () => {
+    const url = URL.createObjectURL(new Blob([codesText() + '\n'], { type: 'text/plain' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'recovery-codes.txt'
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   return (
@@ -55,7 +82,15 @@ export default function RecoveryCodes () {
                 </div>
               </div>
 
-              <div className="flex gap-2 print:hidden">
+              <div className="flex flex-wrap gap-2 print:hidden">
+                <Button onClick={handleCopy} variant="outline">
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy
+                </Button>
+                <Button onClick={handleDownload} variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download (.txt)
+                </Button>
                 <Button onClick={handlePrint} variant="outline">
                   <Printer className="mr-2 h-4 w-4" />
                   Print Codes

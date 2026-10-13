@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom"
 import { useGetServiceQuery } from "@/graphql/queries/services.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -29,7 +29,7 @@ export default function Service() {
             <AvatarFallback>{service.name.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="text-2xl">{service.name}</CardTitle>
+            <h1 className="text-2xl leading-none font-semibold">{service.name}</h1>
             <p className="text-muted-foreground">{service.identifier}</p>
           </div>
         </CardHeader>
@@ -44,7 +44,7 @@ export default function Service() {
                     </Link>
                 ))}
                 {service.releases.length === 0 && (
-                    <div className="text-sm text-muted-foreground">No instances found</div>
+                    <div className="text-sm text-muted-foreground">No versions found</div>
                 )}
             </div>
         </CardContent>

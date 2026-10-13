@@ -10,7 +10,8 @@ import { Input } from "./components/ui/input"
 import { Label } from "./components/ui/label"
 import { CreateInviteDialog } from "./components/CreateInviteDialog"
 import { useMediaUpload } from "./hooks/use-upload"
-import { Pen, Camera } from "lucide-react"
+import { timeAgo } from "./lib/time"
+import { Pen, Camera, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
 import { ConfirmActionDialog } from "./components/ConfirmActionDialog"
@@ -19,13 +20,20 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { ProfilePageSkeleton } from "@/components/skeletons"
 
+/** "Expires in 2 days" / "Expired 3 hours ago" / "No expiry". */
+function inviteExpiry(expiresAt?: string | null): string {
+  if (!expiresAt) return "No expiry"
+  const expired = new Date(expiresAt).getTime() < Date.now()
+  return `${expired ? "Expired" : "Expires"} ${timeAgo(expiresAt)}`
+}
+
 export default function OrganizationProfile() {
   const { orgId } = useParams<{ orgId: string }>()
   const [inviteOpen, setInviteOpen] = useState(false)
   
   const upload = useMediaUpload()
-  const [updateProfile] = useUpdateOrganizationProfileMutation()
-  const [createProfile] = useCreateOrganizationProfileMutation()
+  const [updateProfile, { loading: updating }] = useUpdateOrganizationProfileMutation()
+  const [createProfile, { loading: creating }] = useCreateOrganizationProfileMutation()
   const [cancelInvite] = useCancelInviteMutation()
 
   const { data, loading, error, refetch } = useOrganizationQuery({
@@ -37,6 +45,7 @@ export default function OrganizationProfile() {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState("")
   const [cancelTarget, setCancelTarget] = useState<string | null>(null)
+  const [uploading, setUploading] = useState<"avatar" | "banner" | null>(null)
 
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
@@ -53,6 +62,7 @@ export default function OrganizationProfile() {
   const canEdit = org.amIOwner || org.amIAdmin
 
   const handleCreateProfile = async () => {
+    if (creating) return;
     try {
         await createProfile({
             variables: {
@@ -62,7 +72,7 @@ export default function OrganizationProfile() {
                 }
             }
         });
-        toast.success("Organization profile created!");
+        toast.success("Organization profile created");
         refetch();
     } catch (e) {
         toastError(e, "Couldn't create the organization profile");
@@ -75,8 +85,9 @@ export default function OrganizationProfile() {
     
     // If no profile, create one first? Or assume profile exists if we allow clicking?
     // We only render the file inputs if profile exists.
-    if (!profile) return;
+    if (!profile || uploading) return;
 
+    setUploading("avatar");
     try {
         const key = await upload(file);
         await updateProfile({
@@ -91,6 +102,8 @@ export default function OrganizationProfile() {
         refetch();
     } catch (e) {
         toastError(e, "Couldn't upload the avatar");
+    } finally {
+        setUploading(null);
     }
     e.target.value = "";
   };
@@ -98,8 +111,9 @@ export default function OrganizationProfile() {
   const handleBannerSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!profile) return;
+    if (!profile || uploading) return;
 
+    setUploading("banner");
     try {
         const key = await upload(file);
         await updateProfile({
@@ -114,19 +128,22 @@ export default function OrganizationProfile() {
         refetch();
     } catch (e) {
         toastError(e, "Couldn't upload the cover image");
+    } finally {
+        setUploading(null);
     }
     e.target.value = "";
   };
 
 
   const handleSave = async () => {
-      if (!profile) return;
+      const trimmedName = editName.trim()
+      if (!profile || !trimmedName || updating) return;
       try {
           await updateProfile({
               variables: {
                   input: {
                       id: profile.id,
-                      name: editName,
+                      name: trimmedName,
                   }
               }
           })
@@ -177,12 +194,14 @@ export default function OrganizationProfile() {
                         <button
                             type="button"
                             aria-label="Change cover image"
+                            aria-busy={uploading === "banner"}
+                            disabled={uploading !== null}
                             onClick={() => bannerInputRef.current?.click()}
-                            className="absolute inset-0 bg-black/10 opacity-0 group-hover/banner:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                            className={`absolute inset-0 bg-black/10 group-hover/banner:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${uploading === "banner" ? "opacity-100" : "opacity-0"}`}
                         >
                             <div className="bg-black/50 text-white px-3 py-1 rounded-full flex items-center gap-2 backdrop-blur-sm">
-                                <Camera className="w-4 h-4" />
-                                <span className="text-xs font-medium">Change Cover</span>
+                                {uploading === "banner" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                                <span className="text-xs font-medium">{uploading === "banner" ? "Uploading..." : "Change Cover"}</span>
                             </div>
                         </button>
                     )}
@@ -201,10 +220,12 @@ export default function OrganizationProfile() {
                 <button
                     type="button"
                     aria-label="Change organization avatar"
+                    aria-busy={uploading === "avatar"}
+                    disabled={uploading !== null}
                     onClick={() => avatarInputRef.current?.click()}
-                    className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover/avatar:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className={`absolute inset-0 rounded-full bg-black/50 group-hover/avatar:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${uploading === "avatar" ? "opacity-100" : "opacity-0"}`}
                 >
-                     <Camera className="w-6 h-6" />
+                     {uploading === "avatar" ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
                 </button>
                )}
             </div>
@@ -216,13 +237,16 @@ export default function OrganizationProfile() {
                 <div className="flex flex-col gap-2 items-start h-full justify-end">
                     <h1 className="text-4xl font-bold tracking-tight text-foreground">{displayName}</h1>
                     {canEdit && (
-                        <Button onClick={handleCreateProfile} size="sm">
-                            Create {displayName} Profile
+                        <Button onClick={handleCreateProfile} size="sm" disabled={creating}>
+                            {creating ? "Creating..." : `Create ${displayName} Profile`}
                         </Button>
                     )}
                 </div>
             ) : isEditing ? (
-                 <div className="flex flex-col gap-2 max-w-xl bg-card p-4 rounded-lg border shadow-lg absolute top-10 left-0 z-50 w-full">
+                 <form
+                    className="flex flex-col gap-2 max-w-xl bg-card p-4 rounded-lg border shadow-lg absolute top-10 left-0 z-50 w-full"
+                    onSubmit={(e) => { e.preventDefault(); handleSave() }}
+                 >
                     <div className="space-y-2">
                         <Label htmlFor="org-profile-name">Display Name</Label>
                         <Input 
@@ -230,14 +254,20 @@ export default function OrganizationProfile() {
                             value={editName} 
                             onChange={(e) => setEditName(e.target.value)} 
                             className="text-lg font-bold"
+                            aria-invalid={!editName.trim() || undefined}
                         />
+                        {!editName.trim() && (
+                            <p className="text-sm text-destructive">The display name can't be empty.</p>
+                        )}
                     </div>
 
                     <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
-                        <Button onClick={handleSave}>Save Changes</Button>
+                        <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} disabled={updating}>Cancel</Button>
+                        <Button type="submit" disabled={updating || !editName.trim()}>
+                            {updating ? "Saving..." : "Save Changes"}
+                        </Button>
                     </div>
-                 </div>
+                 </form>
             ) : (
                 <div className="group flex flex-col justify-end h-full">
                     <div className="flex items-center gap-2">
@@ -258,7 +288,7 @@ export default function OrganizationProfile() {
                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                         @{org.slug}
                         <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                        <span>{org.memberships.length} members</span>
+                        <span>{org.memberships.length} {org.memberships.length === 1 ? "member" : "members"}</span>
                     </p>
                 </div>
             )}
@@ -269,7 +299,7 @@ export default function OrganizationProfile() {
                   <Button variant="outline" onClick={() => setInviteOpen(true)}>
                       Invite Member
                   </Button>
-                  <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} />
+                  <CreateInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} organizationId={org.id} availableRoles={org.roles} roleSets={org.roleSets} />
             </div>
           )}
         </div>
@@ -287,7 +317,7 @@ export default function OrganizationProfile() {
                 <CardContent>
                     <div className="grid gap-4">
                         {org.memberships.map(membership => (
-                            <div key={membership.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                            <Link key={membership.id} to={`/organization/${org.id}/members/${membership.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                                 <Avatar className="h-10 w-10 border">
                                     <AvatarImage src={membership.user.profile?.avatar?.presignedUrl || undefined} />
                                     <AvatarFallback>{membership.user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -305,7 +335,7 @@ export default function OrganizationProfile() {
                                         </span>
                                     ))}
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </CardContent>
@@ -321,19 +351,21 @@ export default function OrganizationProfile() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                     {org.invites?.map(i => (
-                        <Link
-                        to={`/invites/${i.id}`}
+                        <div
                         key={i.id}
-                        className="block p-3 rounded-lg border bg-card text-card-foreground shadow-sm hover:border-primary/50 transition-colors"
+                        className="p-3 rounded-lg border bg-card text-card-foreground shadow-sm"
                         >
                         <div className="flex items-start justify-between gap-4 mb-2">
                             <div className="space-y-1 overflow-hidden">
                                 <div className="text-xs font-medium text-muted-foreground uppercase">
                                     INVITE LINK
                                 </div>
-                                <div className="font-mono text-xs bg-muted p-1 rounded truncate">
+                                <Link
+                                    to={`/organization/${org.id}/invites/${i.id}`}
+                                    className="block font-mono text-xs bg-muted p-1 rounded truncate hover:underline"
+                                >
                                     {i.inviteUrl}
-                                </div>
+                                </Link>
                             </div>
                             <div className="flex flex-col items-end gap-2">
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
@@ -344,11 +376,7 @@ export default function OrganizationProfile() {
                                         variant="ghost" 
                                         size="sm" 
                                         className="h-6 text-destructive hover:text-destructive hover:bg-destructive/10 px-2"
-                                        onClick={(e) => {
-                                            e.preventDefault()
-                                            e.stopPropagation()
-                                            setCancelTarget(i.id)
-                                        }}
+                                        onClick={() => setCancelTarget(i.id)}
                                      >
                                         Cancel
                                     </Button>
@@ -357,7 +385,7 @@ export default function OrganizationProfile() {
                         </div>
                         <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
                             <span>
-                                Expires in 2 days
+                                {inviteExpiry(i.expiresAt)}
                             </span>
                             {i.acceptedBy && (
                             <span>
@@ -365,7 +393,7 @@ export default function OrganizationProfile() {
                             </span>
                             )}
                         </div>
-                        </Link>
+                        </div>
                     ))}
                     </CardContent>
                 </Card>
@@ -373,7 +401,7 @@ export default function OrganizationProfile() {
         </div>
       </div>
 
-      {/* One page-level confirm, outside the invite <Link> cards. */}
+      {/* One page-level confirm for all invite cards. */}
       <ConfirmActionDialog
         open={cancelTarget !== null}
         onOpenChange={(open) => !open && setCancelTarget(null)}

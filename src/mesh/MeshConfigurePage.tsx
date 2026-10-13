@@ -1,10 +1,11 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toastError } from "@/lib/errors";
 import { useMeshDeviceCodeByCodeQuery } from "@/graphql/queries/mesh_device_code.generated"
 import { useAcceptMeshDeviceCodeMutation, useDeclineMeshDeviceCodeMutation } from "@/graphql/mutations/mesh_device_code.generated"
 import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
+import { QueryError } from "@/components/status"
 
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -14,7 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OrganizationSelect } from "@/components/OrganizationSelect";
-import { AlertCircle, Network, Check, X } from "lucide-react";
+import { AlertCircle, Network, Check, X, ShieldAlert } from "lucide-react";
 
 interface ConfigureFormData {
   organization: string;
@@ -30,7 +31,7 @@ export function MeshConfigurePage() {
   const selectedOrganization = watch("organization");
   const machineName = watch("machineName");
 
-  const { data: meshDeviceCodeData, loading: meshDeviceCodeLoading, error: meshDeviceCodeError } = useMeshDeviceCodeByCodeQuery({
+  const { data: meshDeviceCodeData, loading: meshDeviceCodeLoading, error: meshDeviceCodeError, refetch: refetchCode } = useMeshDeviceCodeByCodeQuery({
     variables: { code: code || "" },
     skip: !code,
   });
@@ -38,25 +39,33 @@ export function MeshConfigurePage() {
   const { data: orgData } = useListOrganizationsQuery();
   const { data: meData } = useMeQuery();
 
-  const [acceptMeshDeviceCode] = useAcceptMeshDeviceCodeMutation();
-  const [declineMeshDeviceCode] = useDeclineMeshDeviceCodeMutation();
+  const [acceptMeshDeviceCode, { loading: accepting }] = useAcceptMeshDeviceCodeMutation();
+  const [declineMeshDeviceCode, { loading: declining }] = useDeclineMeshDeviceCodeMutation();
+  const busy = accepting || declining;
 
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
 
   const meshDeviceCode = meshDeviceCodeData?.meshDeviceCodeByCode;
 
-  // Preset the active organization.
+  // Preset the active organization. Adding a machine is an admin operation, so
+  // bias the preselection towards an org the user may actually add it to (the
+  // same rule as the hub page).
   useEffect(() => {
-    if (meData?.me && orgData?.organizations) {
-      const activeOrg = orgData.organizations.find(org => org.name === meData.me.username);
-      if (activeOrg && !selectedOrganization) {
-        setValue("organization", activeOrg.id);
-      } else if (orgData.organizations.length > 0 && !selectedOrganization) {
-        setValue("organization", orgData.organizations[0].id);
-      }
-    }
+    if (!meData?.me || !orgData?.organizations || selectedOrganization) return;
+    const organizations = orgData.organizations;
+    const personal = organizations.find(org => org.name === meData.me.username);
+    const preset =
+      (personal?.amIAdmin ? personal : undefined) ??
+      organizations.find(org => org.amIAdmin) ??
+      personal ??
+      organizations[0];
+    if (preset) setValue("organization", preset.id);
   }, [meData, orgData, selectedOrganization, setValue]);
+
+  const targetOrganization = orgData?.organizations.find(org => org.id === selectedOrganization);
+  // The bar the backend enforces on acceptMeshDeviceCode: owner or `admin` role.
+  const mayAddMachine = Boolean(targetOrganization?.amIAdmin);
 
   // Pre-fill the machine name with the value the machine suggested.
   useEffect(() => {
@@ -73,10 +82,16 @@ export function MeshConfigurePage() {
     );
   }
 
-  if (meshDeviceCodeError || !meshDeviceCode) {
+  // A failed request is not an expired link: say so, and offer a retry.
+  if (meshDeviceCodeError) {
+    return <QueryError error={meshDeviceCodeError} resource="authorization request" onRetry={() => refetchCode()} />;
+  }
+
+  if (!meshDeviceCode) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-muted-foreground">This authorization link is invalid or has expired.</p>
+      <div className="flex flex-col items-center justify-center gap-1 py-16 text-center">
+        <p className="text-sm font-medium">This authorization link is invalid or has expired.</p>
+        <p className="text-sm text-muted-foreground">Start joining the mesh again on the machine to get a new link.</p>
       </div>
     );
   }
@@ -97,6 +112,8 @@ export function MeshConfigurePage() {
       if (data.data?.acceptMeshDeviceCode) {
         setAuthorized(true);
         setSubmitted(true);
+      } else {
+        toastError(new Error("The server did not confirm the request."), "Couldn't add the machine to the mesh");
       }
     } catch (e) {
       toastError(e, "Couldn't add the machine to the mesh");
@@ -129,7 +146,7 @@ export function MeshConfigurePage() {
               {authorized ? <Check className="size-8" strokeWidth={2.5} /> : <X className="size-8" strokeWidth={2.5} />}
             </div>
             <div className="space-y-1.5">
-              <h1 className="text-xl font-semibold">{authorized ? "Machine authorized" : "Request denied"}</h1>
+              <h1 className="text-xl font-semibold">{authorized ? "Machine authorized" : "Request declined"}</h1>
               <p className="text-muted-foreground text-sm">
                 {authorized
                   ? "The machine will now receive its mesh key and join the network. You can close this tab."
@@ -165,7 +182,7 @@ export function MeshConfigurePage() {
           {/* RIGHT — org + machine name + actions */}
           <div className="space-y-5 p-6">
             <p className="text-muted-foreground text-sm">
-              This machine is requesting a pre-authorized key to join your organization's private mesh network.
+              This machine is asking to join your organization's private mesh network.
               Choose the organization and confirm the name it should join under.
             </p>
 
@@ -174,6 +191,17 @@ export function MeshConfigurePage() {
             )}
 
             <div className="space-y-4 border-t pt-5">
+              {orgData && orgData.organizations.length === 0 && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>No organization yet</AlertTitle>
+                  <AlertDescription>
+                    A mesh belongs to an organization, and you are not a member of one.{" "}
+                    <Link to="/home" className="underline">Create one</Link>, then open this link again.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {orgData?.organizations && orgData.organizations.length > 0 && (
                 <div className="space-y-2">
                   <Label>Assign to organization</Label>
@@ -210,6 +238,17 @@ export function MeshConfigurePage() {
                 </p>
               </div>
 
+              {targetOrganization && !mayAddMachine && (
+                <Alert>
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Admin required</AlertTitle>
+                  <AlertDescription>
+                    Only organization admins can add a machine to the mesh. Ask an admin of this
+                    organization to open this link, or pick an organization you administer.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Review required</AlertTitle>
@@ -219,11 +258,11 @@ export function MeshConfigurePage() {
               </Alert>
 
               <div className="flex gap-2 pt-1">
-                <Button variant="outline" className="flex-1" onClick={onCancel}>
-                  Decline
+                <Button variant="outline" className="flex-1" onClick={onCancel} disabled={busy}>
+                  {declining ? "Declining..." : "Decline"}
                 </Button>
-                <Button className="flex-1" onClick={onAllow} disabled={!selectedOrganization}>
-                  Authorize
+                <Button className="flex-1" onClick={onAllow} disabled={busy || !selectedOrganization || !mayAddMachine}>
+                  {accepting ? "Adding..." : "Accept"}
                 </Button>
               </div>
             </div>

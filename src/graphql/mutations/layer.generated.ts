@@ -30,6 +30,18 @@ export type CreateIonscaleAuthKeyMutationVariables = Types.Exact<{
 
 export type CreateIonscaleAuthKeyMutation = { __typename?: 'Mutation', createIonscaleAuthKey: { __typename?: 'ManagementIonscaleAuthKey', id: string, key?: string | null, createdAt: any, ephemeral: boolean, tags: Array<string>, creator: { __typename?: 'ManagementUser', id: string, email?: string | null } } };
 
+export type DeleteIonscaleAuthKeyMutationVariables = Types.Exact<{
+  input: Types.DeleteIonscaleAuthKeyInput;
+}>;
+
+export type DeleteIonscaleAuthKeyMutation = { __typename?: 'Mutation', deleteIonscaleAuthKey: string };
+
+export type DeleteMachineMutationVariables = Types.Exact<{
+  input: Types.DeleteMachineInput;
+}>;
+
+export type DeleteMachineMutation = { __typename?: 'Mutation', deleteMachine: string };
+
 export const CreateIonscaleLayerDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateIonscaleLayer"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateIonscaleLayerInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createIonscaleLayer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"Layer"}}]}}]}},...LayerFragmentDoc.definitions,...ListInstanceAliasFragmentDoc.definitions,...MachineFragmentDoc.definitions,...ListIonscaleAuthKeyFragmentDoc.definitions]} as unknown as DocumentNode;
 export type CreateIonscaleLayerMutationFn = Apollo.MutationFunction<CreateIonscaleLayerMutation, CreateIonscaleLayerMutationVariables>;
 
@@ -138,3 +150,57 @@ export function useCreateIonscaleAuthKeyMutation(baseOptions?: Apollo.MutationHo
 export type CreateIonscaleAuthKeyMutationHookResult = ReturnType<typeof useCreateIonscaleAuthKeyMutation>;
 export type CreateIonscaleAuthKeyMutationResult = Apollo.MutationResult<CreateIonscaleAuthKeyMutation>;
 export type CreateIonscaleAuthKeyMutationOptions = Apollo.BaseMutationOptions<CreateIonscaleAuthKeyMutation, CreateIonscaleAuthKeyMutationVariables>;
+export const DeleteIonscaleAuthKeyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteIonscaleAuthKey"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DeleteIonscaleAuthKeyInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteIonscaleAuthKey"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode;
+export type DeleteIonscaleAuthKeyMutationFn = Apollo.MutationFunction<DeleteIonscaleAuthKeyMutation, DeleteIonscaleAuthKeyMutationVariables>;
+
+/**
+ * __useDeleteIonscaleAuthKeyMutation__
+ *
+ * To run a mutation, you first call `useDeleteIonscaleAuthKeyMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteIonscaleAuthKeyMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteIonscaleAuthKeyMutation, { data, loading, error }] = useDeleteIonscaleAuthKeyMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteIonscaleAuthKeyMutation(baseOptions?: Apollo.MutationHookOptions<DeleteIonscaleAuthKeyMutation, DeleteIonscaleAuthKeyMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteIonscaleAuthKeyMutation, DeleteIonscaleAuthKeyMutationVariables>(DeleteIonscaleAuthKeyDocument, options);
+      }
+export type DeleteIonscaleAuthKeyMutationHookResult = ReturnType<typeof useDeleteIonscaleAuthKeyMutation>;
+export type DeleteIonscaleAuthKeyMutationResult = Apollo.MutationResult<DeleteIonscaleAuthKeyMutation>;
+export type DeleteIonscaleAuthKeyMutationOptions = Apollo.BaseMutationOptions<DeleteIonscaleAuthKeyMutation, DeleteIonscaleAuthKeyMutationVariables>;
+export const DeleteMachineDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteMachine"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DeleteMachineInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteMachine"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode;
+export type DeleteMachineMutationFn = Apollo.MutationFunction<DeleteMachineMutation, DeleteMachineMutationVariables>;
+
+/**
+ * __useDeleteMachineMutation__
+ *
+ * To run a mutation, you first call `useDeleteMachineMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteMachineMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteMachineMutation, { data, loading, error }] = useDeleteMachineMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteMachineMutation(baseOptions?: Apollo.MutationHookOptions<DeleteMachineMutation, DeleteMachineMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteMachineMutation, DeleteMachineMutationVariables>(DeleteMachineDocument, options);
+      }
+export type DeleteMachineMutationHookResult = ReturnType<typeof useDeleteMachineMutation>;
+export type DeleteMachineMutationResult = Apollo.MutationResult<DeleteMachineMutation>;
+export type DeleteMachineMutationOptions = Apollo.BaseMutationOptions<DeleteMachineMutation, DeleteMachineMutationVariables>;

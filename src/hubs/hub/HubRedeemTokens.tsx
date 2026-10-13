@@ -7,8 +7,10 @@ import { Button } from "../../components/ui/button"
 import { Ticket, Copy, Check } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { timeAgo } from "@/lib/time"
 
 import { QueryError } from "@/components/status"
+import { AdminOnly } from "../../components/AdminOnly"
 
 import { ListPageSkeleton } from "@/components/skeletons"
 
@@ -27,10 +29,19 @@ export default function HubRedeemTokens() {
   const tokens = data?.redeemTokens ?? []
 
   const handleCopyToken = async (token: string) => {
-    await navigator.clipboard.writeText(token)
-    setCopiedTokenId(token)
-    toast.success("Redeem token copied")
-    window.setTimeout(() => setCopiedTokenId(null), 2000)
+    // navigator.clipboard needs a secure context (https/localhost).
+    if (!navigator.clipboard) {
+      toast.error("Clipboard is unavailable in this context")
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(token)
+      setCopiedTokenId(token)
+      toast.success("Redeem token copied")
+      window.setTimeout(() => setCopiedTokenId(null), 2000)
+    } catch {
+      toast.error("Failed to copy")
+    }
   }
 
   return (
@@ -39,12 +50,15 @@ export default function HubRedeemTokens() {
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
           <Ticket className="h-4 w-4" /> Redeem Tokens
         </h3>
-        <Button size="sm" variant="outline" onClick={() => setTokenDialogOpen(true)}>
-          <Ticket className="h-4 w-4 mr-2" /> New Token
-        </Button>
+        <AdminOnly orgId={orgId} note="Only organization admins can create redeem tokens.">
+          <Button size="sm" variant="outline" onClick={() => setTokenDialogOpen(true)}>
+            <Ticket className="h-4 w-4 mr-2" /> New Token
+          </Button>
+        </AdminOnly>
       </div>
       <p className="text-xs text-muted-foreground">
-        A redeem token can be used once to create or attach a development client for this hub.
+        A redeem token lets an app connect to this hub once without a browser approval: pass it to
+        the app&apos;s own connect or redeem command.
       </p>
       {error ? (
         <QueryError error={error} compact resource="redeem tokens" />
@@ -65,13 +79,16 @@ export default function HubRedeemTokens() {
                     <Badge variant={token.client ? "default" : "secondary"} className="text-xs">
                       {token.client ? "Redeemed" : "Pending"}
                     </Badge>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => token.token && handleCopyToken(token.token)} disabled={!token.token} title={token.token ? "Copy token" : "Only the creator or an organization admin can see this token"}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => token.token && handleCopyToken(token.token)} disabled={!token.token} aria-label="Copy token" title={token.token ? "Copy token" : "Only the creator or an organization admin can see this token"}>
                       {copiedTokenId === token.token ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                     </Button>
                   </div>
                 </div>
                 <CardDescription className="text-xs">
-                  Expires {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString() : "never"}
+                  {token.expiresAt
+                    ? `${new Date(token.expiresAt).getTime() < Date.now() ? "Expired" : "Expires"} ${timeAgo(token.expiresAt)}`
+                    : "Never expires"}
+                  {!token.token && " · visible to its creator and admins"}
                 </CardDescription>
               </CardHeader>
             </Card>

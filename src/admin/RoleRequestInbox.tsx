@@ -10,6 +10,8 @@ import {
   useDeclineRoleRequestMutation,
 } from "@/graphql/mutations/role_request.generated"
 import { useRoleRequestsQuery } from "@/graphql/queries/role_request.generated"
+import { QueryError } from "@/components/status"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toastError } from "@/lib/errors"
 import { timeAgo } from "@/lib/time"
 
@@ -27,8 +29,10 @@ import { timeAgo } from "@/lib/time"
  * "My Access" view updates too.
  */
 export function RoleRequestInbox({ organizationId }: { organizationId: string }) {
-  const { data, loading } = useRoleRequestsQuery({
+  const { data, loading, error, refetch } = useRoleRequestsQuery({
     variables: { filters: { organization: organizationId, status: "pending" } },
+    // Requests arrive from other people; keep the inbox current while it is open.
+    pollInterval: 60_000,
   })
 
   const [approve, { loading: approving }] = useApproveRoleRequestMutation({
@@ -72,8 +76,15 @@ export function RoleRequestInbox({ organizationId }: { organizationId: string })
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {loading && requests.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Loading requests…</p>
+        {error && !data ? (
+          // Without this a failed query would read as "Nothing waiting on you".
+          <QueryError compact error={error} resource="role requests" onRetry={() => refetch()} />
+        ) : loading && requests.length === 0 ? (
+          <div className="space-y-2" aria-busy="true" aria-label="Loading requests">
+            {[0, 1].map((i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-lg" />
+            ))}
+          </div>
         ) : requests.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             Nothing waiting on you. Requests land here the moment a member asks for a role

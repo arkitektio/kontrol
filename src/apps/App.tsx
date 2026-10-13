@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom"
 import { useDetailAppQuery } from "@/graphql/queries/app.generated"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -29,7 +29,7 @@ export default function App() {
             <AvatarFallback>{app.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="text-2xl">{app.identifier}</CardTitle>
+            <h1 className="text-2xl leading-none font-semibold">{app.identifier}</h1>
           </div>
         </CardHeader>
         <CardContent>

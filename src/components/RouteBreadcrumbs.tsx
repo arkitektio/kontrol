@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useLocation, Link } from "react-router-dom"
 import { gql, useFragment, type DocumentNode } from "@apollo/client"
 import { ChevronRight } from "lucide-react"
@@ -16,7 +17,7 @@ interface BreadcrumbSegment {
 // Static segments whose capitalised form reads badly.
 const SEGMENT_LABELS: Record<string, string> = {
   "2fa": "Two-factor",
-  "danger-zone": "Danger zone",
+  "danger-zone": "Settings",
   "connect-hub": "Connect hub",
   "redeem-tokens": "Redeem tokens",
   "service-instances": "Service instances",
@@ -25,7 +26,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   "instance-aliases": "Instance aliases",
   "rolesets": "Role sets",
   "authkeys": "Auth keys",
-  "me": "My membership",
+  "me": "My access",
   "socialaccount": "Connected accounts",
   "verify-email": "Verify email",
 }
@@ -38,6 +39,8 @@ const ENTITY_TYPES: Record<string, string> = {
   devices: "ManagementDevice",
   groups: "ManagementDeviceGroup",
   clients: "ManagementClient",
+  hubs: "ManagementHub",
+  machines: "ManagementMachine",
   roles: "ManagementRole",
   scopes: "ManagementScope",
   "service-instances": "ManagementServiceInstance",
@@ -55,6 +58,8 @@ const ENTITY_FRAGMENTS: Record<string, DocumentNode> = {
   ManagementDevice: gql`fragment CrumbDevice on ManagementDevice { id name }`,
   ManagementDeviceGroup: gql`fragment CrumbDeviceGroup on ManagementDeviceGroup { id name }`,
   ManagementClient: gql`fragment CrumbClient on ManagementClient { id name }`,
+  ManagementHub: gql`fragment CrumbHub on ManagementHub { id name }`,
+  ManagementMachine: gql`fragment CrumbMachine on ManagementMachine { id name }`,
   ManagementRole: gql`fragment CrumbRole on ManagementRole { id identifier }`,
   ManagementScope: gql`fragment CrumbScope on ManagementScope { id identifier }`,
   ManagementServiceInstance: gql`fragment CrumbServiceInstance on ManagementServiceInstance { id identifier }`,
@@ -81,7 +86,14 @@ function humanize(part: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-function EntityCrumbLabel({ typename, id }: { typename: string; id: string }) {
+// Collections whose items have no name of their own (a key value, an invite
+// code): the id segment reads as the thing, not as a raw id.
+const UNNAMED_ITEMS: Record<string, string> = {
+  authkeys: "Key",
+  invites: "Invite",
+}
+
+function useEntityLabel({ typename, id }: { typename: string; id: string }): string {
   const { data } = useFragment<CrumbData>({ fragment: ENTITY_FRAGMENTS[typename], from: { __typename: typename, id } })
   const label =
     data?.user?.username ??
@@ -91,11 +103,43 @@ function EntityCrumbLabel({ typename, id }: { typename: string; id: string }) {
     data?.host ??
     data?.key ??
     data?.version
-  return <>{label || `#${id}`}</>
+  return label || `#${id}`
+}
+
+function EntityCrumbLabel({ entity }: { entity: { typename: string; id: string } }) {
+  return <>{useEntityLabel(entity)}</>
 }
 
 function CrumbLabel({ crumb }: { crumb: BreadcrumbSegment }) {
-  return crumb.entity ? <EntityCrumbLabel {...crumb.entity} /> : <>{crumb.label}</>
+  return crumb.entity ? <EntityCrumbLabel entity={crumb.entity} /> : <>{crumb.label}</>
+}
+
+const APP_TITLE = "Kontrol"
+
+function useDocumentTitle(label: string | null) {
+  useEffect(() => {
+    document.title = label ? `${label} · ${APP_TITLE}` : APP_TITLE
+    return () => {
+      document.title = APP_TITLE
+    }
+  }, [label])
+}
+
+function EntityTitle({ entity }: { entity: { typename: string; id: string } }) {
+  useDocumentTitle(useEntityLabel(entity))
+  return null
+}
+
+function StaticTitle({ label }: { label: string | null }) {
+  useDocumentTitle(label)
+  return null
+}
+
+/** Names the browser tab after the page the trail ends on. */
+function PageTitle({ crumbs }: { crumbs: BreadcrumbSegment[] }) {
+  const last = crumbs.length > 1 ? crumbs[crumbs.length - 1] : null
+  if (last?.entity) return <EntityTitle entity={last.entity} />
+  return <StaticTitle label={last?.label ?? null} />
 }
 
 export const useRouteBreadcrumbs = (): BreadcrumbSegment[] => {
@@ -127,14 +171,18 @@ export const useRouteBreadcrumbs = (): BreadcrumbSegment[] => {
           segments.push({ label: orgNameById.get(part) ?? part, path: currentPath })
           return
       }
-      // The segment after a collection is an id (hubs are addressed by name, so they read fine as-is).
+      if (parent && UNNAMED_ITEMS[parent] && !SEGMENT_LABELS[part]) {
+          segments.push({ label: UNNAMED_ITEMS[parent], path: currentPath })
+          return
+      }
+      // The segment after a collection is an id.
       const typename = parent ? ENTITY_TYPES[parent] : undefined
       if (typename && !SEGMENT_LABELS[part] && part !== 'groups') {
           segments.push({ label: `#${part}`, path: currentPath, entity: { typename, id: part } })
           return
       }
-      // Hub names and other opaque ids stay verbatim; only route words are humanized.
-      const isRouteWord = /^[a-z0-9-]+$/.test(part) && parent !== 'hubs' && !/\d/.test(part)
+      // Opaque ids stay verbatim; only route words are humanized.
+      const isRouteWord = /^[a-z0-9-]+$/.test(part) && !/\d/.test(part)
       segments.push({ label: isRouteWord || SEGMENT_LABELS[part] ? humanize(part) : part, path: currentPath })
   })
 
@@ -147,6 +195,7 @@ export const RouteBreadcrumbs = () => {
 
   return (
     <Breadcrumb>
+      <PageTitle crumbs={breadcrumbs} />
       <BreadcrumbList>
         {breadcrumbs.map((crumb, index) => {
           const isLast = index === breadcrumbs.length - 1

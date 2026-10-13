@@ -240,9 +240,21 @@ export type DeleteHubInput = {
   id: Scalars['ID']['input'];
 };
 
+export type DeleteIonscaleAuthKeyInput = {
+  /** The auth key to revoke. */
+  id: Scalars['ID']['input'];
+};
+
 export type DeleteIonscaleLayerInput = {
   /** The mesh to disable. Irreversible: the tailnet and every machine enrolled in it are deleted on ionscale as well. */
   id: Scalars['ID']['input'];
+};
+
+export type DeleteMachineInput = {
+  /** The mesh the machine is on. */
+  layerId: Scalars['ID']['input'];
+  /** The machine to remove. */
+  machineId: Scalars['ID']['input'];
 };
 
 export type DeleteMembershipInput = {
@@ -316,6 +328,8 @@ export type ManagementAppOrdering =
  */
 export type ManagementClient = {
   __typename?: 'ManagementClient';
+  /** Whether this client can still refresh its tokens. ACTIVE: it has a live session. EXPIRED: its refresh chain ran out, or it never collected a token. REVOKED: it was rejected (by its approver or an admin) or revoked by reuse detection; it has to be approved again. */
+  accessState: PriorAccessState;
   /** The device (compute node) this client runs on, if it registered one. */
   device?: Maybe<ManagementDevice>;
   /** Is this client functional? A non-functional client cannot be used to authenticate users. */
@@ -2148,7 +2162,9 @@ export type Mutation = {
   deleteDevice: Scalars['ID']['output'];
   deleteDeviceGroup: Scalars['ID']['output'];
   deleteHub: Scalars['ID']['output'];
+  deleteIonscaleAuthKey: Scalars['ID']['output'];
   deleteIonscaleLayer: Scalars['ID']['output'];
+  deleteMachine: Scalars['ID']['output'];
   deleteMembership: Scalars['ID']['output'];
   deleteOrganization: Scalars['ID']['output'];
   deleteOrganizationProfile: Scalars['ID']['output'];
@@ -2341,8 +2357,18 @@ export type MutationDeleteHubArgs = {
 };
 
 
+export type MutationDeleteIonscaleAuthKeyArgs = {
+  input: DeleteIonscaleAuthKeyInput;
+};
+
+
 export type MutationDeleteIonscaleLayerArgs = {
   input: DeleteIonscaleLayerInput;
+};
+
+
+export type MutationDeleteMachineArgs = {
+  input: DeleteMachineInput;
 };
 
 
@@ -2542,7 +2568,7 @@ export type PresignedPostCredentials = {
   xAmzSignature: Scalars['String']['output'];
 };
 
-/** Whether a previously approved client can still refresh its tokens. */
+/** Whether an approved client can still refresh its tokens. */
 export const PriorAccessState = {
   Active: 'ACTIVE',
   Expired: 'EXPIRED',

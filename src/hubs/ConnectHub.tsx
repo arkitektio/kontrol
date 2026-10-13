@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom"
+import { Command } from "../components/Command"
 import { useListKommunityPartnerQuery } from "@/graphql/queries/kommunity_partner.generated"
 import { HUB_ADMIN_REQUIRED, useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
@@ -121,16 +122,14 @@ export default function ConnectHub() {
               organization.
             </p>
 
-            <div className="overflow-x-auto rounded-lg border bg-muted/50 p-4">
-              <code className="font-mono text-sm">
-                <span className="select-none text-muted-foreground">$ </span>
-                arkitekt-server hub connect
-              </code>
-            </div>
+            <Command>arkitekt-server hub connect</Command>
+            <p className="text-xs text-muted-foreground">
+              The command prints a link. Open it here, approve the hub, and it appears under Hubs.
+            </p>
 
             <div className="mt-auto">
               <Button variant="outline" asChild>
-                <a href="https://arkitekt.live/docs/intro" target="_blank" rel="noopener noreferrer">
+                <a href="https://arkitekt.live/docs/hosting" target="_blank" rel="noopener noreferrer">
                   Read the documentation <ArrowRight className="ml-1 h-4 w-4" />
                 </a>
               </Button>

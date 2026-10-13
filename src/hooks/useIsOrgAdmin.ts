@@ -18,6 +18,13 @@ export const HUB_ADMIN_REQUIRED =
  * a false: gating on it stops an admin from seeing an "ask an admin" flash before
  * their memberships arrive.
  */
+/** Whether the current user owns or administers at least one organization. */
+export function useIsAnyOrgAdmin(): { isAdmin: boolean; loading: boolean } {
+  const user = useUser()
+  const { data, loading } = useMeQuery({ skip: !user })
+  return { isAdmin: Boolean(data?.me?.memberships?.some((m) => m.organization.amIAdmin)), loading }
+}
+
 export function useIsOrgAdmin(orgId?: string | null): { isAdmin: boolean; loading: boolean } {
   const user = useUser()
   const { data, loading } = useMeQuery({ skip: !user })

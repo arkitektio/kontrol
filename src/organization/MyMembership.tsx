@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 import { SettingsStackSkeleton } from "@/components/skeletons"
+import { QueryError } from "@/components/status"
 
 /** Colour a request badge by its status. */
 function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
@@ -26,7 +27,7 @@ function statusVariant(status: string): "default" | "secondary" | "destructive" 
 
 /**
  * "Me in this organization": lets a member see the roles they hold, request
- * additional roles from the owner, track those requests, and pick their personal
+ * additional roles from the owner or an admin, track those requests, and pick their personal
  * brand colour for the organization. Everything is read from the already-fetched
  * `Me` query — the membership carries its roles, its role requests, and the
  * organization's full role list.
@@ -34,9 +35,9 @@ function statusVariant(status: string): "default" | "secondary" | "destructive" 
 export default function MyMembership() {
   const { orgId } = useParams<{ orgId: string }>()
   const navigate = useNavigate()
-  const { data, loading } = useMeQuery()
+  const { data, loading, error, refetch } = useMeQuery()
   // Me's memberships carry the list-level org (no amIOwner) — ask the org itself.
-  const { data: orgData } = useOrganizationQuery({ variables: { id: orgId! }, skip: !orgId })
+  const { data: orgData, error: orgError } = useOrganizationQuery({ variables: { id: orgId! }, skip: !orgId })
   const [leaveOpen, setLeaveOpen] = useState(false)
 
   const [requestRole, { loading: requesting }] = useRequestRoleMutation({
@@ -48,6 +49,8 @@ export default function MyMembership() {
   const [deleteMembership] = useDeleteMembershipMutation()
 
   if (loading) return <SettingsStackSkeleton header="pageHeader" cards={2} rows={3} />
+  // Without this a failed Me query would read as "not a member".
+  if (error && !data) return <QueryError error={error} resource="membership" onRetry={() => refetch()} />
   const membership = data?.me?.memberships?.find((m) => m.organization.id === orgId)
   if (!membership) {
     return (
@@ -79,7 +82,7 @@ export default function MyMembership() {
   const handleRequest = async (roleId: string) => {
     try {
       await requestRole({ variables: { input: { organization: org.id, role: roleId } } })
-      toast.success("Role requested — the organization owner will review it")
+      toast.success("Role requested", { description: "An owner or admin of the organization will review it." })
     } catch (e) {
       toastError(e, "Couldn't request the role")
     }
@@ -151,7 +154,7 @@ export default function MyMembership() {
             <Plus className="h-5 w-5" /> Request access
           </CardTitle>
           <CardDescription>
-            Ask the organization owner to grant you an additional role.
+            Ask the organization's owner or admins to grant you an additional role.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -255,9 +258,18 @@ export default function MyMembership() {
               <Link to={`/organization/${org.id}/danger-zone`}>Transfer ownership</Link>
             </Button>
           ) : (
-            <Button variant="destructive" onClick={() => setLeaveOpen(true)} disabled={!orgData}>
-              Leave organization
-            </Button>
+            <div className="space-y-2">
+              <Button variant="destructive" onClick={() => setLeaveOpen(true)} disabled={!orgData}>
+                Leave organization
+              </Button>
+              {!orgData && (
+                <p className="text-sm text-muted-foreground">
+                  {orgError
+                    ? "Couldn't check whether you own this organization, so leaving is unavailable. Reload the page to try again."
+                    : "Checking whether you own this organization…"}
+                </p>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

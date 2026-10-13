@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom"
+import { AdminOnly } from "@/components/AdminOnly"
 import { useSidebarOrganizationQuery } from "@/graphql/queries/organization.generated"
 import { useHubsQuery } from "@/graphql/queries/hub.generated"
 import { useClientsQuery } from "@/graphql/queries/client.generated"
@@ -59,7 +60,7 @@ export default function OrganizationDashboard() {
     skip: !orgId,
   })
 
-  const { data: hubsData } = useHubsQuery({
+  const { data: hubsData, loading: hubsLoading, error: hubsError } = useHubsQuery({
     variables: { filters: { organization: orgId || undefined } },
     skip: !orgId,
   })
@@ -70,7 +71,7 @@ export default function OrganizationDashboard() {
   // which is an ordinary state. Resolving a client's latest report clears it from
   // here; the next report the client sends puts it straight back (lok resets
   // Client.latest_report_resolved on every incoming report).
-  const { data: unhealthyData } = useClientsQuery({
+  const { data: unhealthyData, loading: unhealthyLoading, error: unhealthyError, refetch: refetchUnhealthy } = useClientsQuery({
     variables: {
       filters: { organization: orgId, needsAttention: true, latestReportResolved: false },
       ordering: [{ createdAt: Ordering.Desc }],
@@ -102,12 +103,15 @@ export default function OrganizationDashboard() {
         icon={LayoutDashboard}
         title="Overview"
         description={`Managing ${org.name}`}
+        // Inviting is not open to plain members; don't send them to a refusal.
         actions={
-          <Button variant={isLonely ? "default" : "outline"} size="sm" asChild>
-            <Link to={`${base}/invites`}>
-              <UserPlus className="h-4 w-4" /> Invite others
-            </Link>
-          </Button>
+          <AdminOnly orgId={orgId}>
+            <Button variant={isLonely ? "default" : "outline"} size="sm" asChild>
+              <Link to={`${base}/invites`}>
+                <UserPlus className="h-4 w-4" /> Invite others
+              </Link>
+            </Button>
+          </AdminOnly>
         }
       />
 
@@ -116,6 +120,11 @@ export default function OrganizationDashboard() {
 
       {/* People asking to join — admins only */}
       <JoinRequestsCard organizationId={org.id} />
+
+      {/* Without this a failed query would read as "all healthy" below. */}
+      {unhealthyError && (
+        <QueryError compact error={unhealthyError} resource="app reports" onRetry={() => refetchUnhealthy()} />
+      )}
 
       {/* Apps that cannot reach a granted service, not yet triaged */}
       {hasUnhealthy && (
@@ -153,7 +162,9 @@ export default function OrganizationDashboard() {
       {/* The organization at a glance; every tile leads to its page. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatTile to={`${base}/members`} icon={Users} label="Members" value={memberCount} />
-        {hubs.length === 0 ? (
+        {!hubsData ? (
+          <StatTile to={`${base}/hubs`} icon={Layers} label="Hubs" value={hubsError ? "Couldn't load" : hubsLoading ? "…" : "—"} />
+        ) : hubs.length === 0 ? (
           <StatTile to={`${base}/connect-hub`} icon={Layers} label="Hub" value="Connect a hub" highlight />
         ) : hubs.length === 1 ? (
           <StatTile to={`${base}/hubs/${hubs[0].id}`} icon={Layers} label="Hub" value={hubs[0].name} />
@@ -163,13 +174,19 @@ export default function OrganizationDashboard() {
         <StatTile
           to={`${base}/clients`}
           icon={AppWindow}
-          label="Apps"
+          label="Clients"
           value={
-            hasUnhealthy
+            unhealthyError
+              ? "Couldn't load"
+              : !unhealthyData && unhealthyLoading
+                ? "…"
+                : hasUnhealthy
               ? `${unhealthyClients.length} need${unhealthyClients.length === 1 ? "s" : ""} attention`
               : hasClients
                 ? "All healthy"
-                : "None connected yet"
+                : hubsData && hubs.length === 0
+                  ? "Connect a hub first"
+                  : "None connected yet"
           }
         />
       </div>

@@ -1,30 +1,24 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
+import { toast } from "sonner"
 import { useLayersQuery } from "@/graphql/queries/layer.generated"
 import { useDeleteIonscaleLayerMutation, useCreateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
 import { toastError } from "@/lib/errors"
 import { Button } from "../components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../components/ui/alert-dialog"
+import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
+import { QueryError } from "@/components/status"
 import { Network } from "lucide-react"
 
 export function MeshControl({ orgId }: { orgId: string }) {
-  const { data, loading } = useLayersQuery({
+  const { data, loading, error, refetch } = useLayersQuery({
     variables: { filters: { organization: orgId } },
     skip: !orgId,
   })
   const mesh = data?.layers?.[0]
+  const [disableOpen, setDisableOpen] = useState(false)
 
-  const [disableMesh, { loading: disabling }] = useDeleteIonscaleLayerMutation({
+  const [disableMesh] = useDeleteIonscaleLayerMutation({
     refetchQueries: ["Layers"],
   })
   const [enableMesh, { loading: enabling }] = useCreateIonscaleLayerMutation({
@@ -34,18 +28,26 @@ export function MeshControl({ orgId }: { orgId: string }) {
   const handleDisable = async () => {
     if (!mesh) return
     try {
-      await disableMesh({ variables: { input: { id: mesh.id } } })
+      await disableMesh({ variables: { input: { id: mesh.id } }, awaitRefetchQueries: true })
+      toast.success("Mesh disabled")
     } catch (e) {
       toastError(e, "Couldn't disable the mesh")
+      return false
     }
   }
 
   const handleEnable = async () => {
     try {
       await enableMesh({ variables: { input: { organizationId: orgId, name: "default" } } })
+      toast.success("Mesh enabled")
     } catch (e) {
       toastError(e, "Couldn't enable the mesh")
     }
+  }
+
+  // Without this a failed query would read as "Disabled" and offer to enable a mesh that may be on.
+  if (error && !data) {
+    return <QueryError compact error={error} resource="mesh status" onRetry={() => refetch()} />
   }
 
   return (
@@ -58,7 +60,9 @@ export function MeshControl({ orgId }: { orgId: string }) {
           <div className="space-y-1">
             <CardTitle className="text-lg">Mesh</CardTitle>
             <CardDescription>
-              {mesh
+              {loading && !data
+                ? "Checking the mesh status…"
+                : mesh
                 ? "Enabled — machines can join this organization's private WireGuard network. Clients opt in to join."
                 : "Disabled — no private network for this organization."}
             </CardDescription>
@@ -71,31 +75,9 @@ export function MeshControl({ orgId }: { orgId: string }) {
             </Button>
           )}
           {loading ? null : mesh ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={disabling}>
-                  {disabling ? "Disabling..." : "Disable mesh"}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Disable the mesh?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Machines will no longer be able to join, and existing auth keys and
-                    machines for this organization are removed. You can re-enable it later.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDisable}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Disable
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button variant="destructive" size="sm" onClick={() => setDisableOpen(true)}>
+              Disable mesh
+            </Button>
           ) : (
             <Button size="sm" onClick={handleEnable} disabled={enabling}>
               {enabling ? "Enabling..." : "Enable mesh"}
@@ -103,6 +85,16 @@ export function MeshControl({ orgId }: { orgId: string }) {
           )}
         </div>
       </CardHeader>
+      <ConfirmActionDialog
+        open={disableOpen}
+        onOpenChange={setDisableOpen}
+        title="Disable the mesh?"
+        description="Machines will no longer be able to join, and existing auth keys and machines for this organization are removed. You can re-enable it later."
+        confirmLabel="Disable"
+        pendingLabel="Disabling..."
+        destructive
+        onConfirm={handleDisable}
+      />
     </Card>
   )
 }

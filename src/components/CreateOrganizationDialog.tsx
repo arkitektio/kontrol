@@ -24,6 +24,7 @@ import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { toastError } from "@/lib/errors";
 import * as z from "zod";
 import { useCreateOrganizationMutation } from "@/graphql/mutations/organization.generated"
 import {
@@ -134,7 +135,7 @@ export const CreateOrganizationDialog = ({
         form.setValue("slug", suggestion, { shouldValidate: true });
         form.setError("slug", { type: "server", message });
       }
-      toast.error(message);
+      toastError(error, "Couldn't create the organization");
     });
   };
 

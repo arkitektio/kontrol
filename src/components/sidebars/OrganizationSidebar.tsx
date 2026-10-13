@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom"
 import { useSidebarHubsQuery } from "@/graphql/queries/sidebar_hubs.generated"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug, Tags } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug, Tags, AppWindow } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
@@ -60,6 +60,7 @@ export function OrganizationSidebar() {
 
     const resourceItems = [
         { to: `${base}/hubs`, label: "Hubs", icon: Layers },
+        { to: `${base}/clients`, label: "Clients", icon: AppWindow },
         { to: `${base}/mesh`, label: "Mesh", icon: Network },
         { to: `${base}/devices`, label: "Devices", icon: Smartphone, exact: true },
         { to: `${base}/devices/groups`, label: "Device Groups", icon: Boxes },
