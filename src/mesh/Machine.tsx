@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { absoluteTime, timeAgo } from "@/lib/time"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
+import { MachineKind } from "@/api/types"
 import { useLayersQuery } from "@/graphql/queries/layer.generated"
 import { useDeleteMachineMutation } from "@/graphql/mutations/layer.generated"
 import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
@@ -59,10 +60,6 @@ function MagicDnsName({ name }: { name: string }) {
   )
 }
 
-/** `tag:app-*` / `tag:hub-*` mark the node or key of an app or hub; lok manages those. */
-const isSidecar = (tags?: readonly string[] | null) =>
-  (tags ?? []).some((t) => t.startsWith("tag:app-") || t.startsWith("tag:hub-"))
-
 export default function Machine() {
   const { id, orgId } = useParams<{ id: string; orgId: string }>()
   const navigate = useNavigate()
@@ -111,7 +108,7 @@ export default function Machine() {
     <div className="flex flex-1 flex-col gap-6 p-6">
       {orgId && (
         <div className="flex justify-end">
-          {isSidecar(machine.tags) ? (
+          {machine.kind !== MachineKind.Device ? (
             <p className="text-xs text-muted-foreground">
               This is the node of an app or hub. To remove it, reject the client or delete the hub.
             </p>
@@ -147,11 +144,49 @@ export default function Machine() {
                 <Badge variant={machine.connected ? "default" : "secondary"}>
                   {machine.connected ? "Connected" : "Disconnected"}
                 </Badge>
+                <Badge variant="outline">
+                  {machine.kind === MachineKind.App ? "App node" : machine.kind === MachineKind.Hub ? "Hub node" : "Machine"}
+                </Badge>
                 {machine.ephemeral && <Badge variant="outline">Ephemeral</Badge>}
                 {machine.isExternal && <Badge variant="outline">External</Badge>}
                 {/* Only flag when authorization is KNOWN false — null means "unknown", not unauthorized. */}
                 {machine.authorized === false && <Badge variant="destructive">Unauthorized</Badge>}
               </CardTitle>
+              {machine.kind === MachineKind.App && (
+                <p className="text-sm text-muted-foreground">
+                  The node of{" "}
+                  {machine.client && orgId ? (
+                    <Link className="underline" to={`/organization/${orgId}/clients/${machine.client.id}`}>
+                      {machine.app?.identifier ?? "an app"}
+                    </Link>
+                  ) : (
+                    machine.app?.identifier ?? "an app that is no longer connected"
+                  )}
+                  {machine.user?.username ? `, approved by ${machine.user.username}` : ""}
+                  {machine.device && orgId ? (
+                    <>
+                      , on{" "}
+                      <Link className="underline" to={`/organization/${orgId}/devices/${machine.device.id}`}>
+                        {machine.device.name || "an unnamed device"}
+                      </Link>
+                    </>
+                  ) : null}
+                  . It reaches only its hub.
+                </p>
+              )}
+              {machine.kind === MachineKind.Hub && (
+                <p className="text-sm text-muted-foreground">
+                  The node of the hub{" "}
+                  {machine.hub && orgId ? (
+                    <Link className="underline" to={`/organization/${orgId}/hubs/${machine.hub.id}`}>
+                      {machine.hub.name}
+                    </Link>
+                  ) : (
+                    "that is no longer connected"
+                  )}
+                  .
+                </p>
+              )}
               {machine.authorized === false && (
                 <p className="text-sm text-muted-foreground">
                   This machine has joined but is not authorized yet, so it cannot reach the others.

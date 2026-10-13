@@ -2,54 +2,26 @@ import { Link, useParams } from "react-router-dom"
 import { useLayersQuery, useDetailLayerQuery } from "@/graphql/queries/layer.generated"
 import { useTailnetLockQuery } from "@/graphql/queries/tailnet_lock.generated"
 import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
-import { useCreateIonscaleAuthKeyMutation, useUpdateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
+import { useUpdateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
+import type { ListMachineFragment } from "@/graphql/fragments/machine.generated"
+import { MachineKind } from "@/api/types"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
 import { PageHeader } from "../components/PageHeader"
-import { Network, Key, Plus, Monitor, Info, Globe, ShieldCheck } from "lucide-react"
-import { useEffect, useState } from "react"
-import { Input } from "../components/ui/input"
+import { Network, Key, Monitor, Globe, ShieldCheck, Layers, AppWindow, ChevronDown, Settings2 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { Label } from "../components/ui/label"
 import { Switch } from "../components/ui/switch"
-import { Checkbox } from "../components/ui/checkbox"
 import { Badge } from "../components/ui/badge"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
 import { timeAgo } from "@/lib/time"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
-import { Command } from "../components/Command"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { ListPageSkeleton } from "@/components/skeletons"
-
-// Explains the machine-vs-device distinction the user asked to surface.
-function MachinesVsDevicesNote() {
-  return (
-    <Alert className="mb-4">
-      <Info className="h-4 w-4" />
-      <AlertTitle>Machines are not the same as devices</AlertTitle>
-      <AlertDescription>
-        A <strong>machine</strong> is any host that has joined this mesh with an auth
-        key — a server, a laptop, a container. A <strong>device</strong> is something
-        registered with your organization in Arkitekt. They often line up (a device
-        is frequently running on one machine), but they are distinct: a machine can
-        join the mesh without ever being a device, and a single device may span
-        several machines. This page lists machines on the network, not devices.
-      </AlertDescription>
-    </Alert>
-  )
-}
 
 /**
  * Entry point into the guided tailnet lock setup, with the current state
@@ -98,52 +70,133 @@ function TailnetLockSummary({ orgId, meshId }: { orgId: string; meshId: string }
   )
 }
 
-/**
- * The coordination server machines log in to, from lok's discovery document
- * (the management API does not expose it). Null until loaded, or if it fails.
- */
-function useMeshCoordUrl(enabled: boolean): string | null {
-  const [url, setUrl] = useState<string | null>(null)
-  useEffect(() => {
-    if (!enabled || url) return
-    let cancelled = false
-    fetch("/lok/.well-known/fakts")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((doc) => {
-        if (!cancelled && doc?.mesh_coord_url) setUrl(doc.mesh_coord_url)
-      })
-      .catch(() => undefined)
-    return () => {
-      cancelled = true
+const isSidecarTag = (tag: string) => tag.startsWith("tag:app-") || tag.startsWith("tag:hub-")
+
+/** Online first, then by name: the nodes someone is looking for are usually up. */
+const byPresence = (a: ListMachineFragment, b: ListMachineFragment) =>
+  Number(b.connected) - Number(a.connected) || a.name.localeCompare(b.name)
+
+/** What a node is called and whose it is, by kind. */
+function describeNode(machine: ListMachineFragment): { icon: LucideIcon; title: string; subtitle: string | null } {
+  if (machine.kind === MachineKind.App) {
+    const where = [machine.user?.username, machine.device?.name].filter(Boolean).join(" · ")
+    return {
+      icon: AppWindow,
+      title: machine.app?.identifier ?? machine.name,
+      subtitle: where || (machine.app ? null : "Its app is no longer connected"),
     }
-  }, [enabled, url])
-  return url
+  }
+  if (machine.kind === MachineKind.Hub) {
+    return {
+      icon: Layers,
+      title: machine.hub?.name ?? machine.name,
+      subtitle: machine.hub ? "Hub server" : "Its hub is no longer connected",
+    }
+  }
+  return { icon: Monitor, title: machine.name, subtitle: null }
+}
+
+function NodeCard({ orgId, machine }: { orgId: string; machine: ListMachineFragment }) {
+  const { icon: Icon, title, subtitle } = describeNode(machine)
+  const address = machine.magicDnsName || machine.ipv4 || machine.ipv6
+  const tags = machine.tags.filter((tag) => !isSidecarTag(tag))
+  // The node name only adds something when the title is the app or the hub.
+  const showNodeName = title !== machine.name
+
+  return (
+    <Link to={`/organization/${orgId}/mesh/machines/${machine.id}`} className="block">
+      <Card className="h-full gap-3 p-4 transition-colors hover:bg-muted/50">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium" title={title}>{title}</div>
+            {subtitle && <div className="truncate text-xs text-muted-foreground">{subtitle}</div>}
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5 pt-0.5 text-xs text-muted-foreground">
+            <span
+              aria-hidden
+              className={`h-2 w-2 rounded-full ${machine.connected ? "bg-green-500" : "bg-muted-foreground/40"}`}
+            />
+            {machine.connected ? "Online" : machine.lastSeen ? timeAgo(machine.lastSeen) : "Never seen"}
+          </div>
+        </div>
+        <div className="space-y-0.5 text-xs text-muted-foreground">
+          {address && <div className="truncate font-mono" title={address}>{address}</div>}
+          {machine.magicDnsName && machine.ipv4 && <div className="font-mono">{machine.ipv4}</div>}
+          {showNodeName && <div className="truncate">Node {machine.name}</div>}
+        </div>
+        {(tags.length > 0 || machine.ephemeral || machine.authorized === false) && (
+          <div className="flex flex-wrap gap-1">
+            {machine.authorized === false && <Badge variant="destructive" className="text-xs">Not authorized</Badge>}
+            {machine.ephemeral && <Badge variant="outline" className="text-xs">Ephemeral</Badge>}
+            {tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+            ))}
+          </div>
+        )}
+      </Card>
+    </Link>
+  )
+}
+
+function NodeSection({
+  orgId,
+  icon: Icon,
+  title,
+  description,
+  machines,
+  empty,
+}: {
+  orgId: string
+  icon: LucideIcon
+  title: string
+  description: string
+  machines: ListMachineFragment[]
+  empty?: string
+}) {
+  if (machines.length === 0 && !empty) return null
+  const online = machines.filter((m) => m.connected).length
+  return (
+    <section className="space-y-3">
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <Icon className="h-4 w-4" /> {title}
+          {machines.length > 0 && (
+            <span className="font-normal normal-case tracking-normal">
+              · {online} of {machines.length} online
+            </span>
+          )}
+        </h2>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      {machines.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">{empty}</div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {machines.map((machine) => (
+            <NodeCard key={machine.id} orgId={orgId} machine={machine} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
 }
 
 function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
-  // Machines join and drop off on their own; keep the list current while open.
+  // Nodes join and drop off on their own; keep the lists current while open.
   const { data, loading, error } = useDetailLayerQuery({
     variables: { id: meshId },
     skip: !meshId,
     pollInterval: 30_000,
   })
 
-  const [createAuthKey, { loading: creatingKey }] = useCreateIonscaleAuthKeyMutation({
-    refetchQueries: ["DetailLayer"],
-  })
-
   const [updateLayer, { loading: updatingDns }] = useUpdateIonscaleLayerMutation({
     refetchQueries: ["DetailLayer"],
   })
 
-  const [createKeyDialogOpen, setCreateKeyDialogOpen] = useState(false)
-  const [newKeyEphemeral, setNewKeyEphemeral] = useState(false)
-  const [newKeyTags, setNewKeyTags] = useState("")
-  // The key just minted, shown once in the dialog with the command to use it.
-  const [createdKey, setCreatedKey] = useState<string | null>(null)
-  const coordUrl = useMeshCoordUrl(createKeyDialogOpen)
-
-  // Changing the mesh and minting keys take the owner or admin role.
+  // Changing the mesh takes the owner or admin role.
   const { isAdmin, loading: adminLoading } = useIsOrgAdmin(orgId)
   const readOnly = !adminLoading && !isAdmin
 
@@ -152,31 +205,6 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
   if (!data?.layer) return <ResourceNotFound resource="mesh" id={meshId} />
 
   const mesh = data.layer
-
-  const handleCreateKey = async () => {
-    try {
-      const result = await createAuthKey({
-        variables: {
-          input: {
-            layerId: mesh.id,
-            ephemeral: newKeyEphemeral,
-            tags: newKeyTags.split(",").map((t) => t.trim()).filter((t) => t.length > 0),
-          },
-        },
-      })
-      setNewKeyEphemeral(false)
-      setNewKeyTags("")
-      const key = result.data?.createIonscaleAuthKey?.key
-      if (key) {
-        setCreatedKey(key)
-      } else {
-        setCreateKeyDialogOpen(false)
-        toast.success("Auth key created")
-      }
-    } catch (e) {
-      toastError(e, "Couldn't create the auth key")
-    }
-  }
 
   // Toggling HTTPS/MagicDNS pushes the full desired DNS state to ionscale.
   // HTTPS certs require MagicDNS (the cert domain *is* the MagicDNS name), so
@@ -196,27 +224,63 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
     }
   }
 
+  const machines = [...(mesh.machines ?? [])].sort(byPresence)
+  const devices = machines.filter((m) => m.kind === MachineKind.Device)
+  const hubs = machines.filter((m) => m.kind === MachineKind.Hub)
+  const apps = machines.filter((m) => m.kind === MachineKind.App)
+
   return (
     <>
-      {/* Header */}
       <PageHeader
         icon={Network}
         title="Mesh"
-        description="The private WireGuard network for this organization. Clients opt in to join it."
+        description="The private network of this organization: its machines, its hubs and the apps that reach them."
+        actions={
+          <Button asChild size="sm" variant="outline">
+            <Link to={`/organization/${orgId}/mesh/authkeys`}>
+              <Key className="mr-2 h-4 w-4" />
+              Auth keys
+            </Link>
+          </Button>
+        }
       />
 
-      <TailnetLockSummary orgId={orgId} meshId={meshId} />
+      <NodeSection
+        orgId={orgId}
+        icon={Monitor}
+        title="Machines"
+        description="Whole machines that joined with an auth key or a login: servers, laptops, containers. They reach each other and are reachable by members."
+        machines={devices}
+        empty="No machine has joined yet. Create an auth key and run the command it gives you on the machine; it appears here on its own."
+      />
 
-      {/* Network settings */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-          <Globe className="h-4 w-4" /> Network settings
-        </h3>
-        {readOnly && (
-          <p className="text-xs text-muted-foreground">
-            Only organization admins can change these settings or create auth keys.
-          </p>
-        )}
+      <NodeSection
+        orgId={orgId}
+        icon={Layers}
+        title="Hubs"
+        description="The node of each hub server. Apps connected to a hub reach it here."
+        machines={hubs}
+      />
+
+      <NodeSection
+        orgId={orgId}
+        icon={AppWindow}
+        title="Apps"
+        description="One node per app installation that was granted mesh access. An app node reaches only its hub; rejecting the app removes it."
+        machines={apps}
+      />
+
+      <Collapsible className="space-y-3">
+        <CollapsibleTrigger className="group flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground">
+          <Settings2 className="h-4 w-4" /> Network settings
+          <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4">
+          {readOnly && (
+            <p className="text-xs text-muted-foreground">
+              Only organization admins can change these settings.
+            </p>
+          )}
         <Card className="p-4 space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
@@ -253,160 +317,9 @@ function MeshDetail({ orgId, meshId }: { orgId: string; meshId: string }) {
             />
           </div>
         </Card>
-      </section>
-
-      {/* Machines */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-          <Monitor className="h-4 w-4" /> Machines
-        </h3>
-        <MachinesVsDevicesNote />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {mesh.machines?.map((machine: any) => (
-            <Link key={machine.id} to={`/organization/${orgId}/mesh/machines/${machine.id}`} className="block">
-              <Card className="p-4 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-medium truncate">{machine.name}</div>
-                  <Badge variant={machine.connected ? "default" : "secondary"} className="text-xs shrink-0">
-                    {machine.connected ? "Connected" : "Offline"}
-                  </Badge>
-                </div>
-                {machine.magicDnsName && (
-                  <div className="text-xs font-mono text-muted-foreground truncate" title={machine.magicDnsName}>
-                    {machine.magicDnsName}
-                  </div>
-                )}
-                <div className="text-xs text-muted-foreground">{machine.ipv4}</div>
-                <div className="text-xs text-muted-foreground">{machine.ipv6}</div>
-                {!machine.connected && machine.lastSeen && (
-                  <div className="text-xs text-muted-foreground">Last seen {timeAgo(machine.lastSeen)}</div>
-                )}
-              </Card>
-            </Link>
-          ))}
-          {(!mesh.machines || mesh.machines.length === 0) && (
-            <div className="text-sm text-muted-foreground">
-              No machines have joined the mesh yet. Create an auth key below and run the command it
-              gives you on a machine; it appears here on its own.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Auth Keys */}
-      <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-              <Key className="h-4 w-4" /> Auth Keys
-            </h3>
-            {isAdmin && (
-            <Dialog
-              open={createKeyDialogOpen}
-              onOpenChange={(open) => {
-                setCreateKeyDialogOpen(open)
-                if (!open) setCreatedKey(null)
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Auth Key
-                </Button>
-              </DialogTrigger>
-              {createdKey ? (
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Auth key created</DialogTitle>
-                  <DialogDescription>
-                    Run this on the machine that should join the mesh. The key stays
-                    available on this page for you and the other admins.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3 py-2">
-                  <Command>{`tailscale up --login-server ${coordUrl ?? "<coordination server URL>"} --authkey ${createdKey}`}</Command>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">The key on its own:</p>
-                    <Command label="Copy auth key">{createdKey}</Command>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={() => { setCreateKeyDialogOpen(false); setCreatedKey(null) }}>Done</Button>
-                </DialogFooter>
-              </DialogContent>
-              ) : (
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Auth Key</DialogTitle>
-                  <DialogDescription>
-                    An auth key lets a machine join this mesh. You get the command to run on
-                    that machine in the next step.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
-                    <Label htmlFor="tags" className="sm:text-right">
-                      Tags
-                    </Label>
-                    <Input
-                      id="tags"
-                      placeholder="tag:value, tag2"
-                      value={newKeyTags}
-                      onChange={(e) => setNewKeyTags(e.target.value)}
-                      className="sm:col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
-                    <Label htmlFor="ephemeral" className="sm:text-right">
-                      Ephemeral
-                    </Label>
-                    <div className="sm:col-span-3 flex items-center space-x-2">
-                      <Checkbox
-                        id="ephemeral"
-                        checked={newKeyEphemeral}
-                        onCheckedChange={(checked) => setNewKeyEphemeral(checked === true)}
-                      />
-                      <label htmlFor="ephemeral" className="text-sm font-medium leading-none">
-                        Ephemeral keys are automatically removed when offline.
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="secondary" onClick={() => setCreateKeyDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateKey} disabled={creatingKey}>
-                    {creatingKey ? "Creating..." : "Create"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-              )}
-            </Dialog>
-            )}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {mesh.authKeys?.map((key: any) => (
-              <Link key={key.id} to={`/organization/${orgId}/mesh/authkeys/${key.id}`} className="block">
-                <Card className="p-4 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Key className="h-4 w-4 text-muted-foreground shrink-0" />
-                    {/* lok only returns the key to its creator and to admins. */}
-                    <div className="font-medium truncate">{key.key ?? "Hidden key"}</div>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {key.ephemeral && <Badge variant="outline" className="text-xs">Ephemeral</Badge>}
-                    {key.tags?.map((tag: string) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                    ))}
-                  </div>
-                </Card>
-              </Link>
-            ))}
-            {(!mesh.authKeys || mesh.authKeys.length === 0) && (
-              <div className="text-sm text-muted-foreground">No auth keys yet.</div>
-            )}
-          </div>
-      </section>
+          <TailnetLockSummary orgId={orgId} meshId={meshId} />
+        </CollapsibleContent>
+      </Collapsible>
     </>
   )
 }

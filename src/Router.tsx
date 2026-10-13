@@ -149,6 +149,9 @@ const Machine = lazyDefault(() => import('./mesh/Machine'))
 const KommunityPartner = lazyDefault(() => import('./partners/KommunityPartner'))
 const KommunityPartners = lazyDefault(() => import('./partners/KommunityPartners'))
 const AuthKey = lazyDefault(() => import('./mesh/AuthKey'))
+const AuthKeys = lazyDefault(() => import('./mesh/AuthKeys'))
+const LinkApps = lazyDefault(() => import('./links/LinkApps'))
+const LinkApp = lazyDefault(() => import('./links/LinkApp'))
 const TailnetLock = lazyDefault(() => import('./mesh/TailnetLock'))
 const Scope = lazyDefault(() => import('./scopes/Scope'))
 const Callback = lazyDefault(() => import('./Callback'))
@@ -452,6 +455,14 @@ export function createRoutes() {
                   element: <AuthenticatedRoute><Invite /></AuthenticatedRoute>,
                 },
                 {
+                  path: 'link-apps',
+                  element: <AuthenticatedRoute><LinkApps /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'link-apps/:protocol',
+                  element: <AuthenticatedRoute><LinkApp /></AuthenticatedRoute>,
+                },
+                {
                   path: 'danger-zone',
                   element: <AuthenticatedRoute><DangerZone /></AuthenticatedRoute>,
                 },
@@ -564,6 +575,10 @@ export function createRoutes() {
                 {
                   path: 'mesh/machines/:id',
                   element: <AuthenticatedRoute><Machine /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'mesh/authkeys',
+                  element: <AuthenticatedRoute><AuthKeys /></AuthenticatedRoute>,
                 },
                 {
                   path: 'mesh/authkeys/:id',

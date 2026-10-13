@@ -11,8 +11,13 @@ fragment Layer on ManagementLayer {
     ...ListInstanceAlias
   }
   machines {
-    ...Machine
+    ...ListMachine
   }
+}
+
+# The keys are their own page: most meshes never need one after setup.
+fragment LayerAuthKeys on ManagementLayer {
+  id
   authKeys {
     ...ListIonscaleAuthKey
   }

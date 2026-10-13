@@ -1,8 +1,8 @@
 import type * as Types from '../../api/types';
 import type { DocumentNode } from 'graphql';
-import { ListLayerFragmentDoc, LayerFragmentDoc } from '../fragments/layer.generated';
+import { ListLayerFragmentDoc, LayerFragmentDoc, LayerAuthKeysFragmentDoc } from '../fragments/layer.generated';
 import { ListInstanceAliasFragmentDoc } from '../fragments/alias.generated';
-import { MachineFragmentDoc } from '../fragments/machine.generated';
+import { ListMachineFragmentDoc } from '../fragments/machine.generated';
 import { ListIonscaleAuthKeyFragmentDoc } from '../fragments/auth_key.generated';
 import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
@@ -18,7 +18,13 @@ export type DetailLayerQueryVariables = Types.Exact<{
   id: Types.Scalars['ID']['input'];
 }>;
 
-export type DetailLayerQuery = { __typename?: 'Query', layer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, magicDnsEnabled: boolean, httpsEnabled: boolean, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, resolvedHost?: string | null, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, localId: string, name: string, ipv4?: string | null, ipv6?: string | null, connected: boolean, ephemeral: boolean, lastSeen?: any | null, tags: Array<string>, magicDnsName?: string | null, os?: string | null, keyExpiry?: any | null, authorized?: boolean | null, isExternal?: boolean | null }>, authKeys: Array<{ __typename?: 'ManagementIonscaleAuthKey', id: string, key?: string | null, createdAt: any, ephemeral: boolean, tags: Array<string>, creator: { __typename?: 'ManagementUser', id: string, email?: string | null } }> } };
+export type DetailLayerQuery = { __typename?: 'Query', layer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, magicDnsEnabled: boolean, httpsEnabled: boolean, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, resolvedHost?: string | null, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, localId: string, name: string, ipv4?: string | null, ipv6?: string | null, connected: boolean, ephemeral: boolean, lastSeen?: any | null, tags: Array<string>, magicDnsName?: string | null, authorized?: boolean | null, kind: Types.MachineKind, app?: { __typename?: 'ManagementApp', id: string, identifier: any } | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, hub?: { __typename?: 'ManagementHub', id: string, name: string } | null }> } };
+
+export type LayerAuthKeysQueryVariables = Types.Exact<{
+  id: Types.Scalars['ID']['input'];
+}>;
+
+export type LayerAuthKeysQuery = { __typename?: 'Query', layer: { __typename?: 'ManagementLayer', id: string, authKeys: Array<{ __typename?: 'ManagementIonscaleAuthKey', id: string, key?: string | null, createdAt: any, ephemeral: boolean, tags: Array<string>, creator: { __typename?: 'ManagementUser', id: string, email?: string | null } }> } };
 
 export const LayersDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Layers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ManagementLayerFilter"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pagination"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"OffsetPaginationInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ordering"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ManagementLayerOrdering"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"layers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}},{"kind":"Argument","name":{"kind":"Name","value":"pagination"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pagination"}}},{"kind":"Argument","name":{"kind":"Name","value":"ordering"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ordering"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ListLayer"}}]}}]}},...ListLayerFragmentDoc.definitions]} as unknown as DocumentNode;
 
@@ -59,7 +65,7 @@ export type LayersQueryHookResult = ReturnType<typeof useLayersQuery>;
 export type LayersLazyQueryHookResult = ReturnType<typeof useLayersLazyQuery>;
 export type LayersSuspenseQueryHookResult = ReturnType<typeof useLayersSuspenseQuery>;
 export type LayersQueryResult = Apollo.QueryResult<LayersQuery, LayersQueryVariables>;
-export const DetailLayerDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DetailLayer"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"layer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"Layer"}}]}}]}},...LayerFragmentDoc.definitions,...ListInstanceAliasFragmentDoc.definitions,...MachineFragmentDoc.definitions,...ListIonscaleAuthKeyFragmentDoc.definitions]} as unknown as DocumentNode;
+export const DetailLayerDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DetailLayer"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"layer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"Layer"}}]}}]}},...LayerFragmentDoc.definitions,...ListInstanceAliasFragmentDoc.definitions,...ListMachineFragmentDoc.definitions]} as unknown as DocumentNode;
 
 /**
  * __useDetailLayerQuery__
@@ -96,3 +102,40 @@ export type DetailLayerQueryHookResult = ReturnType<typeof useDetailLayerQuery>;
 export type DetailLayerLazyQueryHookResult = ReturnType<typeof useDetailLayerLazyQuery>;
 export type DetailLayerSuspenseQueryHookResult = ReturnType<typeof useDetailLayerSuspenseQuery>;
 export type DetailLayerQueryResult = Apollo.QueryResult<DetailLayerQuery, DetailLayerQueryVariables>;
+export const LayerAuthKeysDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"LayerAuthKeys"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"layer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"LayerAuthKeys"}}]}}]}},...LayerAuthKeysFragmentDoc.definitions,...ListIonscaleAuthKeyFragmentDoc.definitions]} as unknown as DocumentNode;
+
+/**
+ * __useLayerAuthKeysQuery__
+ *
+ * To run a query within a React component, call `useLayerAuthKeysQuery` and pass it any options that fit your needs.
+ * When your component renders, `useLayerAuthKeysQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useLayerAuthKeysQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useLayerAuthKeysQuery(baseOptions: Apollo.QueryHookOptions<LayerAuthKeysQuery, LayerAuthKeysQueryVariables> & ({ variables: LayerAuthKeysQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>(LayerAuthKeysDocument, options);
+      }
+export function useLayerAuthKeysLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>(LayerAuthKeysDocument, options);
+        }
+// @ts-ignore
+export function useLayerAuthKeysSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>): Apollo.UseSuspenseQueryResult<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>;
+export function useLayerAuthKeysSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>): Apollo.UseSuspenseQueryResult<LayerAuthKeysQuery | undefined, LayerAuthKeysQueryVariables>;
+export function useLayerAuthKeysSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>(LayerAuthKeysDocument, options);
+        }
+export type LayerAuthKeysQueryHookResult = ReturnType<typeof useLayerAuthKeysQuery>;
+export type LayerAuthKeysLazyQueryHookResult = ReturnType<typeof useLayerAuthKeysLazyQuery>;
+export type LayerAuthKeysSuspenseQueryHookResult = ReturnType<typeof useLayerAuthKeysSuspenseQuery>;
+export type LayerAuthKeysQueryResult = Apollo.QueryResult<LayerAuthKeysQuery, LayerAuthKeysQueryVariables>;

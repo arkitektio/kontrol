@@ -1,11 +1,11 @@
-import { useParams, useNavigate } from "react-router-dom"
+import { Link, useParams, useNavigate } from "react-router-dom"
 import { useOrganizationQuery } from "@/graphql/queries/organization.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { useDeleteOrganizationMutation, useChangeOrganizationOwnerMutation } from "@/graphql/mutations/organization.generated"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { useState } from "react"
-import { AlertTriangle, KeyRound, Shield, Settings } from "lucide-react"
+import { AlertTriangle, KeyRound, Link2, Shield, Settings } from "lucide-react"
 import { toast } from "sonner"
 import { useRevokeOrganizationSessionsMutation } from "@/graphql/mutations/revoke.generated"
 import { toastError } from "@/lib/errors"
@@ -32,7 +32,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { MeshControl } from "./MeshControl"
 import { RenameOrganizationCard } from "../components/RenameOrganizationCard"
 import { AccessTokenLifetimeCard } from "../components/AccessTokenLifetimeCard"
-import { DeeplinkAppsCard } from "../components/DeeplinkAppsCard"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -220,12 +219,26 @@ export default function DangerZone() {
         accessTokenLifetime={org.accessTokenLifetime}
       />
 
-      <DeeplinkAppsCard
-        organizationId={org.id}
-        slug={org.slug}
-        deeplinkApps={org.deeplinkApps}
-        publicLinkPreview={org.publicLinkPreview}
-      />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+              <Link2 className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-lg">Link apps</CardTitle>
+              <CardDescription>
+                {org.deeplinkApps.length === 0
+                  ? "Web links that open in an app. None set up; links for this organization are off."
+                  : `Web links that open in an app. ${org.deeplinkApps.length} ${org.deeplinkApps.length === 1 ? "app" : "apps"} set up.`}
+              </CardDescription>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/organization/${org.id}/link-apps`}>Manage</Link>
+          </Button>
+        </CardHeader>
+      </Card>
 
       {revokeCard}
 

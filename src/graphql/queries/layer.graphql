@@ -9,3 +9,9 @@ query DetailLayer($id: ID!) {
     ...Layer
   }
 }
+
+query LayerAuthKeys($id: ID!) {
+  layer(id: $id) {
+    ...LayerAuthKeys
+  }
+}

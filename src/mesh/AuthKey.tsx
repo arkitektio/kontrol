@@ -50,7 +50,7 @@ export default function AuthKey() {
     try {
       await deleteAuthKey({ variables: { input: { id: authKey.id } } })
       toast.success("Auth key revoked")
-      navigate(`/organization/${orgId}/mesh`)
+      navigate(`/organization/${orgId}/mesh/authkeys`)
     } catch (e) {
       toastError(e, "Couldn't revoke the auth key")
       return false

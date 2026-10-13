@@ -1,4 +1,4 @@
-fragment Machine on ManagementMachine {
+fragment ListMachine on ManagementMachine {
     id
     localId
     name
@@ -9,9 +9,32 @@ fragment Machine on ManagementMachine {
     lastSeen
     tags
     magicDnsName
-    os
-    keyExpiry
     authorized
-    isExternal
+    kind
+    app {
+      id
+      identifier
+    }
+    user {
+      id
+      username
+    }
+    device {
+      id
+      name
+    }
+    hub {
+      id
+      name
+    }
 }
 
+fragment Machine on ManagementMachine {
+    ...ListMachine
+    os
+    keyExpiry
+    isExternal
+    client {
+      id
+    }
+}

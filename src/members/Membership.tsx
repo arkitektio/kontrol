@@ -35,7 +35,7 @@ export default function Membership() {
         variables: { id: id! }
     })
 
-    const [updateMembership] = useUpdateMembershipMutation({
+    const [updateMembership, { loading: savingRoles }] = useUpdateMembershipMutation({
         refetchQueries: ["GetMembership"]
     })
 
@@ -53,6 +53,7 @@ export default function Membership() {
     }
 
     const handleSaveRoles = async () => {
+        if (savingRoles) return
         try {
             await updateMembership({
                 variables: {
@@ -63,6 +64,7 @@ export default function Membership() {
                 }
             })
             setIsEditing(false)
+            toast.success("Roles updated")
         } catch (e) {
             toastError(e, "Couldn't update the roles")
         }
@@ -135,14 +137,14 @@ export default function Membership() {
                                         Edit Roles
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent>
+                                <DialogContent className="sm:max-w-3xl">
                                     <DialogHeader>
                                         <DialogTitle>Edit Roles</DialogTitle>
                                         <DialogDescription>
                                             Select the roles for {membership.user?.username}
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <div className="grid gap-4 py-4">
+                                    <div className="grid min-w-0 gap-4 py-2">
                                         {roleSets.length > 0 && (
                                             <div className="space-y-1 border-b pb-4">
                                                 <Label>Apply a role set</Label>
@@ -161,35 +163,39 @@ export default function Membership() {
                                                 </Select>
                                             </div>
                                         )}
-                                        {availableRoles.map((role) => (
-                                            <div className="flex items-start space-x-3 space-y-0" key={role.id}>
-                                                <Checkbox 
-                                                    id={role.id} 
-                                                    checked={selectedRoles.includes(role.id)}
-                                                    onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            setSelectedRoles([...selectedRoles, role.id])
-                                                        } else {
-                                                            setSelectedRoles(selectedRoles.filter(id => id !== role.id))
-                                                        }
-                                                    }}
-                                                />
-                                                <div className="grid gap-1.5 leading-none">
-                                                    <Label htmlFor={role.id} className="font-medium cursor-pointer">
-                                                        {role.identifier}
-                                                    </Label>
-                                                    {role.description && (
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {role.description}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
+                                        <div className="grid max-h-[50dvh] grid-cols-1 gap-2 overflow-y-auto p-px sm:grid-cols-2 lg:grid-cols-3">
+                                            {availableRoles.map((role) => (
+                                                <label
+                                                    key={role.id}
+                                                    className="flex min-w-0 cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors hover:bg-accent/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent"
+                                                >
+                                                    <Checkbox
+                                                        checked={selectedRoles.includes(role.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            if (checked) {
+                                                                setSelectedRoles([...selectedRoles, role.id])
+                                                            } else {
+                                                                setSelectedRoles(selectedRoles.filter(id => id !== role.id))
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="min-w-0 space-y-1 leading-none">
+                                                        <span className="block text-sm font-medium break-words">{role.identifier}</span>
+                                                        {role.description && (
+                                                            <p className="text-sm text-muted-foreground break-words">
+                                                                {role.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                     <DialogFooter>
-                                        <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                                        <Button onClick={handleSaveRoles}>Save Changes</Button>
+                                        <Button variant="outline" onClick={() => setIsEditing(false)} disabled={savingRoles}>Cancel</Button>
+                                        <Button onClick={handleSaveRoles} disabled={savingRoles}>
+                                            {savingRoles ? "Saving..." : "Save Changes"}
+                                        </Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
@@ -203,6 +209,11 @@ export default function Membership() {
                              ))}
                         </div>
                     </div>
+                    {isAdmin && !isSelf && membership.isOwner && (
+                        <p className="border-t pt-6 text-sm text-muted-foreground">
+                            {membership.user?.username} owns this organization and can't be removed. Ownership has to be transferred first.
+                        </p>
+                    )}
                     {canRemove && (
                         <div className="flex items-center justify-between gap-4 border-t pt-6">
                             <div>

@@ -1,15 +1,15 @@
 import type * as Types from '../../api/types';
 import type { DocumentNode } from 'graphql';
-import { MachineFragmentDoc } from '../fragments/machine.generated';
+import { MachineFragmentDoc, ListMachineFragmentDoc } from '../fragments/machine.generated';
 import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type DetailMachineQueryVariables = Types.Exact<{
   id: Types.Scalars['ID']['input'];
 }>;
 
-export type DetailMachineQuery = { __typename?: 'Query', machine?: { __typename?: 'ManagementMachine', id: string, localId: string, name: string, ipv4?: string | null, ipv6?: string | null, connected: boolean, ephemeral: boolean, lastSeen?: any | null, tags: Array<string>, magicDnsName?: string | null, os?: string | null, keyExpiry?: any | null, authorized?: boolean | null, isExternal?: boolean | null } | null };
+export type DetailMachineQuery = { __typename?: 'Query', machine?: { __typename?: 'ManagementMachine', os?: string | null, keyExpiry?: any | null, isExternal?: boolean | null, id: string, localId: string, name: string, ipv4?: string | null, ipv6?: string | null, connected: boolean, ephemeral: boolean, lastSeen?: any | null, tags: Array<string>, magicDnsName?: string | null, authorized?: boolean | null, kind: Types.MachineKind, client?: { __typename?: 'ManagementClient', id: string } | null, app?: { __typename?: 'ManagementApp', id: string, identifier: any } | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, hub?: { __typename?: 'ManagementHub', id: string, name: string } | null } | null };
 
-export const DetailMachineDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DetailMachine"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"machine"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"Machine"}}]}}]}},...MachineFragmentDoc.definitions]} as unknown as DocumentNode;
+export const DetailMachineDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DetailMachine"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"machine"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"Machine"}}]}}]}},...MachineFragmentDoc.definitions,...ListMachineFragmentDoc.definitions]} as unknown as DocumentNode;
 
 /**
  * __useDetailMachineQuery__

@@ -86,7 +86,7 @@ export default function RoleSets() {
   }
 
   const handleSave = async () => {
-    if (!name.trim() || !orgId) return
+    if (!name.trim() || !orgId || saving) return
     setSaving(true)
     try {
       if (editing) {
@@ -175,14 +175,21 @@ export default function RoleSets() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-3xl">
+          <form
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleSave()
+            }}
+          >
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Role Set" : "Create Role Set"}</DialogTitle>
             <DialogDescription>
               Pick the roles to bundle together. Applying the set grants all of them at once.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
+          <div className="grid min-w-0 gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="rs-name">Name</Label>
               <Input
@@ -194,17 +201,20 @@ export default function RoleSets() {
             </div>
             <div className="grid gap-2">
               <Label>Roles</Label>
-              <div className="grid gap-2 max-h-64 overflow-y-auto">
+              <div className="grid max-h-[45dvh] grid-cols-1 gap-2 overflow-y-auto p-px sm:grid-cols-2 lg:grid-cols-3">
                 {availableRoles.map((role) => (
-                  <label key={role.id} className="flex items-start gap-3 cursor-pointer">
+                  <label
+                    key={role.id}
+                    className="flex min-w-0 cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors hover:bg-accent/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent"
+                  >
                     <Checkbox
                       checked={selectedRoleIds.includes(role.id)}
                       onCheckedChange={(checked) => toggleRole(role.id, checked === true)}
                     />
-                    <div className="leading-none space-y-1">
-                      <span className="text-sm font-medium">{role.identifier}</span>
+                    <div className="min-w-0 space-y-1 leading-none">
+                      <span className="block text-sm font-medium break-words">{role.identifier}</span>
                       {role.description && (
-                        <p className="text-sm text-muted-foreground">{role.description}</p>
+                        <p className="text-sm text-muted-foreground break-words">{role.description}</p>
                       )}
                     </div>
                   </label>
@@ -213,13 +223,14 @@ export default function RoleSets() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving || !name.trim()}>
+            <Button type="submit" disabled={saving || !name.trim()}>
               {saving ? "Saving..." : editing ? "Save Changes" : "Create Role Set"}
             </Button>
           </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

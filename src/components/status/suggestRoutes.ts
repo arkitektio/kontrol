@@ -38,6 +38,7 @@ const ORG_ROUTES: Array<{ suffix: string; label: string }> = [
   { suffix: "/members", label: "Members" },
   { suffix: "/invites", label: "Invites" },
   { suffix: "/rolesets", label: "Role sets" },
+  { suffix: "/link-apps", label: "Link apps" },
   { suffix: "/danger-zone", label: "Organization settings" },
   { suffix: "/hubs", label: "Hubs" },
   { suffix: "/mesh", label: "Mesh" },

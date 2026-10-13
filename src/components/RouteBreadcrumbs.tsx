@@ -25,6 +25,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   "service-releases": "Service releases",
   "instance-aliases": "Instance aliases",
   "rolesets": "Role sets",
+  "link-apps": "Link apps",
   "authkeys": "Auth keys",
   "me": "My access",
   "socialaccount": "Connected accounts",

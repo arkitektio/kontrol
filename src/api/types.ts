@@ -296,6 +296,14 @@ export const LayerKind = {
 } as const;
 
 export type LayerKind = typeof LayerKind[keyof typeof LayerKind];
+/** What a machine on a mesh is. */
+export const MachineKind = {
+  App: 'APP',
+  Device: 'DEVICE',
+  Hub: 'HUB'
+} as const;
+
+export type MachineKind = typeof MachineKind[keyof typeof MachineKind];
 /** An App is the Arkitekt equivalent of a Software Application. It is a collection of `Releases` that can be all part of the same application. E.g the App `Napari` could have the releases `0.1.0` and `0.2.0`. */
 export type ManagementApp = {
   __typename?: 'ManagementApp';
@@ -1078,10 +1086,18 @@ export type ManagementLinkPreviewUser = {
 
 export type ManagementMachine = {
   __typename?: 'ManagementMachine';
+  /** For an app node: the app it runs. */
+  app?: Maybe<ManagementApp>;
   /** Whether the machine is authorized on the tailnet, or null when unknown. */
   authorized?: Maybe<Scalars['Boolean']['output']>;
+  /** For an app node: the app's most recently approved client (the page to reject it from). */
+  client?: Maybe<ManagementClient>;
   connected: Scalars['Boolean']['output'];
+  /** For an app node: the registered device the app runs on, if it named one. */
+  device?: Maybe<ManagementDevice>;
   ephemeral: Scalars['Boolean']['output'];
+  /** For a hub node: the hub. */
+  hub?: Maybe<ManagementHub>;
   id: Scalars['ID']['output'];
   ipv4?: Maybe<Scalars['String']['output']>;
   ipv6?: Maybe<Scalars['String']['output']>;
@@ -1089,6 +1105,8 @@ export type ManagementMachine = {
   isExternal?: Maybe<Scalars['Boolean']['output']>;
   /** When the machine's node key expires, if key expiry is enabled. */
   keyExpiry?: Maybe<Scalars['DateTime']['output']>;
+  /** DEVICE: a machine that joined on its own (an auth key or a login). APP: the node an app runs as (its sidecar). HUB: the node of a hub server. */
+  kind: MachineKind;
   lastSeen?: Maybe<Scalars['DateTime']['output']>;
   localId: Scalars['String']['output'];
   /** The machine's MagicDNS name (e.g. `myhost.mytailnet.mesh.example.com`), or null when MagicDNS is disabled for the mesh or no suffix is configured. */
@@ -1097,6 +1115,8 @@ export type ManagementMachine = {
   /** The operating system reported by the machine, if known. */
   os?: Maybe<Scalars['String']['output']>;
   tags: Array<Scalars['String']['output']>;
+  /** For an app node: the member who approved the app. */
+  user?: Maybe<ManagementUser>;
 };
 
 /**
