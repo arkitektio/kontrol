@@ -1,7 +1,6 @@
 import React from 'react';
 // Import Simple Icons (Si) for specific brands
 import {
-  SiGoogle,
   SiFacebook,
   SiGithub,
   SiDiscord,
@@ -24,11 +23,15 @@ import {
 
 // Import a generic fallback icon (e.g., from Material Design)
 import { MdLogin } from 'react-icons/md';
+// Full-colour Google mark, and a university building for institutional login
+import { FcGoogle } from 'react-icons/fc';
+import { FaBuildingColumns } from 'react-icons/fa6';
 
 // 1. The Mapping Configuration
 // Keys match django-allauth provider IDs (lowercase)
-const providerIcons: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
-  google: SiGoogle,
+const providerIcons: { [key: string]: React.ComponentType<{ size?: number; className?: string; color?: string; 'aria-hidden'?: boolean }> } = {
+  google: FcGoogle,
+  cilogon: FaBuildingColumns,
   facebook: SiFacebook,
   github: SiGithub,
   discord: SiDiscord,
@@ -51,6 +54,18 @@ const providerIcons: { [key: string]: React.ComponentType<{ size?: number; class
   reddit: SiReddit,
 };
 
+// Brand colours for monochrome marks; anything unlisted inherits the text colour.
+const providerColors: { [key: string]: string } = {
+  orcid: '#A6CE39',
+  github: 'currentColor',
+  gitlab: '#FC6D26',
+  discord: '#5865F2',
+  linkedin: '#0A66C2',
+  linkedin_oauth2: '#0A66C2',
+  facebook: '#1877F2',
+  slack: '#4A154B',
+};
+
 
 
 const ProviderIcon = ({ providerId, size = 20, className = "" }: { providerId: string; size?: number; className?: string }) => {
@@ -61,10 +76,11 @@ const ProviderIcon = ({ providerId, size = 20, className = "" }: { providerId: s
   const IconComponent = providerIcons[normalizedId] || MdLogin;
 
   return (
-    <IconComponent 
-      size={size} 
-      className={className} 
-      title={`Login with ${providerId}`} // Accessibility tooltip
+    <IconComponent
+      size={size}
+      className={className}
+      color={providerColors[normalizedId]}
+      aria-hidden
     />
   );
 };
