@@ -14,6 +14,7 @@ import { Switch } from "../components/ui/switch"
 import { QueryError, ResourceNotFound } from "@/components/status"
 import { DetailPageSkeleton } from "@/components/skeletons"
 import { toastError } from "@/lib/errors"
+import { knownDownloads } from "@/lib/appDownloads"
 import { isSafeInstallUrl, normalizeInstallUrl, type DeeplinkApp } from "@/lib/deeplinks"
 import { useLinkApps } from "./useLinkApps"
 
@@ -52,12 +53,17 @@ function DetailsForm({
           <Label htmlFor="link-app-install">Where to install it</Label>
           <Input
             id="link-app-install"
-            placeholder="arkitekt.live/docs/use/install"
+            placeholder="arkitekt.live/docs/guides/apps/orkestrator"
             value={installUrl}
             onChange={(e) => setInstallUrl(e.target.value)}
           />
           {badInstallUrl ? (
             <p className="text-sm text-destructive">Use an https address.</p>
+          ) : knownDownloads(app.protocol) ? (
+            <p className="text-xs text-muted-foreground">
+              Not used for {app.protocol}://: links offer the latest {app.name} download for the
+              visitor&apos;s system instead.
+            </p>
           ) : (
             <p className="text-xs text-muted-foreground">
               Offered to someone who does not have the app yet. Without it they are only told

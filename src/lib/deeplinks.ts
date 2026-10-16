@@ -78,6 +78,23 @@ function usable(apps: readonly DeeplinkApp[]): DeeplinkApp[] {
   return apps.filter((app) => isAllowedProtocolName(app.protocol))
 }
 
+/**
+ * Query parameters that are meant for the link page, not for the app: who
+ * shared the link (`user_id`) and the invite that lets the visitor join
+ * (`invite`, a bearer credential). They are dropped before forwarding, so the
+ * app, its history and its logs never see them.
+ */
+export const LINK_PAGE_PARAMS = ["invite", "user_id"] as const
+
+export function stripLinkParams(search: string): string {
+  if (!search) return search
+  const params = new URLSearchParams(search)
+  if (!LINK_PAGE_PARAMS.some((name) => params.has(name))) return search
+  for (const name of LINK_PAGE_PARAMS) params.delete(name)
+  const rest = params.toString()
+  return rest ? `?${rest}` : ""
+}
+
 export type LinkTarget = { target: string; app: DeeplinkApp } | { problem: string }
 
 /** The raw (still percent-encoded) path segments of a pathname. */
@@ -90,7 +107,8 @@ function segments(pathname: string): string[] {
  * `<protocol>://<path…>?<query>#<hash>`.
  *
  * The path is forwarded as it arrived, encoding included; only the protocol is
- * interpreted, and it must belong to an app the organization allows.
+ * interpreted, and it must belong to an app the organization allows. The query
+ * loses only the link page's own parameters (`stripLinkParams`).
  */
 export function buildDeeplinkTarget(
   location: { pathname: string; search: string; hash: string },
@@ -105,7 +123,7 @@ export function buildDeeplinkTarget(
   if (!app) {
     return { problem: `This organization does not allow links that open "${protocol}".` }
   }
-  return { app, target: `${protocol}://${rest.join("/")}${location.search}${location.hash}` }
+  return { app, target: `${protocol}://${rest.join("/")}${stripLinkParams(location.search)}${location.hash}` }
 }
 
 /**
@@ -145,7 +163,7 @@ export function buildSmartlinkTarget(
     return { problem: "None of this organization's apps is available on mobile. Open the link on a computer." }
   }
   const path = [org, hub, identifier, objectId].map(encodeURIComponent).join("/")
-  return { app, target: `${app.protocol}://smart/${path}${location.search}` }
+  return { app, target: `${app.protocol}://smart/${path}${stripLinkParams(location.search)}` }
 }
 
 /** The parts of a smartlink, for telling the visitor what it points at. */

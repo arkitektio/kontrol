@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useSearchParams } from "react-router-dom"
-import { CheckCircle2, Circle, CircleDot, CircleHelp, Download, ExternalLink, Share2 } from "lucide-react"
+import { CheckCircle2, Circle, CircleDot, CircleHelp, ExternalLink, Share2, UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStatus } from "@/auth/hooks"
 import { URLs } from "@/auth/routing"
@@ -10,12 +10,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useRequestMembershipMutation } from "@/graphql/mutations/membership_request.generated"
-import { useLinkPreviewQuery, useOrganizationDeeplinksQuery } from "@/graphql/queries/deeplink.generated"
+import { useAcceptInviteMutation } from "@/graphql/mutations/invite.generated"
+import {
+  useLinkInviteQuery,
+  useLinkPreviewQuery,
+  useOrganizationDeeplinksQuery,
+  type LinkInviteQuery,
+} from "@/graphql/queries/deeplink.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { LINK_DOCS_URL } from "@/constants"
 import { toastError } from "@/lib/errors"
 import ProviderList from "@/socialaccount/ProviderList"
-import { isSafeInstallUrl, type DeeplinkApp, type LinkTarget } from "@/lib/deeplinks"
+import { type DeeplinkApp, type LinkTarget } from "@/lib/deeplinks"
+import { AppDownloads } from "./AppDownloads"
 
 type StepState = "done" | "current" | "upcoming"
 
@@ -101,6 +108,39 @@ function JoinRequest({ orgSlug }: { orgSlug: string }) {
   )
 }
 
+type LinkInvite = NonNullable<LinkInviteQuery["inviteByCode"]>
+
+/**
+ * Step 2 when the link carries an invite to this organization: one click joins.
+ * Not automatic, so that opening a link can never make someone a member of an
+ * organization they did not choose. Accepting refetches `Me`, which makes the
+ * visitor a member and moves the page on to step 3.
+ */
+function AcceptLinkInvite({ invite }: { invite: LinkInvite }) {
+  const [accept, { loading }] = useAcceptInviteMutation({ refetchQueries: ["Me"], awaitRefetchQueries: true })
+
+  const join = async () => {
+    try {
+      await accept({ variables: { input: { token: invite.token } } })
+      toast.success(`You joined ${invite.createdFor.name || "the organization"}`)
+    } catch (e) {
+      toastError(e, "Couldn't join the organization")
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-center text-sm text-muted-foreground">
+        {invite.createdBy.username} invited you to join {invite.createdFor.name || "this organization"}.
+      </p>
+      <Button className="w-full" onClick={join} disabled={loading}>
+        <UserPlus className="h-4 w-4" />
+        {loading ? "Joining..." : "Join"}
+      </Button>
+    </div>
+  )
+}
+
 /** Step 3: opens the app once on arrival, and offers where to get it. */
 function OpenApp({ target, app }: { target: string; app: DeeplinkApp }) {
   const opened = useRef(false)
@@ -119,14 +159,7 @@ function OpenApp({ target, app }: { target: string; app: DeeplinkApp }) {
           Open in {app.name}
         </a>
       </Button>
-      {isSafeInstallUrl(app.installUrl) && (
-        <Button variant="outline" className="w-full" asChild>
-          <a href={app.installUrl} target="_blank" rel="noopener noreferrer">
-            <Download className="h-4 w-4" />
-            Get {app.name}
-          </a>
-        </Button>
-      )}
+      <AppDownloads app={app} />
     </div>
   )
 }
@@ -144,6 +177,12 @@ function OpenApp({ target, app }: { target: string; app: DeeplinkApp }) {
  * opens, and — only where the organization and the sharer opted in to being
  * shown (`linkPreview`, public) — where it leads and who shared it. The sharer
  * is named by `?user_id=<id>` on the link.
+ *
+ * A link may also carry `?invite=<token>`, an invite to the link's organization
+ * (single-use, created by its owner). A signed-in visitor who is not a member
+ * yet can then join with one click instead of asking to. An invite to another
+ * organization, or one that is used up, is ignored, and a member's visit never
+ * spends it. Neither parameter is forwarded to the app (`stripLinkParams`).
  *
  * These checks decide what kontrol forwards. They are not access control for
  * the target: the app still has to authorize whatever the link opens.
@@ -182,7 +221,17 @@ export function LinkForward({
   })
   const preview = previewData?.linkPreview
 
-  if (previewLoading || (status.isAuthenticated && (meLoading || orgLoading))) {
+  // Looked up once signed in: joining needs an account anyway, and lok shows a
+  // private invite only to someone who is.
+  const inviteCode = searchParams.get("invite")
+  const { data: inviteData, loading: inviteLoading } = useLinkInviteQuery({
+    variables: { code: inviteCode ?? "" },
+    skip: !inviteCode || !status.isAuthenticated,
+  })
+  const invite = inviteData?.inviteByCode
+  const usableInvite = invite?.valid && invite.createdFor.slug === slug ? invite : null
+
+  if (previewLoading || (status.isAuthenticated && (meLoading || orgLoading || inviteLoading))) {
     return <CenteredCardSkeleton />
   }
 
@@ -246,7 +295,7 @@ export function LinkForward({
                   state={member ? "done" : signedIn ? "current" : "upcoming"}
                   title={`Join ${publicOrg?.name || orgName}`}
                 >
-                  <JoinRequest orgSlug={slug} />
+                  {usableInvite ? <AcceptLinkInvite invite={usableInvite} /> : <JoinRequest orgSlug={slug} />}
                 </Step>
                 <Step
                   state={member ? "current" : "upcoming"}

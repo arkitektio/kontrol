@@ -30,3 +30,22 @@ query LinkPreview($organization: String!, $user: ID) {
     }
   }
 }
+
+# The invite a shared link may carry (`?invite=<token>`). Anonymous visitors only
+# see public invites; a private one shows up once they are signed in.
+query LinkInvite($code: String!) {
+  inviteByCode(inviteCode: $code) {
+    id
+    token
+    valid
+    createdBy {
+      id
+      username
+    }
+    createdFor {
+      id
+      slug
+      name
+    }
+  }
+}

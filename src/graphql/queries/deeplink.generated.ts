@@ -15,6 +15,12 @@ export type LinkPreviewQueryVariables = Types.Exact<{
 
 export type LinkPreviewQuery = { __typename?: 'Query', linkPreview: { __typename?: 'ManagementLinkPreview', organization?: { __typename?: 'ManagementLinkPreviewOrganization', slug: string, name?: string | null, description?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, inviter?: { __typename?: 'ManagementLinkPreviewUser', name: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null } };
 
+export type LinkInviteQueryVariables = Types.Exact<{
+  code: Types.Scalars['String']['input'];
+}>;
+
+export type LinkInviteQuery = { __typename?: 'Query', inviteByCode: { __typename?: 'ManagementInvite', id: string, token: string, valid: boolean, createdBy: { __typename?: 'ManagementUser', id: string, username: string }, createdFor: { __typename?: 'ManagementOrganization', id: string, slug: string, name?: string | null } } };
+
 export const OrganizationDeeplinksDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"OrganizationDeeplinks"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organization"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"deeplinkApps"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"protocol"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"installUrl"}},{"kind":"Field","name":{"kind":"Name","value":"mobile"}}]}}]}}]}}]} as unknown as DocumentNode;
 
 /**
@@ -90,3 +96,40 @@ export type LinkPreviewQueryHookResult = ReturnType<typeof useLinkPreviewQuery>;
 export type LinkPreviewLazyQueryHookResult = ReturnType<typeof useLinkPreviewLazyQuery>;
 export type LinkPreviewSuspenseQueryHookResult = ReturnType<typeof useLinkPreviewSuspenseQuery>;
 export type LinkPreviewQueryResult = Apollo.QueryResult<LinkPreviewQuery, LinkPreviewQueryVariables>;
+export const LinkInviteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"LinkInvite"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"code"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"inviteByCode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"inviteCode"},"value":{"kind":"Variable","name":{"kind":"Name","value":"code"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"valid"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdFor"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode;
+
+/**
+ * __useLinkInviteQuery__
+ *
+ * To run a query within a React component, call `useLinkInviteQuery` and pass it any options that fit your needs.
+ * When your component renders, `useLinkInviteQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useLinkInviteQuery({
+ *   variables: {
+ *      code: // value for 'code'
+ *   },
+ * });
+ */
+export function useLinkInviteQuery(baseOptions: Apollo.QueryHookOptions<LinkInviteQuery, LinkInviteQueryVariables> & ({ variables: LinkInviteQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<LinkInviteQuery, LinkInviteQueryVariables>(LinkInviteDocument, options);
+      }
+export function useLinkInviteLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<LinkInviteQuery, LinkInviteQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<LinkInviteQuery, LinkInviteQueryVariables>(LinkInviteDocument, options);
+        }
+// @ts-ignore
+export function useLinkInviteSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<LinkInviteQuery, LinkInviteQueryVariables>): Apollo.UseSuspenseQueryResult<LinkInviteQuery, LinkInviteQueryVariables>;
+export function useLinkInviteSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LinkInviteQuery, LinkInviteQueryVariables>): Apollo.UseSuspenseQueryResult<LinkInviteQuery | undefined, LinkInviteQueryVariables>;
+export function useLinkInviteSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LinkInviteQuery, LinkInviteQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<LinkInviteQuery, LinkInviteQueryVariables>(LinkInviteDocument, options);
+        }
+export type LinkInviteQueryHookResult = ReturnType<typeof useLinkInviteQuery>;
+export type LinkInviteLazyQueryHookResult = ReturnType<typeof useLinkInviteLazyQuery>;
+export type LinkInviteSuspenseQueryHookResult = ReturnType<typeof useLinkInviteSuspenseQuery>;
+export type LinkInviteQueryResult = Apollo.QueryResult<LinkInviteQuery, LinkInviteQueryVariables>;

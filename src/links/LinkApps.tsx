@@ -263,6 +263,15 @@ export default function LinkApps() {
               to use them.
             </p>
           )}
+          <p className="text-sm text-muted-foreground">
+            To let someone join without asking, add <code>?invite=&lt;token&gt;</code> from an{" "}
+            <Link className="underline" to={`/organization/${org.id}/invites`}>
+              invite
+            </Link>{" "}
+            you created. Each invite lets one person in, with the roles it carries (guest unless
+            you chose others), and is never passed on to the app. Anyone who has the link before
+            it is used can take it, so only add one to a link you send to one person.
+          </p>
           <p className="text-xs text-muted-foreground">
             Apps usually build these links for you (a &quot;Share&quot; or &quot;Copy link&quot; action); the formats are
             here for when you write one by hand.
