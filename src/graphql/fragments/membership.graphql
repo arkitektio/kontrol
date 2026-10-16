@@ -1,6 +1,10 @@
 fragment Membership on ManagementMembership {
   id
   isOwner
+  isScoped
+  objectGrants {
+    ...ObjectGrant
+  }
   brandHue
   brandChroma
   allowNotifications
@@ -38,6 +42,10 @@ fragment Membership on ManagementMembership {
 
 fragment ListMembership on ManagementMembership {
   id
+  isScoped
+  objectGrants {
+    id
+  }
   brandHue
   brandChroma
   roles {
@@ -56,5 +64,22 @@ fragment ListMembership on ManagementMembership {
   }
   organization {
     ...SidebarOrganization
+  }
+}
+fragment ObjectGrant on ManagementObjectGrant {
+  id
+  grant
+  hub {
+    id
+    name
+  }
+  structure
+  objectId
+  reach
+  createdAt
+  expiresAt
+  grantedBy {
+    id
+    username
   }
 }

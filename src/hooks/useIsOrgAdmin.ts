@@ -32,3 +32,15 @@ export function useIsOrgAdmin(orgId?: string | null): { isAdmin: boolean; loadin
   const membership = data?.me?.memberships?.find((m) => m.organization.id === orgId)
   return { isAdmin: Boolean(orgId) && Boolean(membership?.organization.amIAdmin), loading }
 }
+
+/**
+ * The current user's own membership in `orgId`, from the Me query the shell
+ * already ran. `isScoped` on it means they only have objects shared with them:
+ * the organization's pages are not theirs to see, only what was shared.
+ */
+export function useMyOrgMembership(orgId?: string | null) {
+  const user = useUser()
+  const { data, loading } = useMeQuery({ skip: !user })
+  const membership = data?.me?.memberships?.find((m) => m.organization.id === orgId) ?? null
+  return { membership, loading }
+}

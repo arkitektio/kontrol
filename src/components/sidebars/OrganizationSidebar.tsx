@@ -3,7 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Link, useLocation } from "react-router-dom"
 import { useSidebarHubsQuery } from "@/graphql/queries/sidebar_hubs.generated"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
-import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
+import { useIsOrgAdmin, useMyOrgMembership } from "@/hooks/useIsOrgAdmin"
 import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, KeyRound, UserCircle, Plug, Tags, AppWindow } from "lucide-react"
 
 export function OrganizationSidebar() {
@@ -14,12 +14,14 @@ export function OrganizationSidebar() {
     // entry simply isn't rendered yet; hiding it is cosmetic, since AdminPage
     // gates itself and lok refuses the mutations below owner-or-admin anyway.
     const { isAdmin: mayAdminister } = useIsOrgAdmin(activeOrgId)
+    // Someone with only shared objects sees what was shared and nothing else.
+    const scoped = Boolean(useMyOrgMembership(activeOrgId).membership?.isScoped)
 
     // Hubs get their own slim query (id + name only) — the full `Hubs` query
     // pulls every hub's instances and clients, which the sidebar never shows.
     const { data: hubsData } = useSidebarHubsQuery({
         variables: { filters: { organization: activeOrgId || undefined } },
-        skip: !activeOrgId,
+        skip: !activeOrgId || scoped,
     })
     const hubs = hubsData?.hubs ?? []
 
@@ -44,6 +46,26 @@ export function OrganizationSidebar() {
     }
 
     const base = `/organization/${org.id}`
+
+    if (scoped) {
+        return (
+            <SidebarGroup>
+                <SidebarGroupLabel className="truncate">{org.name || org.slug}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={isActive(base, true)} tooltip="Shared with you">
+                                <Link to={base}>
+                                    <LayoutDashboard />
+                                    <span>Shared with you</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarGroupContent>
+            </SidebarGroup>
+        )
+    }
 
     const mainItems = [
         { to: base, label: "Overview", icon: LayoutDashboard, exact: true },

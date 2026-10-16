@@ -82,6 +82,8 @@ export type ApproveMembershipRequestInput = {
 
 export type CancelInviteInput = {
   id: Scalars['ID']['input'];
+  /** For an object invite: also take back what it shared from everyone who accepted it. */
+  revokeShared?: Scalars['Boolean']['input'];
 };
 
 export type ChangeOrganizationOwnerInput = {
@@ -135,6 +137,10 @@ export type CreateDeviceInput = {
 
 export type CreateInviteInput = {
   expiresInDays?: InputMaybe<Scalars['Int']['input']>;
+  /** For an object invite: how many people may accept it. Null: anyone with the link until it expires. */
+  maxUses?: InputMaybe<Scalars['Int']['input']>;
+  /** Share only these objects, as `<hub>/<structure>:<id>[#<reach>]` strings (e.g. `3/@mikro/image:42#rois`), instead of making the holder a member. Whoever accepts gets a scoped membership that reaches just these. */
+  objects?: InputMaybe<Array<Scalars['String']['input']>>;
   organization?: InputMaybe<Scalars['ID']['input']>;
   public?: Scalars['Boolean']['input'];
   roles?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -894,12 +900,20 @@ export type ManagementInvite = {
   id: Scalars['ID']['output'];
   /** Get the full URL for accepting this invite */
   inviteUrl: Scalars['String']['output'];
+  /** For an object invite: how many people may accept it. Null: anyone with the link until it expires. */
+  maxUses?: Maybe<Scalars['Int']['output']>;
+  /** What this invite has shared, with whom. Only for the people who may see the grants. */
+  objectGrants: Array<ManagementObjectGrant>;
+  /** The objects this invite shares, as `<hub>/<structure>:<id>[#<reach>]` strings. Null for an invite that makes its holder a member. */
+  objects?: Maybe<Array<Scalars['String']['output']>>;
   /** If true, anyone with the link can preview the invitation (organization, inviter, expiry) before signing in. Private invites require authentication before any details are shown. */
   public: Scalars['Boolean']['output'];
   respondedAt?: Maybe<Scalars['DateTime']['output']>;
   roles: Array<ManagementRole>;
   status: Scalars['String']['output'];
   token: Scalars['String']['output'];
+  /** How many people accepted it so far. */
+  uses: Scalars['Int']['output'];
   /** Check if the invite is still valid and pending */
   valid: Scalars['Boolean']['output'];
 };
@@ -914,13 +928,19 @@ export type ManagementInviteCreatedMembershipsArgs = {
 
 
 /** A single-use magic invite link that allows one person to join an organization. */
+export type ManagementInviteObjectGrantsArgs = {
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+/** A single-use magic invite link that allows one person to join an organization. */
 export type ManagementInviteRolesArgs = {
   filters?: InputMaybe<ManagementRoleFilter>;
   ordering?: Array<ManagementRoleOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Invite(id, token, email, created_by, created_for, created_at, expires_at, public, status, accepted_by, declined_by, responded_at) */
+/** Invite(id, token, email, created_by, created_for, created_at, expires_at, public, status, accepted_by, declined_by, responded_at, shared_objects, max_uses, uses) */
 export type ManagementInviteFilter = {
   AND?: InputMaybe<ManagementInviteFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1321,12 +1341,26 @@ export type ManagementMembership = {
   id: Scalars['ID']['output'];
   /** Whether this member owns the organization. The owner cannot be removed by others; ownership must be transferred first. */
   isOwner: Scalars['Boolean']['output'];
+  /** Whether this person only has objects shared with them, rather than being a full member. */
+  isScoped: Scalars['Boolean']['output'];
+  /** The objects shared with this person. Empty for a full member. */
+  objectGrants: Array<ManagementObjectGrant>;
   organization: ManagementOrganization;
   /** The role requests this member has made in the organization */
   roleRequests: Array<ManagementRoleRequest>;
   /** The roles that the user has in the organization */
   roles: Array<ManagementRole>;
   user: ManagementUser;
+};
+
+
+/**
+ *
+ * A Membership is a relation between a User and an Organization. It can have multiple Roles assigned to it.
+ *
+ */
+export type ManagementMembershipObjectGrantsArgs = {
+  pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
@@ -1415,6 +1449,29 @@ export type ManagementOAuth2Client = {
   name: Scalars['String']['output'];
 };
 
+/** One object shared with someone who is not a full member of the organization (a scoped membership). The object is named by its hub, its structure and its id, plus how much related data comes with it (`reach`, in the hosting service's words). */
+export type ManagementObjectGrant = {
+  __typename?: 'ManagementObjectGrant';
+  createdAt: Scalars['DateTime']['output'];
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The grant as one string, `<hub>/<structure>:<id>[#<reach>]`. */
+  grant: Scalars['String']['output'];
+  /** Who shared it. */
+  grantedBy?: Maybe<ManagementUser>;
+  /** The invite it was shared through. */
+  grantedThrough?: Maybe<ManagementInvite>;
+  /** The hub the object lives on. With the structure and the id it names the object uniquely. */
+  hub: ManagementHub;
+  id: Scalars['ID']['output'];
+  membership: ManagementMembership;
+  /** The object's id in its service. */
+  objectId: Scalars['String']['output'];
+  /** How much related data the grant reaches; `self` unless the service declares more. */
+  reach: Scalars['String']['output'];
+  /** The structure identifier, e.g. @mikro/image (unique within a hub). */
+  structure: Scalars['String']['output'];
+};
+
 /**
  *
  * An ORCID Account is a Social Account that maps to an ORCID Account. It provides information about the
@@ -1499,7 +1556,7 @@ export type ManagementOrganization = {
   /** The service instances that belong to this organization */
   serviceInstances: Array<ManagementServiceInstance>;
   slug: Scalars['String']['output'];
-  /** The users that are part of the organization */
+  /** The users that are part of the organization. Empty for someone who only has objects shared with them. */
   users: Array<ManagementUser>;
 };
 
@@ -2353,6 +2410,8 @@ export type Mutation = {
   resolveReport: ManagementReport;
   revokeClientSessions: ManagementClient;
   revokeMandate: ManagementMandate;
+  /** Take back one shared object. Taking back someone's last one removes them from the organization. */
+  revokeObjectGrant: Scalars['ID']['output'];
   revokeOrganizationSessions: Scalars['Int']['output'];
   setMembershipBrandHue: ManagementMembership;
   setMembershipNotifications: ManagementMembership;
@@ -2621,6 +2680,11 @@ export type MutationRevokeClientSessionsArgs = {
 
 export type MutationRevokeMandateArgs = {
   input: RevokeMandateInput;
+};
+
+
+export type MutationRevokeObjectGrantArgs = {
+  input: RevokeObjectGrantInput;
 };
 
 
@@ -3188,6 +3252,10 @@ export type RevokeClientSessionsInput = {
 };
 
 export type RevokeMandateInput = {
+  id: Scalars['ID']['input'];
+};
+
+export type RevokeObjectGrantInput = {
   id: Scalars['ID']['input'];
 };
 

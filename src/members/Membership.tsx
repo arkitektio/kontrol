@@ -21,6 +21,7 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
 import { SendNotification } from "./SendNotification"
+import { SharedObjects } from "@/components/SharedObjects"
 
 export default function Membership() {
     const { orgId, id } = useParams<{ orgId: string, id: string }>()
@@ -126,6 +127,22 @@ export default function Membership() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {membership.isScoped && (
+                        <div className="space-y-2">
+                            <h3 className="font-semibold">Shared with them</h3>
+                            <p className="text-sm text-muted-foreground">
+                                {membership.user?.username} is not a member: they can open only these objects, read-only.
+                                Giving them roles makes them a full member, and what was shared is then no longer listed.
+                            </p>
+                            <SharedObjects
+                                grants={membership.objectGrants}
+                                canRevoke={(grant) => isAdmin || grant.grantedBy?.id === meData?.me?.id}
+                                onRevoked={(_, last) => {
+                                    if (last) navigate(`/organization/${orgId}/members`)
+                                }}
+                            />
+                        </div>
+                    )}
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="font-semibold">Roles</h3>
@@ -134,7 +151,7 @@ export default function Membership() {
                                 <DialogTrigger asChild>
                                     <Button variant="outline" size="sm" onClick={handleEditClick}>
                                         <Pencil className="w-4 h-4 mr-2" />
-                                        Edit Roles
+                                        {membership.isScoped ? "Make a member" : "Edit Roles"}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-3xl">

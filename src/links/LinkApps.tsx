@@ -268,9 +268,11 @@ export default function LinkApps() {
             <Link className="underline" to={`/organization/${org.id}/invites`}>
               invite
             </Link>{" "}
-            you created. Each invite lets one person in, with the roles it carries (guest unless
-            you chose others), and is never passed on to the app. Anyone who has the link before
-            it is used can take it, so only add one to a link you send to one person.
+            you created; it is never passed on to the app. An ordinary invite lets one person join
+            with its roles (guest unless you chose others), so only add it to a link you send to
+            one person. An invite that shares objects (apps create these from a &quot;Share&quot;
+            action) makes nobody a member: whoever accepts can open just those objects, and you
+            can take them back at any time.
           </p>
           <p className="text-xs text-muted-foreground">
             Apps usually build these links for you (a &quot;Share&quot; or &quot;Copy link&quot; action); the formats are

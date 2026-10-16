@@ -14,3 +14,7 @@ mutation SetMembershipBrandHue($input: SetMembershipBrandHueInput!) {
     ...Membership
   }
 }
+
+mutation RevokeObjectGrant($input: RevokeObjectGrantInput!) {
+  revokeObjectGrant(input: $input)
+}

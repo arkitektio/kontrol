@@ -252,7 +252,9 @@ export function InvitePage() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Review Required</AlertTitle>
             <AlertDescription>
-              By accepting this invitation, you will become a member of {invite.createdFor.name}.
+              {invite.objects
+                ? `By accepting, ${invite.objects.length} ${invite.objects.length === 1 ? "object" : "objects"} of ${invite.createdFor.name} will be shared with you, read-only. You do not become a member.`
+                : `By accepting this invitation, you will become a member of ${invite.createdFor.name}.`}
             </AlertDescription>
           </Alert>
         )}

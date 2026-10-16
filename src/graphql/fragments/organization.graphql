@@ -60,6 +60,9 @@ fragment Organization on ManagementOrganization {
     expiresAt
     token
     inviteUrl
+    objects
+    uses
+    maxUses
   }
 }
 

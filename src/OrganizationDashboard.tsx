@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom"
+import { useParams, Link, useNavigate } from "react-router-dom"
 import { AdminOnly } from "@/components/AdminOnly"
 import { useSidebarOrganizationQuery } from "@/graphql/queries/organization.generated"
 import { useHubsQuery } from "@/graphql/queries/hub.generated"
@@ -6,12 +6,14 @@ import { useClientsQuery } from "@/graphql/queries/client.generated"
 import { Ordering } from "@/api/types"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/card"
-import { AlertCircle, AppWindow, ChevronRight, Layers, LayoutDashboard, UserPlus, Users, type LucideIcon } from "lucide-react"
+import { AlertCircle, AppWindow, Boxes, ChevronRight, Layers, LayoutDashboard, UserPlus, Users, type LucideIcon } from "lucide-react"
 
 import { DashboardSkeleton } from "@/components/skeletons"
 import { ClientLabel } from "./components/ClientLabel"
 import { PageHeader } from "./components/PageHeader"
 import { JoinRequestsCard } from "./components/JoinRequestsCard"
+import { SharedObjects } from "./components/SharedObjects"
+import { useMyOrgMembership } from "@/hooks/useIsOrgAdmin"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -52,8 +54,49 @@ function StatTile({
   )
 }
 
+/**
+ * The overview for someone who only has objects shared with them (a scoped
+ * membership): what was shared, and nothing else of the organization.
+ */
+function SharedWithMe({ membership }: { membership: NonNullable<ReturnType<typeof useMyOrgMembership>["membership"]> }) {
+  const navigate = useNavigate()
+  const orgName = membership.organization.name || membership.organization.slug
+  return (
+    <div className="flex flex-1 flex-col gap-8 p-6">
+      <PageHeader
+        icon={Boxes}
+        title={`Shared with you by ${orgName}`}
+        description="You are not a member of this organization: you can open the objects below in the Arkitekt apps, read-only. Ask to join if you need more."
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Shared objects</CardTitle>
+          <CardDescription>Open them from the link you were sent, or in Orkestrator after switching to {orgName}.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SharedObjects
+            grants={membership.objectGrants}
+            canRevoke={() => true}
+            revokeLabel="Give back"
+            onRevoked={(_, last) => {
+              if (last) navigate("/home")
+            }}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export default function OrganizationDashboard() {
   const { orgId } = useParams<{ orgId: string }>()
+  const { membership, loading } = useMyOrgMembership(orgId)
+  if (loading && !membership) return <DashboardSkeleton />
+  if (membership?.isScoped) return <SharedWithMe membership={membership} />
+  return <FullDashboard orgId={orgId} />
+}
+
+function FullDashboard({ orgId }: { orgId?: string }) {
 
   const { data, loading, error } = useSidebarOrganizationQuery({
     variables: { id: orgId! },

@@ -18,6 +18,7 @@ fragment PublicInvite on ManagementInvite {
   token
   status
   public
+  objects
   createdAt
   expiresAt
   createdBy {

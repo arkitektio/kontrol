@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useSearchParams } from "react-router-dom"
-import { CheckCircle2, Circle, CircleDot, CircleHelp, ExternalLink, Share2, UserPlus } from "lucide-react"
+import { Check, CheckCircle2, Circle, CircleDot, CircleHelp, ExternalLink, Share2, UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStatus } from "@/auth/hooks"
 import { URLs } from "@/auth/routing"
@@ -111,31 +111,36 @@ function JoinRequest({ orgSlug }: { orgSlug: string }) {
 type LinkInvite = NonNullable<LinkInviteQuery["inviteByCode"]>
 
 /**
- * Step 2 when the link carries an invite to this organization: one click joins.
- * Not automatic, so that opening a link can never make someone a member of an
+ * Step 2 when the link carries an invite to this organization: one click joins,
+ * or, for an invite that shares objects, accepts them without joining. Not
+ * automatic, so that opening a link can never make someone a member of an
  * organization they did not choose. Accepting refetches `Me`, which makes the
- * visitor a member and moves the page on to step 3.
+ * visitor a member (scoped, for shared objects) and moves the page on to step 3.
  */
 function AcceptLinkInvite({ invite }: { invite: LinkInvite }) {
   const [accept, { loading }] = useAcceptInviteMutation({ refetchQueries: ["Me"], awaitRefetchQueries: true })
+  const orgName = invite.createdFor.name || "this organization"
+  const shared = invite.objects
 
   const join = async () => {
     try {
       await accept({ variables: { input: { token: invite.token } } })
-      toast.success(`You joined ${invite.createdFor.name || "the organization"}`)
+      toast.success(shared ? "Accepted" : `You joined ${orgName}`)
     } catch (e) {
-      toastError(e, "Couldn't join the organization")
+      toastError(e, shared ? "Couldn't accept it" : "Couldn't join the organization")
     }
   }
 
   return (
     <div className="space-y-2">
       <p className="text-center text-sm text-muted-foreground">
-        {invite.createdBy.username} invited you to join {invite.createdFor.name || "this organization"}.
+        {shared
+          ? `${invite.createdBy.username} shared ${shared.length === 1 ? "an object" : `${shared.length} objects`} of ${orgName} with you, to open read-only. You do not become a member.`
+          : `${invite.createdBy.username} invited you to join ${orgName}.`}
       </p>
       <Button className="w-full" onClick={join} disabled={loading}>
-        <UserPlus className="h-4 w-4" />
-        {loading ? "Joining..." : "Join"}
+        {shared ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+        {loading ? (shared ? "Accepting..." : "Joining...") : shared ? "Accept" : "Join"}
       </Button>
     </div>
   )
@@ -202,9 +207,8 @@ export function LinkForward({
   const slug = orgSlug.toLowerCase()
 
   const { data: meData, loading: meLoading, error: meError } = useMeQuery({ skip: !status.isAuthenticated })
-  const organization = meData?.me?.memberships
-    .map((membership) => membership.organization)
-    .find((candidate) => candidate.slug === slug)
+  const myMembership = meData?.me?.memberships.find((membership) => membership.organization.slug === slug)
+  const organization = myMembership?.organization
 
   const {
     data,
@@ -237,6 +241,23 @@ export function LinkForward({
 
   const signedIn = status.isAuthenticated
   const member = Boolean(organization)
+  // An invite that shares objects still has something to offer a scoped member
+  // who lacks some of them, or holds one with another reach that the invite names
+  // explicitly (lok's rule: a plain `self` never narrows a reach). A full member
+  // gets nothing from it. Matching lok exactly matters: accepting nothing new
+  // spends no use, and a mismatch here would offer Accept forever.
+  const heldReach = new Map(
+    myMembership?.objectGrants.map((grant) => [`${grant.hub.id}/${grant.structure}:${grant.objectId}`, grant.reach]),
+  )
+  const offersSomethingNew = (object: string) => {
+    const [key, reach = "self"] = object.split("#")
+    const held = heldReach.get(key)
+    return held === undefined || (reach !== "self" && reach !== held)
+  }
+  const pendingShare =
+    usableInvite?.objects != null &&
+    (!myMembership || (myMembership.isScoped && usableInvite.objects.some(offersSomethingNew)))
+  const ready = member && !pendingShare
   const orgName = data?.organization.name || preview?.organization?.name || slug
   const inviter = preview?.inviter
   const publicOrg = preview?.organization
@@ -292,13 +313,17 @@ export function LinkForward({
                   <ProviderList callbackURL={location.pathname + location.search + location.hash} process="login" />
                 </Step>
                 <Step
-                  state={member ? "done" : signedIn ? "current" : "upcoming"}
-                  title={`Join ${publicOrg?.name || orgName}`}
+                  state={ready ? "done" : signedIn ? "current" : "upcoming"}
+                  title={usableInvite?.objects ? "Accept what was shared" : `Join ${publicOrg?.name || orgName}`}
                 >
-                  {usableInvite ? <AcceptLinkInvite invite={usableInvite} /> : <JoinRequest orgSlug={slug} />}
+                  {usableInvite && (pendingShare || !usableInvite.objects) ? (
+                    <AcceptLinkInvite invite={usableInvite} />
+                  ) : (
+                    <JoinRequest orgSlug={slug} />
+                  )}
                 </Step>
                 <Step
-                  state={member ? "current" : "upcoming"}
+                  state={ready ? "current" : "upcoming"}
                   title={resolved && "app" in resolved ? `Open it in ${resolved.app.name}` : "Open it in the app"}
                 >
                   {resolved &&

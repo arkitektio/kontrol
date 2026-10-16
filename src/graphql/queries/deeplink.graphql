@@ -38,6 +38,9 @@ query LinkInvite($code: String!) {
     id
     token
     valid
+    objects
+    maxUses
+    uses
     createdBy {
       id
       username

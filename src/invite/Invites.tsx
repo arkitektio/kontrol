@@ -1,4 +1,4 @@
-import { Check, Copy, Mail, UserPlus, XCircle } from "lucide-react"
+import { Check, Copy, Mail, Undo2, UserPlus, XCircle } from "lucide-react"
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -42,6 +42,7 @@ export default function Invites() {
   const [recipientEmail, setRecipientEmail] = useState("")
   const [copied, setCopied] = useState<string | null>(null)
   const [cancelTarget, setCancelTarget] = useState<string | null>(null)
+  const [takeBackTarget, setTakeBackTarget] = useState<string | null>(null)
   const [cancelInvite] = useCancelInviteMutation()
   
   const { data, loading, error, refetch } = useOrganizationQuery({
@@ -58,6 +59,17 @@ export default function Invites() {
   // lok: only the owner creates invites; owner and admins may cancel them.
   const mayInvite = org.amIOwner
   const mayCancel = org.amIOwner || org.amIAdmin
+
+  const handleTakeBack = async (inviteId: string) => {
+    try {
+      await cancelInvite({ variables: { input: { id: inviteId, revokeShared: true } } })
+      toast.success("Taken back from everyone it was shared with")
+      refetch()
+    } catch (e) {
+      toastError(e, "Couldn't take it back")
+      return false
+    }
+  }
 
   const handleCancel = async (inviteId: string) => {
     try {
@@ -176,6 +188,20 @@ export default function Invites() {
                     <div className="text-sm text-muted-foreground font-mono break-all">
                       {`${window.location.origin}/invite/${i.token}`}
                     </div>
+                    {i.objects && (
+                      <div className="space-y-1 text-sm">
+                        <p className="text-muted-foreground">
+                          Shares {i.objects.length} {i.objects.length === 1 ? "object" : "objects"}, no membership ·{" "}
+                          accepted {i.uses}
+                          {i.maxUses != null ? ` of ${i.maxUses}` : ""} {i.uses === 1 ? "time" : "times"}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {i.objects.map((o) => (
+                            <code key={o} className="rounded bg-muted px-1.5 py-0.5 text-xs">{o}</code>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                     <div className="flex gap-2 flex-wrap">
@@ -195,6 +221,17 @@ export default function Invites() {
                           <Mail className="w-4 h-4 mr-2" />
                           Email
                       </Button>
+                      {mayCancel && i.objects && i.uses > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setTakeBackTarget(i.id)}
+                        >
+                            <Undo2 className="w-4 h-4 mr-2" />
+                            Take back
+                        </Button>
+                      )}
                       {mayCancel && i.status === "PENDING" && (
                         <Button 
                             variant="ghost" 
@@ -232,6 +269,17 @@ export default function Invites() {
         onConfirm={() => cancelTarget && handleCancel(cancelTarget)}
       />
       
+      <ConfirmActionDialog
+        open={takeBackTarget !== null}
+        onOpenChange={(open) => !open && setTakeBackTarget(null)}
+        title="Take back what this invite shared?"
+        description="The link stops working, and everyone who accepted it loses the shared objects. Anyone left with nothing shared is removed from the organization."
+        confirmLabel="Take back"
+        pendingLabel="Taking back..."
+        destructive
+        onConfirm={() => takeBackTarget && handleTakeBack(takeBackTarget)}
+      />
+
       <Dialog open={sendEmailOpen} onOpenChange={setSendEmailOpen}>
         <DialogContent>
           <DialogHeader>
