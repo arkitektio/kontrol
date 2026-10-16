@@ -175,11 +175,6 @@ export type CreateProfileInput = {
   user: Scalars['ID']['input'];
 };
 
-export type CreateRedeemTokenInput = {
-  expiresInDays?: InputMaybe<Scalars['Int']['input']>;
-  hub: Scalars['ID']['input'];
-};
-
 export type CreateRoleSetInput = {
   name: Scalars['String']['input'];
   organization: Scalars['ID']['input'];
@@ -288,6 +283,19 @@ export type GroupFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type IssueMandateKeyInput = {
+  /** Whether a client logging in with the key may ask for a mesh key. */
+  allowMesh?: Scalars['Boolean']['input'];
+  /** The app the key admits. Left out (owners and admins only): the first app that logs in with it. */
+  app?: InputMaybe<ManagementMandatePinInput>;
+  /** The key stops working after this many days. Left out: until revoked. */
+  expiresInDays?: InputMaybe<Scalars['Int']['input']>;
+  hub: Scalars['ID']['input'];
+  label?: InputMaybe<Scalars['String']['input']>;
+  /** On how many devices the key may log in. Left out: unlimited. */
+  maxClients?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export const LayerKind = {
   Base: 'BASE',
   Ionscale: 'IONSCALE',
@@ -357,6 +365,8 @@ export type ManagementClient = {
   latestReportResolved: Scalars['Boolean']['output'];
   /** The logo of the release. This should be a url to a logo that can be used to represent the release. */
   logo?: Maybe<ManagementMediaStore>;
+  /** The mandate this client logs in with, if it logs in with a key. */
+  mandate?: Maybe<ManagementMandate>;
   /** The app manifest this client was registered with, if it parses. */
   manifest?: Maybe<ManagementStagingManifest>;
   /** The mappings of the client. A mapping is a mapping of a service to a service instance. This is used to configure the hub. */
@@ -717,6 +727,8 @@ export type ManagementHub = {
   lastHealthy?: Maybe<Scalars['Boolean']['output']>;
   /** When the hub last reported its health. Null if it never has. */
   lastSeenAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The mandates that log apps into this hub (the ones you may see). */
+  mandates: Array<ManagementMandate>;
   /** Whether the hub's last health report said its node is on the mesh. Null if it never reported mesh state. */
   meshConnected?: Maybe<Scalars['Boolean']['output']>;
   /** The hub node's MagicDNS name (or mesh IP), as last reported by the hub. */
@@ -744,6 +756,14 @@ export type ManagementHubClientsArgs = {
 export type ManagementHubInstancesArgs = {
   filters?: InputMaybe<ManagementServiceInstanceFilter>;
   ordering?: Array<ManagementServiceInstanceOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+/** A Hub is a collection of service instances and clients that work together. It represents a deployable configuration for an organization. */
+export type ManagementHubMandatesArgs = {
+  filters?: InputMaybe<ManagementMandateFilter>;
+  ordering?: Array<ManagementMandateOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -941,6 +961,14 @@ export type ManagementIonscaleAuthKeyOrdering =
   { createdAt: Ordering; id?: never; }
   |  { createdAt?: never; id: Ordering; };
 
+/** A freshly issued mandate and its key. The key is shown only here, once. */
+export type ManagementIssuedMandateKey = {
+  __typename?: 'ManagementIssuedMandateKey';
+  /** The mandate key. Hand it to the app as FAKTS_MANDATE_KEY; lok keeps only its hash. */
+  key: Scalars['String']['output'];
+  mandate: ManagementMandate;
+};
+
 /** A KommunityPartner represents a pre-configured partner that can provide hubs and services to organizations. Partners can be auto-configured to automatically create hubs for new organizations. */
 export type ManagementKommunityPartner = {
   __typename?: 'ManagementKommunityPartner';
@@ -1117,6 +1145,133 @@ export type ManagementMachine = {
   tags: Array<Scalars['String']['output']>;
   /** For an app node: the member who approved the app. */
   user?: Maybe<ManagementUser>;
+};
+
+/** A standing authority to act as the grantor, inside one hub, up to a pinned app. Whoever holds its key logs in as the grantor, or the agent app it names may issue keys under it. It dies with whoever issued it. */
+export type ManagementMandate = {
+  __typename?: 'ManagementMandate';
+  /** The app allowed to issue keys under this mandate. Null for a keyed mandate. */
+  agentIdentifier?: Maybe<Scalars['String']['output']>;
+  /** Whether a client logging in with the key may ask for a mesh key. */
+  allowMesh: Scalars['Boolean']['output'];
+  /** The keys the agent issued under this mandate. */
+  children: Array<ManagementMandate>;
+  /** Who may use the mandate. */
+  claimant: MandateClaimant;
+  /** The clients logged in with the key, one per device. */
+  clients: Array<ManagementClient>;
+  createdAt: Scalars['DateTime']['output'];
+  /** After this the mandate no longer works. Null: as long as its issuer. */
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The user the clients act as. */
+  grantor: ManagementUser;
+  /** The hub the clients compose against. */
+  hub: ManagementHub;
+  id: Scalars['ID']['output'];
+  /** Whether the mandate still works. */
+  isLive: Scalars['Boolean']['output'];
+  /** The app that issued this mandate. */
+  issuingClient?: Maybe<ManagementClient>;
+  /** The first characters of the key, to recognise it by. Empty for an agent mandate. */
+  keyPrefix: Scalars['String']['output'];
+  /** A human name for the mandate. */
+  label: Scalars['String']['output'];
+  /** When the key was last exchanged for a token. */
+  lastUsedAt?: Maybe<Scalars['DateTime']['output']>;
+  /** Keyed: on how many devices the key may log in. Agent: how many live keys may be issued under it. Null means unlimited. */
+  maxClients?: Maybe<Scalars['Int']['output']>;
+  /** Who issued the mandate. */
+  origin: MandateOrigin;
+  /** The agent mandate this one was issued under. */
+  parent?: Maybe<ManagementMandate>;
+  /** Why the mandate was withdrawn. */
+  revocationReason?: Maybe<MandateRevocation>;
+  /** When the mandate was withdrawn; its clients were deleted then. */
+  revokedAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The app the mandate admits, and the ceilings it puts on it. */
+  subject: ManagementMandatePin;
+};
+
+
+/** A standing authority to act as the grantor, inside one hub, up to a pinned app. Whoever holds its key logs in as the grantor, or the agent app it names may issue keys under it. It dies with whoever issued it. */
+export type ManagementMandateChildrenArgs = {
+  filters?: InputMaybe<ManagementMandateFilter>;
+  ordering?: Array<ManagementMandateOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+/** A standing authority to act as the grantor, inside one hub, up to a pinned app. Whoever holds its key logs in as the grantor, or the agent app it names may issue keys under it. It dies with whoever issued it. */
+export type ManagementMandateClientsArgs = {
+  filters?: InputMaybe<ManagementClientFilter>;
+  ordering?: Array<ManagementClientOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+/**
+ * A standing authority to act as the grantor, inside one hub, up to a pinned manifest.
+ *
+ * Every headless login goes through one. Who may use it is the *claimant*:
+ *
+ * - ``key``: whoever holds the mandate key exchanges it at the token endpoint
+ *   (``urn:fakts:grant-type:mandate-key``) for an access token of a client acting as
+ *   the grantor. Only the key's SHA-256 is stored. There is no refresh chain: the
+ *   client runs the grant again when its access token expires, and every grant
+ *   re-checks the mandate.
+ * - ``agent``: the app named by ``agent_identifier`` (a deployer) may issue keyed
+ *   child mandates under it, one per instance it runs. kabinet's release approvals
+ *   are agent mandates.
+ *
+ * Who issued it is the *origin*, and a mandate dies with its issuer: the grantor
+ * membership, the issuing client (``issuing_client``), the parent agent mandate
+ * (``parent``), the hub that asked for it, or the deployment config entry
+ * (``config_name``) that names it. Deletions cascade; revocations are pushed down
+ * to every child by ``fakts.services.mandates.revoke_mandate``.
+ */
+export type ManagementMandateFilter = {
+  AND?: InputMaybe<ManagementMandateFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ManagementMandateFilter>;
+  OR?: InputMaybe<ManagementMandateFilter>;
+  claimant?: InputMaybe<MandateClaimant>;
+  hub?: InputMaybe<Scalars['ID']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  live?: InputMaybe<Scalars['Boolean']['input']>;
+  organization?: InputMaybe<Scalars['ID']['input']>;
+  origin?: InputMaybe<MandateOrigin>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ManagementMandateOrdering =
+  { createdAt: Ordering; id?: never; lastUsedAt?: never; }
+  |  { createdAt?: never; id: Ordering; lastUsedAt?: never; }
+  |  { createdAt?: never; id?: never; lastUsedAt: Ordering; };
+
+/** The ceiling a mandate puts on the apps that log in under it. A null field is open. */
+export type ManagementMandatePin = {
+  __typename?: 'ManagementMandatePin';
+  /** The device. Null: any device. */
+  deviceId?: Maybe<Scalars['String']['output']>;
+  /** The app. Null: fixed by the first app that logs in. */
+  identifier?: Maybe<Scalars['String']['output']>;
+  /** The most requirements an app may ask for. Null: any. */
+  requirements?: Maybe<Array<ManagementRequirementPin>>;
+  /** The most scopes an app may ask for. Null: the organization's. */
+  scopes?: Maybe<Array<Scalars['String']['output']>>;
+  /** The release. Null: every release. */
+  version?: Maybe<Scalars['String']['output']>;
+};
+
+export type ManagementMandatePinInput = {
+  /** Pin one device. Left out: any device. */
+  deviceId?: InputMaybe<Scalars['String']['input']>;
+  identifier: Scalars['String']['input'];
+  /** The most requirements the app may ask for. Left out: any. */
+  requirements?: InputMaybe<Array<ManagementRequirementPinInput>>;
+  /** The most scopes the app may ask for. Left out: the organization's. */
+  scopes?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Pin one release. Left out: every release. */
+  version?: InputMaybe<Scalars['String']['input']>;
 };
 
 /**
@@ -1460,50 +1615,6 @@ export type ManagementPublicSource = {
   url: Scalars['String']['output'];
 };
 
-/**
- * A redeem token is a token that can be used to redeem the rights to create
- * a client. It is used to give the recipient the right to create a client.
- *
- * If the token is not redeemed within the expires_at time, it will be invalid.
- * If the token has been redeemed, but the manifest has changed, the token will be invalid.
- */
-export type ManagementRedeemToken = {
-  __typename?: 'ManagementRedeemToken';
-  /** The client that this redeem token belongs to. */
-  client?: Maybe<ManagementClient>;
-  createdAt: Scalars['DateTime']['output'];
-  expiresAt?: Maybe<Scalars['DateTime']['output']>;
-  /** The hub that this redeem token grants access to. */
-  hub: ManagementHub;
-  id: Scalars['ID']['output'];
-  /** The redeem token. A bearer credential: only returned to the user who issued it and to the hub organization's owner/admins, null for everyone else. */
-  token?: Maybe<Scalars['String']['output']>;
-  /** The user that this redeem token belongs to. */
-  user: ManagementUser;
-};
-
-/**
- * A redeem token is a token that can be used to redeem the rights to create
- * a client. It is used to give the recipient the right to create a client.
- *
- * If the token is not redeemed within the expires_at time, it will be invalid.
- * If the token has been redeemed, but the manifest has changed, the token will be invalid.
- */
-export type ManagementRedeemTokenFilter = {
-  AND?: InputMaybe<ManagementRedeemTokenFilter>;
-  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
-  NOT?: InputMaybe<ManagementRedeemTokenFilter>;
-  OR?: InputMaybe<ManagementRedeemTokenFilter>;
-  hub?: InputMaybe<Scalars['ID']['input']>;
-  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  organization?: InputMaybe<Scalars['ID']['input']>;
-  search?: InputMaybe<Scalars['String']['input']>;
-};
-
-export type ManagementRedeemTokenOrdering =
-  { createdAt: Ordering; id?: never; }
-  |  { createdAt?: never; id: Ordering; };
-
 /** A Release is a version of an app. Releases might change over time. E.g. a release might be updated to fix a bug, and the release might be updated to add a new feature. This is why they are the home for `scopes` and `requirements`, which might change over the release cycle. */
 export type ManagementRelease = {
   __typename?: 'ManagementRelease';
@@ -1588,6 +1699,18 @@ export type ManagementReportFilter = {
 export type ManagementReportOrdering =
   { createdAt: Ordering; id?: never; }
   |  { createdAt?: never; id: Ordering; };
+
+/** A requirement as a mandate pins it. */
+export type ManagementRequirementPin = {
+  __typename?: 'ManagementRequirementPin';
+  key: Scalars['String']['output'];
+  service: Scalars['String']['output'];
+};
+
+export type ManagementRequirementPinInput = {
+  key: Scalars['String']['input'];
+  service: Scalars['String']['input'];
+};
 
 /** A Role is a set of permissions that can be assigned to a user. It is used to define what a user can do in the system. */
 export type ManagementRole = {
@@ -2145,6 +2268,34 @@ export type ManagementUserMembershipsArgs = {
 export type ManagementUserOrdering =
   { id: Ordering; };
 
+/** Who may use a mandate. */
+export const MandateClaimant = {
+  Agent: 'AGENT',
+  Key: 'KEY'
+} as const;
+
+export type MandateClaimant = typeof MandateClaimant[keyof typeof MandateClaimant];
+/** Who issued a mandate. A mandate dies with its issuer. */
+export const MandateOrigin = {
+  Agent: 'AGENT',
+  Client: 'CLIENT',
+  Config: 'CONFIG',
+  Hub: 'HUB',
+  Member: 'MEMBER'
+} as const;
+
+export type MandateOrigin = typeof MandateOrigin[keyof typeof MandateOrigin];
+/** Why a mandate stopped working. */
+export const MandateRevocation = {
+  IssuerRevoked: 'ISSUER_REVOKED',
+  OrganizationRevoked: 'ORGANIZATION_REVOKED',
+  ParentRevoked: 'PARENT_REVOKED',
+  RemovedFromConfig: 'REMOVED_FROM_CONFIG',
+  Revoked: 'REVOKED',
+  Superseded: 'SUPERSEDED'
+} as const;
+
+export type MandateRevocation = typeof MandateRevocation[keyof typeof MandateRevocation];
 export type Mutation = {
   __typename?: 'Mutation';
   acceptDeviceCode: ManagementClient;
@@ -2168,7 +2319,6 @@ export type Mutation = {
   createOrganization: ManagementOrganization;
   createOrganizationProfile: ManagementOrganizationProfile;
   createProfile: ManagementProfile;
-  createRedeemToken: ManagementRedeemToken;
   createRoleSet: ManagementRoleSet;
   declineDeviceCode: ManagementDeviceCode;
   declineHubDeviceCode: ManagementHubDeviceCode;
@@ -2192,6 +2342,7 @@ export type Mutation = {
   deleteRoleSet: Scalars['ID']['output'];
   disableTailnetLock: ManagementLayer;
   enableTailnetLock: ManagementLayer;
+  issueMandateKey: ManagementIssuedMandateKey;
   notifyMember: ManagementNotificationResult;
   removeDeviceFromGroup: ManagementDevice;
   requestClientReport: ManagementClient;
@@ -2201,6 +2352,7 @@ export type Mutation = {
   requestRole: ManagementRoleRequest;
   resolveReport: ManagementReport;
   revokeClientSessions: ManagementClient;
+  revokeMandate: ManagementMandate;
   revokeOrganizationSessions: Scalars['Int']['output'];
   setMembershipBrandHue: ManagementMembership;
   setMembershipNotifications: ManagementMembership;
@@ -2317,11 +2469,6 @@ export type MutationCreateProfileArgs = {
 };
 
 
-export type MutationCreateRedeemTokenArgs = {
-  input: CreateRedeemTokenInput;
-};
-
-
 export type MutationCreateRoleSetArgs = {
   input: CreateRoleSetInput;
 };
@@ -2427,6 +2574,11 @@ export type MutationEnableTailnetLockArgs = {
 };
 
 
+export type MutationIssueMandateKeyArgs = {
+  input: IssueMandateKeyInput;
+};
+
+
 export type MutationNotifyMemberArgs = {
   input: NotifyMemberInput;
 };
@@ -2464,6 +2616,11 @@ export type MutationResolveReportArgs = {
 
 export type MutationRevokeClientSessionsArgs = {
   input: RevokeClientSessionsInput;
+};
+
+
+export type MutationRevokeMandateArgs = {
+  input: RevokeMandateInput;
 };
 
 
@@ -2627,6 +2784,7 @@ export type Query = {
   /** What a link page may show to anyone holding a link: the organization it leads into and who shared it. Public, and strictly opt-in: a part is null unless its subject chose to be shown. */
   linkPreview: ManagementLinkPreview;
   machine?: Maybe<ManagementMachine>;
+  mandates: Array<ManagementMandate>;
   me: ManagementUser;
   membership: ManagementMembership;
   memberships: Array<ManagementMembership>;
@@ -2635,7 +2793,6 @@ export type Query = {
   oauth2ClientByClientId: ManagementOAuth2Client;
   organization: ManagementOrganization;
   organizations: Array<ManagementOrganization>;
-  redeemTokens: Array<ManagementRedeemToken>;
   release: ManagementRelease;
   releases: Array<ManagementRelease>;
   report: ManagementReport;
@@ -2817,6 +2974,13 @@ export type QueryMachineArgs = {
 };
 
 
+export type QueryMandatesArgs = {
+  filters?: InputMaybe<ManagementMandateFilter>;
+  ordering?: Array<ManagementMandateOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
 export type QueryMembershipArgs = {
   id: Scalars['ID']['input'];
 };
@@ -2852,13 +3016,6 @@ export type QueryOrganizationArgs = {
 export type QueryOrganizationsArgs = {
   filters?: InputMaybe<OrganizationFilter>;
   ordering?: Array<ManagementOrganizationOrdering>;
-  pagination?: InputMaybe<OffsetPaginationInput>;
-};
-
-
-export type QueryRedeemTokensArgs = {
-  filters?: InputMaybe<ManagementRedeemTokenFilter>;
-  ordering?: Array<ManagementRedeemTokenOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -3028,6 +3185,10 @@ export type ResolveRoleRequestInput = {
 
 export type RevokeClientSessionsInput = {
   client: Scalars['ID']['input'];
+};
+
+export type RevokeMandateInput = {
+  id: Scalars['ID']['input'];
 };
 
 export type RevokeOrganizationSessionsInput = {

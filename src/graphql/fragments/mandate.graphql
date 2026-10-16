@@ -1,0 +1,33 @@
+fragment ListMandate on ManagementMandate {
+  id
+  label
+  keyPrefix
+  claimant
+  origin
+  agentIdentifier
+  maxClients
+  allowMesh
+  createdAt
+  expiresAt
+  revokedAt
+  revocationReason
+  lastUsedAt
+  isLive
+  subject {
+    identifier
+    version
+    deviceId
+    scopes
+  }
+  grantor {
+    id
+    username
+  }
+  hub {
+    id
+    name
+  }
+  clients {
+    id
+  }
+}

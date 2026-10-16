@@ -19,7 +19,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   "2fa": "Two-factor",
   "danger-zone": "Settings",
   "connect-hub": "Connect hub",
-  "redeem-tokens": "Redeem tokens",
+  mandates: "Mandates",
   "service-instances": "Service instances",
   "service-instance-mappings": "Instance mappings",
   "service-releases": "Service releases",

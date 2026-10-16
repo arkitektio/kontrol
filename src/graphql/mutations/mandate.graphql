@@ -1,0 +1,14 @@
+mutation IssueMandateKey($input: IssueMandateKeyInput!) {
+  issueMandateKey(input: $input) {
+    key
+    mandate {
+      ...ListMandate
+    }
+  }
+}
+
+mutation RevokeMandate($input: RevokeMandateInput!) {
+  revokeMandate(input: $input) {
+    ...ListMandate
+  }
+}

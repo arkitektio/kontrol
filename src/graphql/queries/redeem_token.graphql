@@ -1,5 +1,0 @@
-query RedeemTokens($filters: ManagementRedeemTokenFilter, $pagination: OffsetPaginationInput) {
-  redeemTokens(filters: $filters, pagination: $pagination) {
-    ...ListRedeemToken
-  }
-}

@@ -47,7 +47,7 @@ const ORG_ROUTES: Array<{ suffix: string; label: string }> = [
   { suffix: "/services", label: "Services" },
   { suffix: "/service-instances", label: "Service instances" },
   { suffix: "/service-instance-mappings", label: "Service instance mappings" },
-  { suffix: "/redeem-tokens", label: "Redeem tokens" },
+  { suffix: "/mandates", label: "Mandates" },
   { suffix: "/permissions", label: "Permissions" },
   { suffix: "/partners", label: "Partners" },
 ]

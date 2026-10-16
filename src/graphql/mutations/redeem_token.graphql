@@ -1,5 +1,0 @@
-mutation CreateRedeemToken($input: CreateRedeemTokenInput!) {
-  createRedeemToken(input: $input) {
-    ...DetailRedeemToken
-  }
-}

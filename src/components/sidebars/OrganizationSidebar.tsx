@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom"
 import { useSidebarHubsQuery } from "@/graphql/queries/sidebar_hubs.generated"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, Ticket, UserCircle, Plug, Tags, AppWindow } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, KeyRound, UserCircle, Plug, Tags, AppWindow } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
@@ -135,7 +135,7 @@ export function OrganizationSidebar() {
             { label: "Overview", to: hubPath, exact: true, icon: LayoutDashboard },
             { label: "Services", to: `${hubPath}/services`, icon: Zap },
             { label: "Clients", to: `${hubPath}/clients`, icon: Package },
-            { label: "Redeem Tokens", to: `${hubPath}/redeem-tokens`, icon: Ticket },
+            { label: "Mandates", to: `${hubPath}/mandates`, icon: KeyRound },
           ]
           return (
             <Collapsible key={hub.id} defaultOpen={index === 0 || hubIsActive} className="group/collapsible">

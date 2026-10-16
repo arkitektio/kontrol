@@ -129,7 +129,7 @@ const Hub = lazyDefault(() => import('./hubs/Hub'))
 const HubOverview = lazyDefault(() => import('./hubs/hub/HubOverview'))
 const HubServices = lazyDefault(() => import('./hubs/hub/HubServices'))
 const HubClients = lazyDefault(() => import('./hubs/hub/HubClients'))
-const HubRedeemTokens = lazyDefault(() => import('./hubs/hub/HubRedeemTokens'))
+const HubMandates = lazyDefault(() => import('./hubs/hub/HubMandates'))
 const Service = lazyDefault(() => import('./services/Service'))
 const ServiceInstance = lazyDefault(() => import('./services/ServiceInstance'))
 const ServiceInstanceMapping = lazyDefault(() => import('./services/ServiceInstanceMapping'))
@@ -527,8 +527,8 @@ export function createRoutes() {
                       element: <HubClients />,
                     },
                     {
-                      path: 'redeem-tokens',
-                      element: <HubRedeemTokens />,
+                      path: 'mandates',
+                      element: <HubMandates />,
                     },
                   ],
                 },

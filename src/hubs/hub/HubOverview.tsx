@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
-import { Layers, Server, Box, Ticket, ArrowRight, Pencil, Trash2, Activity, Network } from "lucide-react"
+import { Layers, Server, Box, KeyRound, ArrowRight, Pencil, Trash2, Activity, Network } from "lucide-react"
 import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 import {
   Dialog,
@@ -63,10 +63,10 @@ export default function HubOverview() {
       description: "Apps and clients connected to this hub.",
     },
     {
-      to: `${base}/redeem-tokens`,
-      icon: Ticket,
-      label: "Redeem Tokens",
-      description: "One-time tokens to attach development clients.",
+      to: `${base}/mandates`,
+      icon: KeyRound,
+      label: "Mandates",
+      description: "Keys that log apps in without a browser.",
     },
   ]
 

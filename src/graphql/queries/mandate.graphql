@@ -1,0 +1,5 @@
+query Mandates($filters: ManagementMandateFilter, $pagination: OffsetPaginationInput) {
+  mandates(filters: $filters, pagination: $pagination) {
+    ...ListMandate
+  }
+}
