@@ -60,7 +60,11 @@ fragment Organization on ManagementOrganization {
     expiresAt
     token
     inviteUrl
-    objects
+    collaborations {
+      instance
+      collaboration
+      roles
+    }
     uses
     maxUses
   }

@@ -12,7 +12,7 @@ import { DashboardSkeleton } from "@/components/skeletons"
 import { ClientLabel } from "./components/ClientLabel"
 import { PageHeader } from "./components/PageHeader"
 import { JoinRequestsCard } from "./components/JoinRequestsCard"
-import { SharedObjects } from "./components/SharedObjects"
+import { SharedCollaborations } from "./components/SharedCollaborations"
 import { useMyOrgMembership } from "@/hooks/useIsOrgAdmin"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -55,8 +55,8 @@ function StatTile({
 }
 
 /**
- * The overview for someone who only has objects shared with them (a scoped
- * membership): what was shared, and nothing else of the organization.
+ * The overview for a guest of some collaborations (a scoped membership): what
+ * was shared, and nothing else of the organization.
  */
 function SharedWithMe({ membership }: { membership: NonNullable<ReturnType<typeof useMyOrgMembership>["membership"]> }) {
   const navigate = useNavigate()
@@ -66,16 +66,16 @@ function SharedWithMe({ membership }: { membership: NonNullable<ReturnType<typeo
       <PageHeader
         icon={Boxes}
         title={`Shared with you by ${orgName}`}
-        description="You are not a member of this organization: you can open the objects below in the Arkitekt apps, read-only. Ask to join if you need more."
+        description="You are not a member of this organization: you can open the collaborations below in the Arkitekt apps, with only the roles shown inside each. Ask to join if you need more."
       />
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Shared objects</CardTitle>
+          <CardTitle className="text-lg">Shared collaborations</CardTitle>
           <CardDescription>Open them from the link you were sent, or in Orkestrator after switching to {orgName}.</CardDescription>
         </CardHeader>
         <CardContent>
-          <SharedObjects
-            grants={membership.objectGrants}
+          <SharedCollaborations
+            grants={membership.collaborationGrants}
             canRevoke={() => true}
             revokeLabel="Give back"
             onRevoked={(_, last) => {

@@ -35,7 +35,7 @@ export function useIsOrgAdmin(orgId?: string | null): { isAdmin: boolean; loadin
 
 /**
  * The current user's own membership in `orgId`, from the Me query the shell
- * already ran. `isScoped` on it means they only have objects shared with them:
+ * already ran. `isScoped` on it means they are only a guest of some collaborations:
  * the organization's pages are not theirs to see, only what was shared.
  */
 export function useMyOrgMembership(orgId?: string | null) {

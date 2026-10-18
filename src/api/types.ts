@@ -82,7 +82,7 @@ export type ApproveMembershipRequestInput = {
 
 export type CancelInviteInput = {
   id: Scalars['ID']['input'];
-  /** For an object invite: also take back what it shared from everyone who accepted it. */
+  /** For a collaboration invite: also take back the collaborations it granted from everyone who accepted it. */
   revokeShared?: Scalars['Boolean']['input'];
 };
 
@@ -136,11 +136,11 @@ export type CreateDeviceInput = {
 };
 
 export type CreateInviteInput = {
+  /** Grant only these collaborations of the organization's service instances, each with the roles that hold inside it, instead of making the holder a member. Whoever accepts becomes a guest that reaches just these. */
+  collaborations?: InputMaybe<Array<SharedCollaborationInput>>;
   expiresInDays?: InputMaybe<Scalars['Int']['input']>;
-  /** For an object invite: how many people may accept it. Null: anyone with the link until it expires. */
+  /** For a collaboration invite: how many people may accept it. Null: anyone with the link until it expires. */
   maxUses?: InputMaybe<Scalars['Int']['input']>;
-  /** Share only these objects, as `<hub>/<structure>:<id>[#<reach>]` strings (e.g. `3/@mikro/image:42#rois`), instead of making the holder a member. Whoever accepts gets a scoped membership that reaches just these. */
-  objects?: InputMaybe<Array<Scalars['String']['input']>>;
   organization?: InputMaybe<Scalars['ID']['input']>;
   public?: Scalars['Boolean']['input'];
   roles?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -494,6 +494,27 @@ export type ManagementClientOrdering =
   |  { createdAt?: never; id: Ordering; lastReportedAt?: never; name?: never; }
   |  { createdAt?: never; id?: never; lastReportedAt: Ordering; name?: never; }
   |  { createdAt?: never; id?: never; lastReportedAt?: never; name: Ordering; };
+
+/** One collaboration of a service instance granted to someone who is not a full member of the organization (a guest). The collaboration is named by its instance and its id there; `roles` are the organization's roles that hold for the guest inside it (none: view only), cut to the granter's own roles whenever a token is minted. */
+export type ManagementCollaborationGrant = {
+  __typename?: 'ManagementCollaborationGrant';
+  /** The collaboration's id in its service. */
+  collaborationId: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  /** Who granted it. */
+  grantedBy?: Maybe<ManagementUser>;
+  /** The invite it was granted through. */
+  grantedThrough?: Maybe<ManagementInvite>;
+  id: Scalars['ID']['output'];
+  /** The service instance the collaboration lives in. */
+  instance: ManagementServiceInstance;
+  /** The id of the service instance the collaboration lives in, as a guest's token names it. */
+  instanceId: Scalars['ID']['output'];
+  membership: ManagementMembership;
+  /** Identifiers of the organization's roles that hold inside the collaboration. Empty: view only. */
+  roles: Array<Scalars['String']['output']>;
+};
 
 /** A communication channel (e.g. a push-notification endpoint) through which a user can be notified. */
 export type ManagementComChannel = {
@@ -889,6 +910,10 @@ export type ManagementInstanceHealth = {
 export type ManagementInvite = {
   __typename?: 'ManagementInvite';
   acceptedBy?: Maybe<ManagementUser>;
+  /** What this invite has granted, to whom. Only for the people who may see the grants. */
+  collaborationGrants: Array<ManagementCollaborationGrant>;
+  /** The collaborations this invite grants, with the roles that hold inside each. Null for an invite that makes its holder a member. */
+  collaborations?: Maybe<Array<ManagementSharedCollaboration>>;
   createdAt: Scalars['DateTime']['output'];
   createdBy: ManagementUser;
   createdFor: ManagementOrganization;
@@ -900,12 +925,8 @@ export type ManagementInvite = {
   id: Scalars['ID']['output'];
   /** Get the full URL for accepting this invite */
   inviteUrl: Scalars['String']['output'];
-  /** For an object invite: how many people may accept it. Null: anyone with the link until it expires. */
+  /** For a collaboration invite: how many people may accept it. Null: anyone with the link until it expires. */
   maxUses?: Maybe<Scalars['Int']['output']>;
-  /** What this invite has shared, with whom. Only for the people who may see the grants. */
-  objectGrants: Array<ManagementObjectGrant>;
-  /** The objects this invite shares, as `<hub>/<structure>:<id>[#<reach>]` strings. Null for an invite that makes its holder a member. */
-  objects?: Maybe<Array<Scalars['String']['output']>>;
   /** If true, anyone with the link can preview the invitation (organization, inviter, expiry) before signing in. Private invites require authentication before any details are shown. */
   public: Scalars['Boolean']['output'];
   respondedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -920,15 +941,15 @@ export type ManagementInvite = {
 
 
 /** A single-use magic invite link that allows one person to join an organization. */
-export type ManagementInviteCreatedMembershipsArgs = {
-  filters?: InputMaybe<ManagementMembershipFilter>;
-  ordering?: Array<ManagementMembershipOrdering>;
+export type ManagementInviteCollaborationGrantsArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 
 /** A single-use magic invite link that allows one person to join an organization. */
-export type ManagementInviteObjectGrantsArgs = {
+export type ManagementInviteCreatedMembershipsArgs = {
+  filters?: InputMaybe<ManagementMembershipFilter>;
+  ordering?: Array<ManagementMembershipOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -940,7 +961,7 @@ export type ManagementInviteRolesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Invite(id, token, email, created_by, created_for, created_at, expires_at, public, status, accepted_by, declined_by, responded_at, shared_objects, max_uses, uses) */
+/** Invite(id, token, email, created_by, created_for, created_at, expires_at, public, status, accepted_by, declined_by, responded_at, shared_collaborations, max_uses, uses) */
 export type ManagementInviteFilter = {
   AND?: InputMaybe<ManagementInviteFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1334,6 +1355,8 @@ export type ManagementMembership = {
   brandChroma?: Maybe<Scalars['Float']['output']>;
   /** The member's personal brand hue (0–360) for this organization, if set. */
   brandHue?: Maybe<Scalars['Float']['output']>;
+  /** The collaborations granted to this person as a guest. Empty for a full member. */
+  collaborationGrants: Array<ManagementCollaborationGrant>;
   /** The invite that created this membership */
   createdThrough?: Maybe<ManagementInvite>;
   /** Whether the member has at least one device registered for notifications (e.g. through the companion app). Opting in does nothing until they do. */
@@ -1341,10 +1364,8 @@ export type ManagementMembership = {
   id: Scalars['ID']['output'];
   /** Whether this member owns the organization. The owner cannot be removed by others; ownership must be transferred first. */
   isOwner: Scalars['Boolean']['output'];
-  /** Whether this person only has objects shared with them, rather than being a full member. */
+  /** Whether this person is only a guest of some collaborations, rather than being a full member. */
   isScoped: Scalars['Boolean']['output'];
-  /** The objects shared with this person. Empty for a full member. */
-  objectGrants: Array<ManagementObjectGrant>;
   organization: ManagementOrganization;
   /** The role requests this member has made in the organization */
   roleRequests: Array<ManagementRoleRequest>;
@@ -1359,7 +1380,7 @@ export type ManagementMembership = {
  * A Membership is a relation between a User and an Organization. It can have multiple Roles assigned to it.
  *
  */
-export type ManagementMembershipObjectGrantsArgs = {
+export type ManagementMembershipCollaborationGrantsArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -1449,29 +1470,6 @@ export type ManagementOAuth2Client = {
   name: Scalars['String']['output'];
 };
 
-/** One object shared with someone who is not a full member of the organization (a scoped membership). The object is named by its hub, its structure and its id, plus how much related data comes with it (`reach`, in the hosting service's words). */
-export type ManagementObjectGrant = {
-  __typename?: 'ManagementObjectGrant';
-  createdAt: Scalars['DateTime']['output'];
-  expiresAt?: Maybe<Scalars['DateTime']['output']>;
-  /** The grant as one string, `<hub>/<structure>:<id>[#<reach>]`. */
-  grant: Scalars['String']['output'];
-  /** Who shared it. */
-  grantedBy?: Maybe<ManagementUser>;
-  /** The invite it was shared through. */
-  grantedThrough?: Maybe<ManagementInvite>;
-  /** The hub the object lives on. With the structure and the id it names the object uniquely. */
-  hub: ManagementHub;
-  id: Scalars['ID']['output'];
-  membership: ManagementMembership;
-  /** The object's id in its service. */
-  objectId: Scalars['String']['output'];
-  /** How much related data the grant reaches; `self` unless the service declares more. */
-  reach: Scalars['String']['output'];
-  /** The structure identifier, e.g. @mikro/image (unique within a hub). */
-  structure: Scalars['String']['output'];
-};
-
 /**
  *
  * An ORCID Account is a Social Account that maps to an ORCID Account. It provides information about the
@@ -1556,7 +1554,7 @@ export type ManagementOrganization = {
   /** The service instances that belong to this organization */
   serviceInstances: Array<ManagementServiceInstance>;
   slug: Scalars['String']['output'];
-  /** The users that are part of the organization. Empty for someone who only has objects shared with them. */
+  /** The users that are part of the organization. Empty for a guest who was only granted some collaborations. */
   users: Array<ManagementUser>;
 };
 
@@ -2100,6 +2098,17 @@ export type ManagementServiceReleaseFilter = {
 export type ManagementServiceReleaseOrdering =
   { id: Ordering; };
 
+/** One collaboration a collaboration invite grants: a collaboration of a service instance, with the roles that hold inside it. */
+export type ManagementSharedCollaboration = {
+  __typename?: 'ManagementSharedCollaboration';
+  /** The collaboration's id in that service. */
+  collaboration: Scalars['String']['output'];
+  /** The service instance the collaboration lives in. */
+  instance: Scalars['ID']['output'];
+  /** Identifiers of the organization's roles that hold inside the collaboration. Empty: view only. */
+  roles: Array<Scalars['String']['output']>;
+};
+
 /**
  *
  * A Social Account is an account that is associated with a user. It can be used to authenticate the user with external services. It
@@ -2409,9 +2418,9 @@ export type Mutation = {
   requestRole: ManagementRoleRequest;
   resolveReport: ManagementReport;
   revokeClientSessions: ManagementClient;
+  /** Take back one granted collaboration. Taking back someone's last one removes them from the organization. */
+  revokeCollaborationGrant: Scalars['ID']['output'];
   revokeMandate: ManagementMandate;
-  /** Take back one shared object. Taking back someone's last one removes them from the organization. */
-  revokeObjectGrant: Scalars['ID']['output'];
   revokeOrganizationSessions: Scalars['Int']['output'];
   setMembershipBrandHue: ManagementMembership;
   setMembershipNotifications: ManagementMembership;
@@ -2678,13 +2687,13 @@ export type MutationRevokeClientSessionsArgs = {
 };
 
 
-export type MutationRevokeMandateArgs = {
-  input: RevokeMandateInput;
+export type MutationRevokeCollaborationGrantArgs = {
+  input: RevokeCollaborationGrantInput;
 };
 
 
-export type MutationRevokeObjectGrantArgs = {
-  input: RevokeObjectGrantInput;
+export type MutationRevokeMandateArgs = {
+  input: RevokeMandateInput;
 };
 
 
@@ -3251,11 +3260,11 @@ export type RevokeClientSessionsInput = {
   client: Scalars['ID']['input'];
 };
 
-export type RevokeMandateInput = {
+export type RevokeCollaborationGrantInput = {
   id: Scalars['ID']['input'];
 };
 
-export type RevokeObjectGrantInput = {
+export type RevokeMandateInput = {
   id: Scalars['ID']['input'];
 };
 
@@ -3294,6 +3303,15 @@ export type SetMembershipBrandHueInput = {
 export type SetMembershipNotificationsInput = {
   allow: Scalars['Boolean']['input'];
   organization: Scalars['ID']['input'];
+};
+
+export type SharedCollaborationInput = {
+  /** The collaboration's id in that service. */
+  collaboration: Scalars['String']['input'];
+  /** The service instance the collaboration lives in (on a hub of the organization). */
+  instance: Scalars['ID']['input'];
+  /** Identifiers of the organization's roles that hold for the guest inside the collaboration. Empty: view only. */
+  roles?: Array<Scalars['String']['input']>;
 };
 
 export type StagingAlias = {

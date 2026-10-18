@@ -18,7 +18,11 @@ fragment PublicInvite on ManagementInvite {
   token
   status
   public
-  objects
+  collaborations {
+    instance
+    collaboration
+    roles
+  }
   createdAt
   expiresAt
   createdBy {

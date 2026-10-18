@@ -2,8 +2,8 @@ fragment Membership on ManagementMembership {
   id
   isOwner
   isScoped
-  objectGrants {
-    ...ObjectGrant
+  collaborationGrants {
+    ...CollaborationGrant
   }
   brandHue
   brandChroma
@@ -43,7 +43,7 @@ fragment Membership on ManagementMembership {
 fragment ListMembership on ManagementMembership {
   id
   isScoped
-  objectGrants {
+  collaborationGrants {
     id
   }
   brandHue
@@ -66,16 +66,11 @@ fragment ListMembership on ManagementMembership {
     ...SidebarOrganization
   }
 }
-fragment ObjectGrant on ManagementObjectGrant {
+fragment CollaborationGrant on ManagementCollaborationGrant {
   id
-  grant
-  hub {
-    id
-    name
-  }
-  structure
-  objectId
-  reach
+  instanceId
+  collaborationId
+  roles
   createdAt
   expiresAt
   grantedBy {

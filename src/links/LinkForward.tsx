@@ -112,15 +112,15 @@ type LinkInvite = NonNullable<LinkInviteQuery["inviteByCode"]>
 
 /**
  * Step 2 when the link carries an invite to this organization: one click joins,
- * or, for an invite that shares objects, accepts them without joining. Not
+ * or, for an invite that shares collaborations, accepts them without joining. Not
  * automatic, so that opening a link can never make someone a member of an
  * organization they did not choose. Accepting refetches `Me`, which makes the
- * visitor a member (scoped, for shared objects) and moves the page on to step 3.
+ * visitor a member (scoped, for shared collaborations) and moves the page on to step 3.
  */
 function AcceptLinkInvite({ invite }: { invite: LinkInvite }) {
   const [accept, { loading }] = useAcceptInviteMutation({ refetchQueries: ["Me"], awaitRefetchQueries: true })
   const orgName = invite.createdFor.name || "this organization"
-  const shared = invite.objects
+  const shared = invite.collaborations
 
   const join = async () => {
     try {
@@ -135,7 +135,7 @@ function AcceptLinkInvite({ invite }: { invite: LinkInvite }) {
     <div className="space-y-2">
       <p className="text-center text-sm text-muted-foreground">
         {shared
-          ? `${invite.createdBy.username} shared ${shared.length === 1 ? "an object" : `${shared.length} objects`} of ${orgName} with you, to open read-only. You do not become a member.`
+          ? `${invite.createdBy.username} shared ${shared.length === 1 ? "a collaboration" : `${shared.length} collaborations`} of ${orgName} with you. You do not become a member.`
           : `${invite.createdBy.username} invited you to join ${orgName}.`}
       </p>
       <Button className="w-full" onClick={join} disabled={loading}>
@@ -241,22 +241,21 @@ export function LinkForward({
 
   const signedIn = status.isAuthenticated
   const member = Boolean(organization)
-  // An invite that shares objects still has something to offer a scoped member
-  // who lacks some of them, or holds one with another reach that the invite names
-  // explicitly (lok's rule: a plain `self` never narrows a reach). A full member
-  // gets nothing from it. Matching lok exactly matters: accepting nothing new
-  // spends no use, and a mismatch here would offer Accept forever.
-  const heldReach = new Map(
-    myMembership?.objectGrants.map((grant) => [`${grant.hub.id}/${grant.structure}:${grant.objectId}`, grant.reach]),
+  // An invite that shares collaborations still has something to offer a scoped
+  // member who lacks one of them, or holds one without a role the invite names
+  // (lok's rule: granting a collaboration again takes the union of its roles). A
+  // full member gets nothing from it. Matching lok exactly matters: accepting
+  // nothing new spends no use, and a mismatch here would offer Accept forever.
+  const heldRoles = new Map(
+    myMembership?.collaborationGrants.map((grant) => [`${grant.instanceId}/${grant.collaborationId}`, grant.roles]),
   )
-  const offersSomethingNew = (object: string) => {
-    const [key, reach = "self"] = object.split("#")
-    const held = heldReach.get(key)
-    return held === undefined || (reach !== "self" && reach !== held)
+  const offersSomethingNew = (shared: { instance: string; collaboration: string; roles: readonly string[] }) => {
+    const held = heldRoles.get(`${shared.instance}/${shared.collaboration}`)
+    return held === undefined || shared.roles.some((role) => !held.includes(role))
   }
   const pendingShare =
-    usableInvite?.objects != null &&
-    (!myMembership || (myMembership.isScoped && usableInvite.objects.some(offersSomethingNew)))
+    usableInvite?.collaborations != null &&
+    (!myMembership || (myMembership.isScoped && usableInvite.collaborations.some(offersSomethingNew)))
   const ready = member && !pendingShare
   const orgName = data?.organization.name || preview?.organization?.name || slug
   const inviter = preview?.inviter
@@ -314,9 +313,9 @@ export function LinkForward({
                 </Step>
                 <Step
                   state={ready ? "done" : signedIn ? "current" : "upcoming"}
-                  title={usableInvite?.objects ? "Accept what was shared" : `Join ${publicOrg?.name || orgName}`}
+                  title={usableInvite?.collaborations ? "Accept what was shared" : `Join ${publicOrg?.name || orgName}`}
                 >
-                  {usableInvite && (pendingShare || !usableInvite.objects) ? (
+                  {usableInvite && (pendingShare || !usableInvite.collaborations) ? (
                     <AcceptLinkInvite invite={usableInvite} />
                   ) : (
                     <JoinRequest orgSlug={slug} />

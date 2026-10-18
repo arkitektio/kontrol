@@ -14,7 +14,7 @@ export function OrganizationSidebar() {
     // entry simply isn't rendered yet; hiding it is cosmetic, since AdminPage
     // gates itself and lok refuses the mutations below owner-or-admin anyway.
     const { isAdmin: mayAdminister } = useIsOrgAdmin(activeOrgId)
-    // Someone with only shared objects sees what was shared and nothing else.
+    // A guest of some collaborations sees what was shared and nothing else.
     const scoped = Boolean(useMyOrgMembership(activeOrgId).membership?.isScoped)
 
     // Hubs get their own slim query (id + name only) — the full `Hubs` query

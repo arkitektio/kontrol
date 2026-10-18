@@ -188,16 +188,22 @@ export default function Invites() {
                     <div className="text-sm text-muted-foreground font-mono break-all">
                       {`${window.location.origin}/invite/${i.token}`}
                     </div>
-                    {i.objects && (
+                    {i.collaborations && (
                       <div className="space-y-1 text-sm">
                         <p className="text-muted-foreground">
-                          Shares {i.objects.length} {i.objects.length === 1 ? "object" : "objects"}, no membership ·{" "}
+                          Shares {i.collaborations.length} {i.collaborations.length === 1 ? "collaboration" : "collaborations"}, no membership ·{" "}
                           accepted {i.uses}
                           {i.maxUses != null ? ` of ${i.maxUses}` : ""} {i.uses === 1 ? "time" : "times"}
                         </p>
                         <div className="flex flex-wrap gap-1">
-                          {i.objects.map((o) => (
-                            <code key={o} className="rounded bg-muted px-1.5 py-0.5 text-xs">{o}</code>
+                          {i.collaborations.map((c) => (
+                            <code
+                              key={`${c.instance}/${c.collaboration}`}
+                              className="rounded bg-muted px-1.5 py-0.5 text-xs"
+                              title={`Collaboration ${c.collaboration} of service instance ${c.instance}`}
+                            >
+                              {c.instance}/{c.collaboration} · {c.roles.length ? c.roles.join(", ") : "view only"}
+                            </code>
                           ))}
                         </div>
                       </div>
@@ -221,7 +227,7 @@ export default function Invites() {
                           <Mail className="w-4 h-4 mr-2" />
                           Email
                       </Button>
-                      {mayCancel && i.objects && i.uses > 0 && (
+                      {mayCancel && i.collaborations && i.uses > 0 && (
                         <Button
                             variant="ghost"
                             size="sm"
@@ -273,7 +279,7 @@ export default function Invites() {
         open={takeBackTarget !== null}
         onOpenChange={(open) => !open && setTakeBackTarget(null)}
         title="Take back what this invite shared?"
-        description="The link stops working, and everyone who accepted it loses the shared objects. Anyone left with nothing shared is removed from the organization."
+        description="The link stops working, and everyone who accepted it loses the collaborations it shared. Anyone left with none is removed from the organization."
         confirmLabel="Take back"
         pendingLabel="Taking back..."
         destructive

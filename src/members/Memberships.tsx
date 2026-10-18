@@ -116,8 +116,8 @@ export default function Memberships() {
               <CardContent>
                   <div className="flex flex-wrap gap-2">
                      {membership.isScoped && (
-                       <Badge variant="outline" title="Not a member: only these objects are shared with them">
-                         {membership.objectGrants.length} shared {membership.objectGrants.length === 1 ? "object" : "objects"}
+                       <Badge variant="outline" title="Not a member: only these collaborations are shared with them">
+                         {membership.collaborationGrants.length} shared {membership.collaborationGrants.length === 1 ? "collaboration" : "collaborations"}
                        </Badge>
                      )}
                      {membership.roles.map(r => <Badge variant="secondary" key={r.id} title={roleDescriptions.get(r.id) || undefined}>{r.identifier}</Badge>)}

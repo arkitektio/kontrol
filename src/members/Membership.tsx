@@ -21,7 +21,7 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
 import { SendNotification } from "./SendNotification"
-import { SharedObjects } from "@/components/SharedObjects"
+import { SharedCollaborations } from "@/components/SharedCollaborations"
 
 export default function Membership() {
     const { orgId, id } = useParams<{ orgId: string, id: string }>()
@@ -131,11 +131,11 @@ export default function Membership() {
                         <div className="space-y-2">
                             <h3 className="font-semibold">Shared with them</h3>
                             <p className="text-sm text-muted-foreground">
-                                {membership.user?.username} is not a member: they can open only these objects, read-only.
+                                {membership.user?.username} is not a member: they can open only these collaborations, with the roles shown inside each.
                                 Giving them roles makes them a full member, and what was shared is then no longer listed.
                             </p>
-                            <SharedObjects
-                                grants={membership.objectGrants}
+                            <SharedCollaborations
+                                grants={membership.collaborationGrants}
                                 canRevoke={(grant) => isAdmin || grant.grantedBy?.id === meData?.me?.id}
                                 onRevoked={(_, last) => {
                                     if (last) navigate(`/organization/${orgId}/members`)

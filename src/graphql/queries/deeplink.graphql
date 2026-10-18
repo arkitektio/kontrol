@@ -38,7 +38,11 @@ query LinkInvite($code: String!) {
     id
     token
     valid
-    objects
+    collaborations {
+      instance
+      collaboration
+      roles
+    }
     maxUses
     uses
     createdBy {

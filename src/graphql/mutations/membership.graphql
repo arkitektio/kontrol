@@ -15,6 +15,6 @@ mutation SetMembershipBrandHue($input: SetMembershipBrandHueInput!) {
   }
 }
 
-mutation RevokeObjectGrant($input: RevokeObjectGrantInput!) {
-  revokeObjectGrant(input: $input)
+mutation RevokeCollaborationGrant($input: RevokeCollaborationGrantInput!) {
+  revokeCollaborationGrant(input: $input)
 }

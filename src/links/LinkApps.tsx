@@ -270,9 +270,9 @@ export default function LinkApps() {
             </Link>{" "}
             you created; it is never passed on to the app. An ordinary invite lets one person join
             with its roles (guest unless you chose others), so only add it to a link you send to
-            one person. An invite that shares objects (apps create these from a &quot;Share&quot;
-            action) makes nobody a member: whoever accepts can open just those objects, and you
-            can take them back at any time.
+            one person. An invite that shares collaborations (apps create these from a &quot;Share&quot;
+            action) makes nobody a member: whoever accepts can open just those collaborations,
+            with the roles the invite names inside each, and you can take them back at any time.
           </p>
           <p className="text-xs text-muted-foreground">
             Apps usually build these links for you (a &quot;Share&quot; or &quot;Copy link&quot; action); the formats are
