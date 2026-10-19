@@ -12,7 +12,7 @@ export type LayersQueryVariables = Types.Exact<{
   ordering?: Types.InputMaybe<Array<Types.ManagementLayerOrdering> | Types.ManagementLayerOrdering>;
 }>;
 
-export type LayersQuery = { __typename?: 'Query', layers: Array<{ __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }> };
+export type LayersQuery = { __typename?: 'Query', layers: Array<{ __typename?: 'ManagementLayer', id: string, name: string, tailnetName: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }> };
 
 export type DetailLayerQueryVariables = Types.Exact<{
   id: Types.Scalars['ID']['input'];

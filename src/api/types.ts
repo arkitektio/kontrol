@@ -136,6 +136,8 @@ export type CreateDeviceInput = {
 };
 
 export type CreateInviteInput = {
+  /** For a collaboration invite: whether the guests' apps may join the organization's mesh. They then reach only the hubs the granted collaborations run on, nothing else of the mesh. */
+  allowMesh?: Scalars['Boolean']['input'];
   /** Grant only these collaborations of the organization's service instances, each with the roles that hold inside it, instead of making the holder a member. Whoever accepts becomes a guest that reaches just these. */
   collaborations?: InputMaybe<Array<SharedCollaborationInput>>;
   expiresInDays?: InputMaybe<Scalars['Int']['input']>;
@@ -512,6 +514,8 @@ export type ManagementCollaborationGrant = {
   /** The id of the service instance the collaboration lives in, as a guest's token names it. */
   instanceId: Scalars['ID']['output'];
   membership: ManagementMembership;
+  /** Whether the guest's apps may join the organization's mesh to reach the hub the collaboration's instance runs on. */
+  mesh: Scalars['Boolean']['output'];
   /** Identifiers of the organization's roles that hold inside the collaboration. Empty: view only. */
   roles: Array<Scalars['String']['output']>;
 };
@@ -927,6 +931,8 @@ export type ManagementInvite = {
   inviteUrl: Scalars['String']['output'];
   /** For a collaboration invite: how many people may accept it. Null: anyone with the link until it expires. */
   maxUses?: Maybe<Scalars['Int']['output']>;
+  /** For a collaboration invite: whether its guests' apps may join the organization's mesh, reaching only the hubs the granted collaborations run on. */
+  mesh: Scalars['Boolean']['output'];
   /** If true, anyone with the link can preview the invitation (organization, inviter, expiry) before signing in. Private invites require authentication before any details are shown. */
   public: Scalars['Boolean']['output'];
   respondedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -961,7 +967,7 @@ export type ManagementInviteRolesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Invite(id, token, email, created_by, created_for, created_at, expires_at, public, status, accepted_by, declined_by, responded_at, shared_collaborations, max_uses, uses) */
+/** Invite(id, token, email, created_by, created_for, created_at, expires_at, public, status, accepted_by, declined_by, responded_at, shared_collaborations, max_uses, uses, mesh) */
 export type ManagementInviteFilter = {
   AND?: InputMaybe<ManagementInviteFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -2028,7 +2034,13 @@ export type ManagementServiceInstanceScopesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** ServiceInstance(id, hub, release, logo, instance_id, private_key, steward, organization, device, template, public_key, token) */
+/**
+ * One service running in a hub: a hub runs one instance of a service per ``instance_id``.
+ *
+ * Its id is what a token composed for it names (``aud``) and what a guest's collaborations are
+ * listed under, so it must not change when the hub is authorized again by another admin or
+ * upgraded to another release of the service: those are updated on the instance, in place.
+ */
 export type ManagementServiceInstanceFilter = {
   AND?: InputMaybe<ManagementServiceInstanceFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -2411,6 +2423,7 @@ export type Mutation = {
   issueMandateKey: ManagementIssuedMandateKey;
   notifyMember: ManagementNotificationResult;
   removeDeviceFromGroup: ManagementDevice;
+  replaceIonscaleLayer: ManagementLayer;
   requestClientReport: ManagementClient;
   requestMediaUpload: PresignedPostCredentials;
   /** Ask to become a member of an organization (named by its handle) that the caller is not in. Always answers true. */
@@ -2654,6 +2667,11 @@ export type MutationNotifyMemberArgs = {
 
 export type MutationRemoveDeviceFromGroupArgs = {
   input: RemoveDeviceFromGroupInput;
+};
+
+
+export type MutationReplaceIonscaleLayerArgs = {
+  input: ReplaceIonscaleLayerInput;
 };
 
 
@@ -3219,6 +3237,13 @@ export type QueryValidateDeviceCodeArgs = {
 export type RemoveDeviceFromGroupInput = {
   device: Scalars['ID']['input'];
   deviceGroup: Scalars['ID']['input'];
+};
+
+export type ReplaceIonscaleLayerInput = {
+  /** The mesh's tailnet name, typed out to confirm. Every machine on the mesh is removed and has to rejoin. */
+  confirm: Scalars['String']['input'];
+  /** The mesh to replace. */
+  id: Scalars['ID']['input'];
 };
 
 export type RequestClientReportInput = {

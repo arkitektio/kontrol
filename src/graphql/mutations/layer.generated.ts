@@ -24,6 +24,12 @@ export type DeleteIonscaleLayerMutationVariables = Types.Exact<{
 
 export type DeleteIonscaleLayerMutation = { __typename?: 'Mutation', deleteIonscaleLayer: string };
 
+export type ReplaceIonscaleLayerMutationVariables = Types.Exact<{
+  input: Types.ReplaceIonscaleLayerInput;
+}>;
+
+export type ReplaceIonscaleLayerMutation = { __typename?: 'Mutation', replaceIonscaleLayer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, magicDnsEnabled: boolean, httpsEnabled: boolean, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, resolvedHost?: string | null, scope: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }>, machines: Array<{ __typename?: 'ManagementMachine', id: string, localId: string, name: string, ipv4?: string | null, ipv6?: string | null, connected: boolean, ephemeral: boolean, lastSeen?: any | null, tags: Array<string>, magicDnsName?: string | null, authorized?: boolean | null, kind: Types.MachineKind, app?: { __typename?: 'ManagementApp', id: string, identifier: any } | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, hub?: { __typename?: 'ManagementHub', id: string, name: string } | null }> } };
+
 export type CreateIonscaleAuthKeyMutationVariables = Types.Exact<{
   input: Types.CreateIonscaleAuthKeyInput;
 }>;
@@ -123,6 +129,33 @@ export function useDeleteIonscaleLayerMutation(baseOptions?: Apollo.MutationHook
 export type DeleteIonscaleLayerMutationHookResult = ReturnType<typeof useDeleteIonscaleLayerMutation>;
 export type DeleteIonscaleLayerMutationResult = Apollo.MutationResult<DeleteIonscaleLayerMutation>;
 export type DeleteIonscaleLayerMutationOptions = Apollo.BaseMutationOptions<DeleteIonscaleLayerMutation, DeleteIonscaleLayerMutationVariables>;
+export const ReplaceIonscaleLayerDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReplaceIonscaleLayer"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ReplaceIonscaleLayerInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"replaceIonscaleLayer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"Layer"}}]}}]}},...LayerFragmentDoc.definitions,...ListInstanceAliasFragmentDoc.definitions,...ListMachineFragmentDoc.definitions]} as unknown as DocumentNode;
+export type ReplaceIonscaleLayerMutationFn = Apollo.MutationFunction<ReplaceIonscaleLayerMutation, ReplaceIonscaleLayerMutationVariables>;
+
+/**
+ * __useReplaceIonscaleLayerMutation__
+ *
+ * To run a mutation, you first call `useReplaceIonscaleLayerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useReplaceIonscaleLayerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [replaceIonscaleLayerMutation, { data, loading, error }] = useReplaceIonscaleLayerMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useReplaceIonscaleLayerMutation(baseOptions?: Apollo.MutationHookOptions<ReplaceIonscaleLayerMutation, ReplaceIonscaleLayerMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ReplaceIonscaleLayerMutation, ReplaceIonscaleLayerMutationVariables>(ReplaceIonscaleLayerDocument, options);
+      }
+export type ReplaceIonscaleLayerMutationHookResult = ReturnType<typeof useReplaceIonscaleLayerMutation>;
+export type ReplaceIonscaleLayerMutationResult = Apollo.MutationResult<ReplaceIonscaleLayerMutation>;
+export type ReplaceIonscaleLayerMutationOptions = Apollo.BaseMutationOptions<ReplaceIonscaleLayerMutation, ReplaceIonscaleLayerMutationVariables>;
 export const CreateIonscaleAuthKeyDocument = {"kind":"Document", "definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateIonscaleAuthKey"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateIonscaleAuthKeyInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createIonscaleAuthKey"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"IonscaleAuthKey"}}]}}]}},...IonscaleAuthKeyFragmentDoc.definitions]} as unknown as DocumentNode;
 export type CreateIonscaleAuthKeyMutationFn = Apollo.MutationFunction<CreateIonscaleAuthKeyMutation, CreateIonscaleAuthKeyMutationVariables>;
 

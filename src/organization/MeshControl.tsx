@@ -2,9 +2,14 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { useLayersQuery } from "@/graphql/queries/layer.generated"
-import { useDeleteIonscaleLayerMutation, useCreateIonscaleLayerMutation } from "@/graphql/mutations/layer.generated"
+import {
+  useDeleteIonscaleLayerMutation,
+  useCreateIonscaleLayerMutation,
+  useReplaceIonscaleLayerMutation,
+} from "@/graphql/mutations/layer.generated"
 import { toastError } from "@/lib/errors"
 import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { QueryError } from "@/components/status"
@@ -17,11 +22,16 @@ export function MeshControl({ orgId }: { orgId: string }) {
   })
   const mesh = data?.layers?.[0]
   const [disableOpen, setDisableOpen] = useState(false)
+  const [replaceOpen, setReplaceOpen] = useState(false)
+  const [replaceConfirm, setReplaceConfirm] = useState("")
 
   const [disableMesh] = useDeleteIonscaleLayerMutation({
     refetchQueries: ["Layers"],
   })
   const [enableMesh, { loading: enabling }] = useCreateIonscaleLayerMutation({
+    refetchQueries: ["Layers"],
+  })
+  const [replaceMesh] = useReplaceIonscaleLayerMutation({
     refetchQueries: ["Layers"],
   })
 
@@ -32,6 +42,18 @@ export function MeshControl({ orgId }: { orgId: string }) {
       toast.success("Mesh disabled")
     } catch (e) {
       toastError(e, "Couldn't disable the mesh")
+      return false
+    }
+  }
+
+  const handleReplace = async () => {
+    if (!mesh) return
+    try {
+      await replaceMesh({ variables: { input: { id: mesh.id, confirm: replaceConfirm } }, awaitRefetchQueries: true })
+      toast.success("Mesh replaced")
+      setReplaceConfirm("")
+    } catch (e) {
+      toastError(e, "Couldn't replace the mesh")
       return false
     }
   }
@@ -75,9 +97,14 @@ export function MeshControl({ orgId }: { orgId: string }) {
             </Button>
           )}
           {loading ? null : mesh ? (
-            <Button variant="destructive" size="sm" onClick={() => setDisableOpen(true)}>
-              Disable mesh
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => setReplaceOpen(true)}>
+                Replace mesh
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setDisableOpen(true)}>
+                Disable mesh
+              </Button>
+            </>
           ) : (
             <Button size="sm" onClick={handleEnable} disabled={enabling}>
               {enabling ? "Enabling..." : "Enable mesh"}
@@ -95,6 +122,33 @@ export function MeshControl({ orgId }: { orgId: string }) {
         destructive
         onConfirm={handleDisable}
       />
+      <ConfirmActionDialog
+        open={replaceOpen}
+        onOpenChange={(open) => {
+          setReplaceOpen(open)
+          if (!open) setReplaceConfirm("")
+        }}
+        title="Replace the mesh?"
+        description="The mesh is wiped and recreated empty under the same name. Every machine is removed, and auth keys and tailnet lock are gone with it. Apps and hubs that were granted the mesh rejoin by renewing their key; members have to log their devices in again. A machine that was on a locked mesh and kept its state must run `tailscale lock local-disable` once. Use this when the mesh can no longer be administered, e.g. a tailnet lock whose signing key is lost."
+        confirmLabel="Replace"
+        pendingLabel="Replacing..."
+        destructive
+        disabled={!mesh || replaceConfirm !== mesh.tailnetName}
+        onConfirm={handleReplace}
+      >
+        {mesh && (
+          <div className="space-y-2">
+            <p className="text-sm font-mono bg-muted px-3 py-2 rounded text-foreground">{mesh.tailnetName}</p>
+            <Input
+              placeholder="Type the mesh name to confirm"
+              aria-label="Mesh name"
+              autoComplete="off"
+              value={replaceConfirm}
+              onChange={(e) => setReplaceConfirm(e.target.value)}
+            />
+          </div>
+        )}
+      </ConfirmActionDialog>
     </Card>
   )
 }

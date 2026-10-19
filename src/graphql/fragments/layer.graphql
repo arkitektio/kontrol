@@ -26,6 +26,7 @@ fragment LayerAuthKeys on ManagementLayer {
 fragment ListLayer on ManagementLayer {
   id
   name
+  tailnetName
   description
   logo {
     presignedUrl
