@@ -231,7 +231,7 @@ export default function LinkApps() {
       {apps.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">The links to share</h2>
-          {org.slug ? (
+          {org.id ? (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <p className="text-sm font-medium">Smart link</p>
@@ -240,7 +240,7 @@ export default function LinkApps() {
                   marked as available on mobile. Use this unless you need a specific app.
                 </p>
                 <Command label="Copy smart link format">
-                  {`${origin}/smartlink/${org.slug}/<hub>/<identifier>/<object>`}
+                  {`${origin}/smartlink/${org.id}/<hub>/<identifier>/<object>`}
                 </Command>
               </div>
               <div className="space-y-2">
@@ -250,7 +250,7 @@ export default function LinkApps() {
                   unchanged.
                 </p>
                 <Command label="Copy deep link format">
-                  {`${origin}/deeplink/${org.slug}/${apps[0].protocol}/<path>`}
+                  {`${origin}/deeplink/${org.id}/${apps[0].protocol}/<path>`}
                 </Command>
               </div>
             </div>

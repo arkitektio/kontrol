@@ -12,13 +12,21 @@ const CreateOrganizationDialog = lazy(() =>
     import("./components/CreateOrganizationDialog").then((m) => ({ default: m.CreateOrganizationDialog })),
 )
 
-/** Organization slugs this browser sent a join request for (see links/LinkForward). */
+/** Names of the organizations this browser sent a join request for (see links/LinkForward). */
 function pendingJoinRequests(): string[] {
     const prefix = "kontrol-join-requested:"
     try {
         return Object.keys(localStorage)
             .filter((key) => key.startsWith(prefix))
-            .map((key) => key.slice(prefix.length))
+            .map((key) => {
+                // Stored as {name, at}; requests from before links carried ids hold
+                // only a date and are keyed by slug, which is then the best name.
+                try {
+                    return JSON.parse(localStorage.getItem(key) ?? "").name || key.slice(prefix.length)
+                } catch {
+                    return key.slice(prefix.length)
+                }
+            })
     } catch {
         return []
     }

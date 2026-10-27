@@ -812,7 +812,7 @@ export type ManagementHubDeviceCode = {
   manifest?: Maybe<ManagementHubManifest>;
 };
 
-/** Hub(id, name, organization, identifier, description, creator, client, token, auth_key, last_seen_at, last_healthy, version, mesh_connected, mesh_host) */
+/** Hub(id, name, organization, identifier, description, creator, client, token, uid, auth_key, tls_certificate, last_seen_at, last_healthy, version, mesh_connected, mesh_host) */
 export type ManagementHubFilter = {
   AND?: InputMaybe<ManagementHubFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -837,7 +837,7 @@ export type ManagementHubHealthSnapshot = {
 export type ManagementHubManifest = {
   __typename?: 'ManagementHubManifest';
   clients: Array<ManagementStagingClientRequest>;
-  /** A unique identifier for the hub WITHIN the organization. */
+  /** The hub's label: a human-readable name, not an identity. */
   identifier: Scalars['String']['output'];
   instances: Array<ManagementStagingInstanceRequest>;
 };
@@ -870,9 +870,11 @@ export type ManagementInstanceAlias = {
   port?: Maybe<Scalars['Int']['output']>;
   /** Is this alias publicly reachable? If true, the coordination server can also check the alias's health directly, enabling health checks from the kontrol interface. */
   public: Scalars['Boolean']['output'];
+  /** Where the address works: 'loopback' (this machine), 'internal' (only inside the deployment's own network), 'lan' (the local network), 'mesh' (the organization's mesh) or 'public' (the internet). */
+  reach: Scalars['String']['output'];
   /** For a mesh alias, the host it currently resolves to (its hub node's MagicDNS name, or mesh IP). Null for other kinds, or while the hub is not on the mesh. */
   resolvedHost?: Maybe<Scalars['String']['output']>;
-  /** The scope of the alias. E.g 'local' means that the alias can only be used within the local network. */
+  /** Deprecated: see `reach`. The scope of the alias. E.g 'local' means that the alias can only be used within the local network. */
   scope: Scalars['String']['output'];
   /** Is this alias using SSL? If true, the alias will be accessed via https:// instead of http://. */
   ssl: Scalars['Boolean']['output'];
@@ -2035,11 +2037,12 @@ export type ManagementServiceInstanceScopesArgs = {
 };
 
 /**
- * One service running in a hub: a hub runs one instance of a service per ``instance_id``.
+ * One service running in a hub, named by its name there (``instance_id``: ``mikro``).
  *
- * Its id is what a token composed for it names (``aud``) and what a guest's collaborations are
- * listed under, so it must not change when the hub is authorized again by another admin or
- * upgraded to another release of the service: those are updated on the instance, in place.
+ * The hub names its services itself: the name is unique within the hub, and with the hub's own
+ * uuid (``Hub.uid``) it is what a token composed for the service says (``aud: [mikro]``,
+ * ``hub: <uid>``) and what a guest's collaborations are listed under. Authorized again, by
+ * another admin or with another release, it is the same instance, updated in place.
  */
 export type ManagementServiceInstanceFilter = {
   AND?: InputMaybe<ManagementServiceInstanceFilter>;
@@ -3055,7 +3058,7 @@ export type QueryLayersArgs = {
 
 
 export type QueryLinkPreviewArgs = {
-  organization: Scalars['String']['input'];
+  organization: Scalars['ID']['input'];
   user?: InputMaybe<Scalars['ID']['input']>;
 };
 
@@ -3261,8 +3264,8 @@ export type RequestMediaUploadInput = {
 };
 
 export type RequestMembershipInput = {
-  /** The organization's handle (slug). */
-  organization: Scalars['String']['input'];
+  /** The organization's id: what a shared link carries. */
+  organization: Scalars['ID']['input'];
   reason?: InputMaybe<Scalars['String']['input']>;
 };
 

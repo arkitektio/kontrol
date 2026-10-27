@@ -194,9 +194,9 @@ export default function LinkApp() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {org.slug ? (
+          {org.id ? (
             <Command label="Copy deep link format">
-              {`${window.location.origin}/deeplink/${org.slug}/${app.protocol}/<path>`}
+              {`${window.location.origin}/deeplink/${org.id}/${app.protocol}/<path>`}
             </Command>
           ) : (
             <p className="text-sm text-muted-foreground">

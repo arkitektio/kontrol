@@ -12,7 +12,7 @@ query OrganizationDeeplinks($id: ID!) {
   }
 }
 
-query LinkPreview($organization: String!, $user: ID) {
+query LinkPreview($organization: ID!, $user: ID) {
   linkPreview(organization: $organization, user: $user) {
     organization {
       slug

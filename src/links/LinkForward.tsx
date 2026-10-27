@@ -52,28 +52,29 @@ function Step({
 
 // A sent request is remembered per browser only: lok answers every request the
 // same way (a foreign organization must look like a missing one), so there is
-// nothing to ask it afterwards.
-const requestedKey = (slug: string) => `kontrol-join-requested:${slug}`
+// nothing to ask it afterwards. Keyed by the organization's id (what a link
+// carries); the value keeps its name for Home to show.
+const requestedKey = (orgId: string) => `kontrol-join-requested:${orgId}`
 
-function wasRequested(slug: string): boolean {
+function wasRequested(orgId: string): boolean {
   try {
-    return localStorage.getItem(requestedKey(slug)) !== null
+    return localStorage.getItem(requestedKey(orgId)) !== null
   } catch {
     return false
   }
 }
 
 /** Step 2 for someone who is signed in but not in the link's organization. */
-function JoinRequest({ orgSlug }: { orgSlug: string }) {
+function JoinRequest({ orgId, orgName }: { orgId: string; orgName: string | null }) {
   const [reason, setReason] = useState("")
-  const [requested, setRequested] = useState(() => wasRequested(orgSlug))
+  const [requested, setRequested] = useState(() => wasRequested(orgId))
   const [request, { loading }] = useRequestMembershipMutation()
 
   const send = async () => {
     try {
-      await request({ variables: { input: { organization: orgSlug, reason: reason.trim() || null } } })
+      await request({ variables: { input: { organization: orgId, reason: reason.trim() || null } } })
       try {
-        localStorage.setItem(requestedKey(orgSlug), new Date().toISOString())
+        localStorage.setItem(requestedKey(orgId), JSON.stringify({ name: orgName, at: new Date().toISOString() }))
       } catch {
         // Private mode: the request was still sent.
       }
@@ -193,21 +194,19 @@ function OpenApp({ target, app }: { target: string; app: DeeplinkApp }) {
  * the target: the app still has to authorize whatever the link opens.
  */
 export function LinkForward({
-  orgSlug,
+  orgId,
   resolve,
   summary,
 }: {
-  orgSlug: string
+  orgId: string
   resolve: (apps: readonly DeeplinkApp[]) => LinkTarget
   summary?: React.ReactNode
 }) {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [, status] = useAuthStatus()
-  const slug = orgSlug.toLowerCase()
-
   const { data: meData, loading: meLoading, error: meError } = useMeQuery({ skip: !status.isAuthenticated })
-  const myMembership = meData?.me?.memberships.find((membership) => membership.organization.slug === slug)
+  const myMembership = meData?.me?.memberships.find((membership) => membership.organization.id === orgId)
   const organization = myMembership?.organization
 
   const {
@@ -221,7 +220,7 @@ export function LinkForward({
 
   // Public and opt-in: null parts for anything that did not choose to be shown.
   const { data: previewData, loading: previewLoading } = useLinkPreviewQuery({
-    variables: { organization: slug, user: searchParams.get("user_id") },
+    variables: { organization: orgId, user: searchParams.get("user_id") },
   })
   const preview = previewData?.linkPreview
 
@@ -233,7 +232,7 @@ export function LinkForward({
     skip: !inviteCode || !status.isAuthenticated,
   })
   const invite = inviteData?.inviteByCode
-  const usableInvite = invite?.valid && invite.createdFor.slug === slug ? invite : null
+  const usableInvite = invite?.valid && invite.createdFor.id === orgId ? invite : null
 
   if (previewLoading || (status.isAuthenticated && (meLoading || orgLoading || inviteLoading))) {
     return <CenteredCardSkeleton />
@@ -257,7 +256,7 @@ export function LinkForward({
     usableInvite?.collaborations != null &&
     (!myMembership || (myMembership.isScoped && usableInvite.collaborations.some(offersSomethingNew)))
   const ready = member && !pendingShare
-  const orgName = data?.organization.name || preview?.organization?.name || slug
+  const orgName = data?.organization.name || preview?.organization?.name || "this organization"
   const inviter = preview?.inviter
   const publicOrg = preview?.organization
   const resolved = data ? resolve(data.organization.deeplinkApps) : null
@@ -318,7 +317,7 @@ export function LinkForward({
                   {usableInvite && (pendingShare || !usableInvite.collaborations) ? (
                     <AcceptLinkInvite invite={usableInvite} />
                   ) : (
-                    <JoinRequest orgSlug={slug} />
+                    <JoinRequest orgId={orgId} orgName={publicOrg?.name ?? null} />
                   )}
                 </Step>
                 <Step

@@ -3,7 +3,7 @@ import { buildDeeplinkTarget, describeDeeplink } from "@/lib/deeplinks"
 import { LinkForward } from "./LinkForward"
 
 /**
- * `/deeplink/<org>/<protocol>/<path…>` — a path, forwarded to the protocol the
+ * `/deeplink/<org id>/<protocol>/<path…>` — a path, forwarded to the protocol the
  * link names: `<protocol>://<path…>`. See `LinkForward` for who gets forwarded.
  */
 export default function DeepLinkPage() {
@@ -13,7 +13,7 @@ export default function DeepLinkPage() {
   // percent-encoding intact.
   return (
     <LinkForward
-      orgSlug={org}
+      orgId={org}
       resolve={(apps) => buildDeeplinkTarget(window.location, apps)}
       summary={
         link ? (

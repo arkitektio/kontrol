@@ -103,7 +103,7 @@ function segments(pathname: string): string[] {
 }
 
 /**
- * `/deeplink/<org>/<protocol>/<path…>?<query>#<hash>` →
+ * `/deeplink/<org id>/<protocol>/<path…>?<query>#<hash>` →
  * `<protocol>://<path…>?<query>#<hash>`.
  *
  * The path is forwarded as it arrived, encoding included; only the protocol is
@@ -127,8 +127,8 @@ export function buildDeeplinkTarget(
 }
 
 /**
- * `/smartlink/<org>/<hub>/<identifier>/<object_id>` →
- * `<default protocol>://smart/<org>/<hub>/<identifier>/<object_id>`.
+ * `/smartlink/<org id>/<hub>/<identifier>/<object_id>` →
+ * `<default protocol>://smart/<org id>/<hub>/<identifier>/<object_id>`.
  *
  * The default is the organization's first app, or on a mobile device its first
  * app that exists on mobile.
