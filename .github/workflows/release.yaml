@@ -126,6 +126,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          # The production build, served by nginx: what a coordination server runs at the
+          # root of its address. `Dockerfile` is the development server, for a checkout
+          # mounted into a dev deployment (`deployments/next` builds that one itself).
+          file: DockerfileProd
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

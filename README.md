@@ -29,8 +29,11 @@ gateway has to put kontrol and lok behind the same host, with lok at `/lok`.
 
 | Image | Built from | What it runs |
 | --- | --- | --- |
-| `jhnnsrs/kontrol` | [`Dockerfile`](Dockerfile) | The Vite dev server on :80 (`pnpm dev`). This is the image the release workflow publishes. |
-| not published | [`DockerfileProd`](DockerfileProd) | The production build, served as static files by nginx on :80 ([`nginx.conf`](nginx.conf)). |
+| `jhnnsrs/kontrol` | [`DockerfileProd`](DockerfileProd) | The production build, served as static files by nginx on :80 ([`nginx.conf`](nginx.conf)). This is the image the release workflow publishes. |
+| not published | [`Dockerfile`](Dockerfile) | The Vite dev server on :80 (`pnpm dev`), for a checkout mounted into a development deployment, which builds it itself. |
+
+The published image reads an optional `/landing.json` (`/usr/share/nginx/html/landing.json`)
+for its landing page; see [`LANDING_PAGE_README.md`](LANDING_PAGE_README.md).
 
 ## Development
 
