@@ -1,0 +1,21 @@
+# The scopes an organization offers, with what they let an app do: the grant
+# dialogs (OAuth authorize, app device code) look up the keys an app asks for.
+query GrantScopes($organization: ID!) {
+  scopes(filters: { organization: $organization }, pagination: { limit: 1000 }) {
+    id
+    identifier
+    description
+    isAllScope
+    creatingInstance {
+      id
+      release {
+        id
+        service {
+          id
+          name
+          identifier
+        }
+      }
+    }
+  }
+}

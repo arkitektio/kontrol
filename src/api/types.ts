@@ -1782,8 +1782,12 @@ export type ManagementRole = {
   description: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   identifier: Scalars['String']['output'];
+  /** The role lets a member do everything in the service declaring it. Lok gives it to the organization's owner and admins. */
+  isAdminRole: Scalars['Boolean']['output'];
   /** If this role is a built-in role that cannot be deleted (admin) */
   isBuiltin: Scalars['Boolean']['output'];
+  /** Every full member holds the role, unless an admin took it away. */
+  isDefaultRole: Scalars['Boolean']['output'];
   /** The memberships that have this role */
   memberships: Array<ManagementMembership>;
   organization: ManagementOrganization;
@@ -1807,7 +1811,7 @@ export type ManagementRoleUsedByArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Role(id, identifier, description, organization, creating_instance, is_builtin) */
+/** Role(id, identifier, description, organization, creating_instance, is_builtin, is_admin_role, is_default_role) */
 export type ManagementRoleFilter = {
   AND?: InputMaybe<ManagementRoleFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1886,6 +1890,8 @@ export type ManagementScope = {
   description: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   identifier: Scalars['String']['output'];
+  /** The scope grants an app everything the service declaring it offers. */
+  isAllScope: Scalars['Boolean']['output'];
   /** If this scope is a built-in scope that cannot be deleted (admin) */
   isBuiltin: Scalars['Boolean']['output'];
   organization: ManagementOrganization;
@@ -1901,7 +1907,7 @@ export type ManagementScopeUsedByArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** Scope(id, identifier, description, organization, creating_instance, is_builtin) */
+/** Scope(id, identifier, description, organization, creating_instance, is_builtin, is_all_scope) */
 export type ManagementScopeFilter = {
   AND?: InputMaybe<ManagementScopeFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;

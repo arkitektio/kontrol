@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Lock, Shield, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RequestedScopes } from "@/components/RequestedScopes";
 
 interface AuthorizeFormData {
   organization: string;
@@ -36,6 +37,8 @@ export default function Authorize() {
   });
 
   const selectedOrganization = watch("organization");
+  // What lok resolves against: the space-separated `scope`, `openid` when absent.
+  const requestedScopes = (scope || "openid").split(" ").filter(Boolean);
 
   const { data: meData, loading: meLoading } = useMeQuery();
   const { data: clientData, loading: clientLoading } = useGetOauth2ClientByClientIdQuery({
@@ -161,15 +164,15 @@ export default function Authorize() {
           <Card>
             <CardHeader>
               <CardTitle>Permissions</CardTitle>
-              <CardDescription>Review the permissions requested by this application</CardDescription>
+              <CardDescription>Review what this application asks to do in the organization you pick below</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="rounded-md bg-muted p-4">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
                         <Lock className="h-4 w-4" />
-                        <span className="font-medium text-sm">Requested Scopes</span>
+                        <span className="font-medium text-sm">This application will be able to</span>
                     </div>
-                    <code className="text-xs text-muted-foreground break-all">{scope || "openid"}</code>
+                    <RequestedScopes keys={requestedScopes} organizationId={selectedOrganization} />
                 </div>
 
                 <div className="space-y-4">

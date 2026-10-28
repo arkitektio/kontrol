@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useActiveOrganization } from "@/hooks/useActiveOrganization";
+import { RequestedScopes } from "@/components/RequestedScopes";
 import { applyBrand, DEFAULT_BRAND_CHROMA, DEFAULT_BRAND_HUE } from "@/lib/brand";
 
 interface ConfigureFormData {
@@ -383,17 +384,11 @@ export function ConfigurePage() {
                 <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                   Requested permissions
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {manifest!.scopes.map((scope) => {
-                    const isNew = prior !== null && !priorScopes.has(scope);
-                    return (
-                      <Badge key={scope} variant={isNew ? "destructive" : "secondary"} className="font-mono text-xs">
-                        {scope}
-                        {isNew && <span className="font-sans opacity-80">new</span>}
-                      </Badge>
-                    );
-                  })}
-                </div>
+                <RequestedScopes
+                  keys={manifest!.scopes}
+                  organizationId={selectedComp?.organization.id}
+                  newKeys={prior ? new Set(newScopes) : undefined}
+                />
                 {(newScopes.length > 0 || versionChanged) && (
                   <p className="text-destructive text-xs">
                     {newScopes.length > 0 &&
