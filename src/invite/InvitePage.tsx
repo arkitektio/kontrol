@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, Building2, XCircle, UserPlus, Loader2, MailX } from "lucide-react";
+import { AlertCircle, CheckCircle2, Building2, XCircle, UserPlus, Loader2, MailX, Users, FolderOpen, Network, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errors";
 import { absoluteTime, timeAgo } from "@/lib/time";
@@ -117,7 +117,11 @@ export function InvitePage() {
         }
       });
       const orgId = result.data?.acceptInvite.organization.id ?? invite.createdFor.id;
-      toast.success(`You joined ${invite.createdFor.name || "the organization"}`);
+      toast.success(
+        collaborations
+          ? `You now have access to what ${invite.createdBy.username} shared with you`
+          : `You joined ${invite.createdFor.name || "the organization"}`,
+      );
       navigate(`/organization/${orgId}`);
     } catch (e) {
       toastError(e, "Couldn't accept the invitation");
@@ -139,6 +143,7 @@ export function InvitePage() {
     }
   };
 
+  const collaborations = invite.collaborations;
   const isExpired = new Date(invite.expiresAt) < new Date();
   const isAlreadyAccepted = invite.status === "ACCEPTED";
 
@@ -168,16 +173,20 @@ export function InvitePage() {
         {/* Header */}
         <div className="flex items-start gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-            <Building2 className="h-8 w-8" />
+            {collaborations ? <Users className="h-8 w-8" /> : <Building2 className="h-8 w-8" />}
           </div>
           <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-semibold">Organization Invitation</h1>
+            <h1 className="text-2xl font-semibold">
+              {collaborations ? "You're invited to collaborate" : "Organization Invitation"}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              You've been invited to join an organization
+              {collaborations
+                ? `${invite.createdBy.username} wants to share ${collaborations.length === 1 ? "a collaboration" : `${collaborations.length} collaborations`} from ${invite.createdFor.name} with you`
+                : "You've been invited to join an organization"}
             </p>
             {meData?.me && (
               <p className="text-sm text-muted-foreground">
-                Invited as <span className="font-medium">{meData.me.username}</span>
+                Signed in as <span className="font-medium">{meData.me.username}</span>
               </p>
             )}
           </div>
@@ -185,7 +194,7 @@ export function InvitePage() {
 
         <Separator />
 
-        {/* Organization Details */}
+        {/* Organization, inviter and (for a collaboration invite) what is shared */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -196,33 +205,89 @@ export function InvitePage() {
               <CardDescription>{invite.createdFor.description}</CardDescription>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={invite.createdBy.profile?.avatar?.presignedUrl || ""} />
-                <AvatarFallback>
-                  {invite.createdBy.username.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+          <CardContent className="space-y-5 text-sm">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={invite.createdBy.profile?.avatar?.presignedUrl || ""} />
+                  <AvatarFallback>
+                    {invite.createdBy.username.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">Invited by</p>
+                  <p className="text-muted-foreground">{invite.createdBy.username}</p>
+                </div>
+              </div>
               <div>
-                <p className="text-sm font-medium">Invited by</p>
-                <p className="text-sm text-muted-foreground">{invite.createdBy.username}</p>
+                <p className="font-medium">Created</p>
+                <p className="text-muted-foreground" title={absoluteTime(invite.createdAt)}>
+                  {timeAgo(invite.createdAt)}
+                </p>
+              </div>
+              <div>
+                <p className="font-medium">{isExpired ? "Expired" : "Expires"}</p>
+                <p className="text-muted-foreground" title={absoluteTime(invite.expiresAt)}>
+                  {timeAgo(invite.expiresAt)}
+                </p>
               </div>
             </div>
 
-            <div>
-              <p className="text-sm font-medium">Created</p>
-              <p className="text-sm text-muted-foreground" title={absoluteTime(invite.createdAt)}>
-                {timeAgo(invite.createdAt)}
-              </p>
-            </div>
+            {collaborations && (
+              <>
+                <Separator />
 
-            <div>
-              <p className="text-sm font-medium">{isExpired ? "Expired" : "Expires"}</p>
-              <p className="text-sm text-muted-foreground" title={absoluteTime(invite.expiresAt)}>
-                {timeAgo(invite.expiresAt)}
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <p className="font-medium">Shared with you</p>
+                  <ul className="space-y-2">
+                    {collaborations.map((c) => (
+                      <li key={`${c.instance}/${c.collaboration}`} className="flex items-center gap-3 rounded-md border p-2">
+                        <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="flex-1 truncate font-mono text-xs" title={`instance ${c.instance}`}>
+                          Collaboration {c.collaboration}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {c.roles.length ? c.roles.join(", ") : "view only"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <p className="font-medium">What is a collaboration?</p>
+                  <p className="text-muted-foreground">
+                    A collaboration is a shared workspace inside one of {invite.createdFor.name}'s services,
+                    for example a project with its images, datasets and workflows. Everyone in it works on the
+                    same data, each with the roles they were given there.
+                  </p>
+                  <div className="flex gap-3">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <p>
+                      You join as a <span className="font-medium">guest</span>: you see only what is shared above,
+                      not the rest of {invite.createdFor.name}, and you don't become a member of the organization.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Users className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <p>
+                      Your access comes from {invite.createdBy.username}. It ends if they take it back or leave {invite.createdFor.name},
+                      and you can never do more there than they can.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Network className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <p>
+                      {invite.mesh
+                        ? `Your apps may connect to ${invite.createdFor.name}'s network, but reach only the servers these collaborations run on.`
+                        : `Your apps won't join ${invite.createdFor.name}'s network.`}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -252,8 +317,8 @@ export function InvitePage() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Review Required</AlertTitle>
             <AlertDescription>
-              {invite.collaborations
-                ? `By accepting, ${invite.collaborations.length} ${invite.collaborations.length === 1 ? "collaboration" : "collaborations"} of ${invite.createdFor.name} will be shared with you. You do not become a member.`
+              {collaborations
+                ? `Accept only if you know ${invite.createdBy.username} and expect to work with them. You can leave a collaboration at any time.`
                 : `By accepting this invitation, you will become a member of ${invite.createdFor.name}.`}
             </AlertDescription>
           </Alert>
@@ -277,7 +342,7 @@ export function InvitePage() {
               disabled={isExpired || isAlreadyAccepted || busy}
             >
               {accepting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-              {accepting ? "Joining..." : "Accept Invitation"}
+              {accepting ? "Joining..." : collaborations ? "Start collaborating" : "Accept Invitation"}
             </Button>
           </div>
         ) : (
