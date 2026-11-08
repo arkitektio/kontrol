@@ -34,7 +34,7 @@ const REFETCH = ["GetDevice", "GetDeviceGroup", "ListDevices", "ListDeviceGroups
 export const DeviceContextMenu = ({ device, children, onChanged }: DeviceContextMenuProps) => {
   // One menu per device card: only ask for the groups once this one has been opened.
   const [opened, setOpened] = useState(false)
-  const { data: groupsData, loading: groupsLoading } = useListDeviceGroupsQuery({
+  const { data: groupsData, loading: groupsLoading, error: groupsError } = useListDeviceGroupsQuery({
     variables: { filters: { organization: device.organization.id } },
     skip: !opened,
   })
@@ -93,6 +93,8 @@ export const DeviceContextMenu = ({ device, children, onChanged }: DeviceContext
           <ContextMenuSubContent className="w-48">
             {groupsLoading && !groupsData ? (
               <ContextMenuItem disabled>Loading…</ContextMenuItem>
+            ) : groupsError && !groupsData ? (
+              <ContextMenuItem disabled>Couldn't load groups</ContextMenuItem>
             ) : availableGroups.length === 0 ? (
               <ContextMenuItem disabled>No other groups</ContextMenuItem>
             ) : (

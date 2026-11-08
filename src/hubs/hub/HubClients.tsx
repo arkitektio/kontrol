@@ -11,7 +11,7 @@ import { SectionSkeleton } from "@/components/skeletons"
 
 export default function HubClients() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
-  const { data, loading, error } = useClientsQuery({
+  const { data, loading, error, refetch } = useClientsQuery({
     variables: { filters: { organization: orgId, hub: name } },
     skip: !name,
   })
@@ -19,7 +19,7 @@ export default function HubClients() {
   const clients = data?.clients ?? []
 
   if (loading) return <SectionSkeleton rows={4} />
-  if (error) return <QueryError error={error} compact />
+  if (error) return <QueryError error={error} compact resource="clients" onRetry={() => void refetch()} />
 
   return (
     <section className="space-y-3">

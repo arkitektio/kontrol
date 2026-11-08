@@ -5,6 +5,7 @@ import { useAcceptMeshDeviceCodeMutation, useDeclineMeshDeviceCodeMutation } fro
 import { useListOrganizationsQuery } from "@/graphql/queries/organization.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
+import { Skeleton } from "@/components/ui/skeleton"
 import { QueryError } from "@/components/status"
 
 import { useState, useEffect } from "react";
@@ -36,7 +37,7 @@ export function MeshConfigurePage() {
     skip: !code,
   });
 
-  const { data: orgData } = useListOrganizationsQuery();
+  const { data: orgData, loading: orgsLoading, error: orgsError, refetch: refetchOrgs } = useListOrganizationsQuery();
   const { data: meData } = useMeQuery();
 
   const [acceptMeshDeviceCode, { loading: accepting }] = useAcceptMeshDeviceCodeMutation();
@@ -191,6 +192,10 @@ export function MeshConfigurePage() {
             )}
 
             <div className="space-y-4 border-t pt-5">
+              {!orgData && orgsLoading && <Skeleton className="h-10 w-full" />}
+              {!orgData && orgsError && (
+                <QueryError compact error={orgsError} resource="your organizations" onRetry={() => void refetchOrgs()} />
+              )}
               {orgData && orgData.organizations.length === 0 && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />

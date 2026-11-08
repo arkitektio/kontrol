@@ -10,7 +10,7 @@ import { SectionSkeleton } from "@/components/skeletons"
 
 export default function HubServices() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
-  const { data, loading, error } = useListServiceInstancesQuery({
+  const { data, loading, error, refetch } = useListServiceInstancesQuery({
     variables: { filters: { organization: orgId, hub: name } },
     skip: !name,
   })
@@ -18,7 +18,7 @@ export default function HubServices() {
   const instances = data?.serviceInstances ?? []
 
   if (loading) return <SectionSkeleton rows={4} />
-  if (error) return <QueryError error={error} compact />
+  if (error) return <QueryError error={error} compact resource="services" onRetry={() => void refetch()} />
 
   return (
     <section className="space-y-3">

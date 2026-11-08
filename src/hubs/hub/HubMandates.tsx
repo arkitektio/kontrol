@@ -76,7 +76,7 @@ export default function HubMandates() {
         is revoked or expires, and stops with whoever issued it. You see the mandates you granted; admins see all.
       </p>
       {error ? (
-        <QueryError error={error} compact resource="mandates" />
+        <QueryError error={error} compact resource="mandates" onRetry={() => void refetch()} />
       ) : loading ? (
         <ListPageSkeleton variant="embedded" header="none" columns={3} count={3} />
       ) : mandates.length === 0 ? (

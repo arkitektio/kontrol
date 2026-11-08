@@ -6,6 +6,7 @@ import { useListOrganizationsQuery } from "@/graphql/queries/organization.genera
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { type HubDeviceCodeFragment } from "@/graphql/fragments/hub_device_code.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
+import { Skeleton } from "@/components/ui/skeleton"
 import { HUB_ADMIN_REQUIRED } from "@/hooks/useIsOrgAdmin"
 import { QueryError } from "@/components/status"
 
@@ -58,7 +59,7 @@ export function HubConfigurePage() {
     skip: !code,
   });
 
-  const { data: orgData } = useListOrganizationsQuery();
+  const { data: orgData, loading: orgsLoading, error: orgsError, refetch: refetchOrgs } = useListOrganizationsQuery();
   const { data: meData } = useMeQuery();
 
   // The hub lists and the sidebar's "Connect a hub" entry are cached per
@@ -309,6 +310,10 @@ export function HubConfigurePage() {
 
             {/* Where to assign + actions */}
             <div className="space-y-4 border-t pt-5">
+              {!orgData && orgsLoading && <Skeleton className="h-10 w-full" />}
+              {!orgData && orgsError && (
+                <QueryError compact error={orgsError} resource="your organizations" onRetry={() => void refetchOrgs()} />
+              )}
               {orgData && orgData.organizations.length === 0 && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />

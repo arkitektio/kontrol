@@ -14,6 +14,7 @@ import { PageHeader } from "../components/PageHeader"
 import { QueryError, ResourceNotFound } from "@/components/status"
 import { ListPageSkeleton } from "@/components/skeletons"
 import { toast } from "sonner"
+import { toastError } from "@/lib/errors"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,7 +91,7 @@ function TailnetLockDetail({ meshId, orgId }: { meshId: string; orgId?: string }
       await enable({ variables: { input: { layerId: meshId } } })
       toast.success("Tailnet lock capability granted")
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not grant the capability")
+      toastError(e, "Could not grant the capability")
     }
   }
 
@@ -100,8 +101,8 @@ function TailnetLockDetail({ meshId, orgId }: { meshId: string; orgId?: string }
       toast.success("Tailnet lock capability revoked")
     } catch (e) {
       // The most likely failure is ionscale refusing while the authority is
-      // still active, which carries a useful message — surface it verbatim.
-      toast.error(e instanceof Error ? e.message : "Could not revoke the capability")
+      // still active; toastError passes that deliberate message through.
+      toastError(e, "Could not revoke the capability")
     }
   }
 

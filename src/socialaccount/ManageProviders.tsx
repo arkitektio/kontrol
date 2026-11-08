@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { toastError } from "@/lib/errors"
+import { errorMessage, toastError } from "@/lib/errors"
 import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 
 interface ProviderAccount {
@@ -52,7 +52,7 @@ export default function ManageProviders () {
       }
     }).catch((e) => {
       console.error(e)
-      setLoadError(e instanceof Error ? e.message : String(e))
+      setLoadError(errorMessage(e))
     }).then(() => {
       setResponse((r) => { return { ...r, fetching: false } })
     })

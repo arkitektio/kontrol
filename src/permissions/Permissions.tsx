@@ -12,10 +12,10 @@ import { ListPageSkeleton } from "@/components/skeletons"
 export default function Permissions() {
   const { orgId } = useParams<{ orgId: string }>()
 
-  const { data: rolesData, loading: rolesLoading, error: rolesError } = useRolesQuery({
+  const { data: rolesData, loading: rolesLoading, error: rolesError, refetch: refetchRoles } = useRolesQuery({
     variables: { filters: { organization: orgId || undefined } },
   })
-  const { data: scopesData, loading: scopesLoading, error: scopesError } = useScopesQuery({
+  const { data: scopesData, loading: scopesLoading, error: scopesError, refetch: refetchScopes } = useScopesQuery({
     variables: { filters: { organization: orgId || undefined } },
   })
 
@@ -73,7 +73,7 @@ export default function Permissions() {
           <h3 className="text-xl font-semibold tracking-tight">Roles</h3>
         </div>
         {rolesError ? (
-          <QueryError error={rolesError} compact resource="roles" />
+          <QueryError error={rolesError} compact resource="roles" onRetry={() => void refetchRoles()} />
         ) : rolesLoading ? (
           <ListPageSkeleton variant="embedded" header="none" columns={4} count={4} />
         ) : (
@@ -104,7 +104,7 @@ export default function Permissions() {
           <h3 className="text-xl font-semibold tracking-tight">Scopes</h3>
         </div>
         {scopesError ? (
-          <QueryError error={scopesError} compact resource="scopes" />
+          <QueryError error={scopesError} compact resource="scopes" onRetry={() => void refetchScopes()} />
         ) : scopesLoading ? (
           <ListPageSkeleton variant="embedded" header="none" columns={4} count={4} />
         ) : (

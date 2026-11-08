@@ -4,6 +4,7 @@ import { useAcceptDeviceCodeMutation, useDeclineDeviceCodeMutation } from "@/gra
 import { useHubsQuery } from "@/graphql/queries/hub.generated"
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toastError } from "@/lib/errors";
 import { QueryError } from "@/components/status";
 
@@ -60,7 +61,7 @@ export function ConfigurePage() {
     variables: { code: code || "" },
     skip: !code,
   });
-  const { data: compData } = useHubsQuery();
+  const { data: compData, loading: hubsLoading, error: hubsError, refetch: refetchHubs } = useHubsQuery();
   const { data: meData } = useMeQuery();
   const { data: validationData, loading: validating, error: validationError } = useValidateDeviceCodeQuery({
     variables: {
@@ -514,7 +515,11 @@ export function ConfigurePage() {
 
             {/* Where to assign + actions */}
             <div className="space-y-4 border-t pt-5">
-              {compData?.hubs?.length ? (
+              {!compData && hubsLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : !compData && hubsError ? (
+                <QueryError compact error={hubsError} resource="your hubs" onRetry={() => void refetchHubs()} />
+              ) : compData?.hubs?.length ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Assign to hub</p>
                   {hubHint && !hubHintKnown && (

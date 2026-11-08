@@ -19,6 +19,7 @@ import {
 } from "../components/ui/select"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
+import { QueryError } from "@/components/status"
 
 interface AddToGroupDialogProps {
   deviceId: string
@@ -32,7 +33,7 @@ export const AddToGroupDialog = ({ deviceId, organizationId, currentGroups = [],
   const [open, setOpen] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState("")
   const [isAdding, setIsAdding] = useState(false)
-  const { data: groupsData, loading: groupsLoading } = useListDeviceGroupsQuery({
+  const { data: groupsData, loading: groupsLoading, error: groupsError, refetch: refetchGroups } = useListDeviceGroupsQuery({
     variables: { filters: { organization: organizationId } },
     skip: !open,
   })
@@ -98,6 +99,8 @@ export const AddToGroupDialog = ({ deviceId, organizationId, currentGroups = [],
             <div className="text-sm text-muted-foreground text-center py-6">
               Loading groups...
             </div>
+          ) : groupsError && !groupsData ? (
+            <QueryError compact error={groupsError} resource="device groups" onRetry={() => void refetchGroups()} />
           ) : availableGroups.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-6">
               {deviceGroups.length === 0

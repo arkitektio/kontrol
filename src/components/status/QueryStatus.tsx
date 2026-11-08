@@ -9,6 +9,7 @@ import {
   UnexpectedErrorPage,
 } from "./pages"
 import { classifyApolloError } from "./classifyError"
+import { errorMessage } from "@/lib/errors"
 
 export interface QueryErrorProps {
   error: unknown
@@ -46,7 +47,7 @@ export function QueryError({ error, resource, id, onRetry, compact = false }: Qu
         tone={classified.kind === "denied" ? "warning" : "destructive"}
         icon={AlertCircle}
         title={title}
-        description={classified.message}
+        description={errorMessage(error)}
         details={id ? [{ label: "Id", value: id, mono: true }] : undefined}
         actions={
           onRetry ? (
