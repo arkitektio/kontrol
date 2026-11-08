@@ -3,6 +3,7 @@ fragment ListHub  on ManagementHub {
   name 
   online
   lastHealthy
+  reachable
   organization {
     id
     name
@@ -24,6 +25,29 @@ fragment Hub on ManagementHub {
   version
   meshConnected
   meshHost
+  reachable
+  lastVerifiedAt
+  publicAliases {
+    id
+    host
+    port
+    path
+    probeStatus
+    probedAt
+    probeHttpStatus
+    probeLatencyMs
+    lastVerifiedAt
+    instance {
+      id
+      release {
+        id
+        service {
+          id
+          identifier
+        }
+      }
+    }
+  }
   healthSnapshots {
     id
     healthy

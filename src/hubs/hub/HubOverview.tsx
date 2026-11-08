@@ -23,6 +23,7 @@ import { useState } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { HubStatusBadge } from "../HubStatusBadge"
 import { AdminOnly } from "../../components/AdminOnly"
+import { HubProbeCard } from "./HubProbeCard"
 
 export default function HubOverview() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
@@ -106,7 +107,7 @@ export default function HubOverview() {
             <h1 className="text-2xl font-bold tracking-tight">{hub.name}</h1>
             <p className="text-sm text-muted-foreground">{hub.organization.name}</p>
             <div className="flex gap-2 pt-1 flex-wrap">
-              <HubStatusBadge online={hub.online} healthy={hub.lastHealthy} />
+              <HubStatusBadge online={hub.online} healthy={hub.lastHealthy} reachable={hub.reachable} />
               <Badge variant="outline">
                 {hub.instances.length} {hub.instances.length === 1 ? "Service" : "Services"}
               </Badge>
@@ -179,6 +180,8 @@ export default function HubOverview() {
       </div>
 
       <HubHealthCard hub={hub} />
+
+      <HubProbeCard hub={hub} orgId={orgId} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((section) => (

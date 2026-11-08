@@ -134,7 +134,7 @@ export default function Hubs() {
                       {hub.name}
                     </CardTitle>
                   </div>
-                  <HubStatusBadge online={hub.online} healthy={hub.lastHealthy} />
+                  <HubStatusBadge online={hub.online} healthy={hub.lastHealthy} reachable={hub.reachable} />
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col gap-3">

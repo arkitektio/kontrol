@@ -8,3 +8,9 @@ mutation UpdateHub($input: UpdateHubInput!) {
 mutation DeleteHub($input: DeleteHubInput!) {
   deleteHub(input: $input) 
 }
+
+mutation ProbeHub($input: ProbeHubInput!) {
+  probeHub(input: $input) {
+    ...Hub
+  }
+}

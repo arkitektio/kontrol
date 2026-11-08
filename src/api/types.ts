@@ -758,6 +758,8 @@ export type ManagementHub = {
   lastHealthy?: Maybe<Scalars['Boolean']['output']>;
   /** When the hub last reported its health. Null if it never has. */
   lastSeenAt?: Maybe<Scalars['DateTime']['output']>;
+  /** When lok last proved one of the hub's public aliases up and authentic. Null if it never has. */
+  lastVerifiedAt?: Maybe<Scalars['DateTime']['output']>;
   /** The mandates that log apps into this hub (the ones you may see). */
   mandates: Array<ManagementMandate>;
   /** Whether the hub's last health report said its node is on the mesh. Null if it never reported mesh state. */
@@ -770,6 +772,10 @@ export type ManagementHub = {
   online: Scalars['Boolean']['output'];
   /** The organization that owns this hub. */
   organization: ManagementOrganization;
+  /** The hub's public aliases: the ones lok probes itself, with each one's last probe outcome. */
+  publicAliases: Array<ManagementInstanceAlias>;
+  /** Whether lok proved one of the hub's public aliases up and authentic (a signed challenge) within the last three probe intervals. Independent of `online`: a hosted hub that never reports its own health can still be reachable. */
+  reachable: Scalars['Boolean']['output'];
   /** The hub software version, as last reported. */
   version: Scalars['String']['output'];
 };
@@ -858,6 +864,8 @@ export type ManagementInstanceAlias = {
   instance: ManagementServiceInstance;
   /** The kind of alias (absolute, mesh or docker). A mesh alias has no host of its own: it resolves to its hub node's MagicDNS name. A docker alias is only reachable from inside the hub's own docker environment. */
   kind: Scalars['String']['output'];
+  /** When a probe last got a valid signature from the instance. */
+  lastVerifiedAt?: Maybe<Scalars['DateTime']['output']>;
   /** The layer that this alias belongs to. */
   layer?: Maybe<ManagementLayer>;
   /** The name of the alias. */
@@ -868,6 +876,14 @@ export type ManagementInstanceAlias = {
   path?: Maybe<Scalars['String']['output']>;
   /** The port of the alias (e.g. 8080 for 'example.com:8080'). If not set, the scheme's default port is used. */
   port?: Maybe<Scalars['Int']['output']>;
+  /** The HTTP status of lok's last probe, if it got one. */
+  probeHttpStatus?: Maybe<Scalars['Int']['output']>;
+  /** How long lok's last probe took, in milliseconds. */
+  probeLatencyMs?: Maybe<Scalars['Int']['output']>;
+  /** The outcome of lok's last probe of this alias's signed challenge: 'verified' (up, and proven to be the instance), 'no_key', 'unsigned', 'bad_signature', 'unhealthy', 'invalid_response', 'unreachable', 'tls_failed', 'timeout', 'non_public_address' or 'not_probeable'. Null if lok never probed it (only public aliases are probed). */
+  probeStatus?: Maybe<Scalars['String']['output']>;
+  /** When lok last probed this alias. */
+  probedAt?: Maybe<Scalars['DateTime']['output']>;
   /** Is this alias publicly reachable? If true, the coordination server can also check the alias's health directly, enabling health checks from the kontrol interface. */
   public: Scalars['Boolean']['output'];
   /** Where the address works: 'loopback' (this machine), 'internal' (only inside the deployment's own network), 'lan' (the local network), 'mesh' (the organization's mesh) or 'public' (the internet). */
@@ -2431,6 +2447,8 @@ export type Mutation = {
   enableTailnetLock: ManagementLayer;
   issueMandateKey: ManagementIssuedMandateKey;
   notifyMember: ManagementNotificationResult;
+  /** Check the hub's public aliases from lok now: each must answer a fresh nonce with its instance key's signature to count as verified. */
+  probeHub: ManagementHub;
   removeDeviceFromGroup: ManagementDevice;
   replaceIonscaleLayer: ManagementLayer;
   requestClientReport: ManagementClient;
@@ -2674,6 +2692,11 @@ export type MutationNotifyMemberArgs = {
 };
 
 
+export type MutationProbeHubArgs = {
+  input: ProbeHubInput;
+};
+
+
 export type MutationRemoveDeviceFromGroupArgs = {
   input: RemoveDeviceFromGroupInput;
 };
@@ -2853,6 +2876,10 @@ export const PriorAccessState = {
 } as const;
 
 export type PriorAccessState = typeof PriorAccessState[keyof typeof PriorAccessState];
+export type ProbeHubInput = {
+  id: Scalars['ID']['input'];
+};
+
 export type Query = {
   __typename?: 'Query';
   _service: _Service;
@@ -3342,7 +3369,7 @@ export type SetMembershipNotificationsInput = {
 export type SharedCollaborationInput = {
   /** The collaboration's id in that service. */
   collaboration: Scalars['String']['input'];
-  /** The service instance the collaboration lives in (on a hub of the organization). */
+  /** The service instance the collaboration lives in (on a hub of the organization): its id, or, when called from an app, the app's own requirement key for it (e.g. 'mikro'), resolved through the app's service mappings. */
   instance: Scalars['ID']['input'];
   /** Identifiers of the organization's roles that hold for the guest inside the collaboration. Empty: view only. */
   roles?: Array<Scalars['String']['input']>;
