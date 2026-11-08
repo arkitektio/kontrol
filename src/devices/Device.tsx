@@ -119,8 +119,8 @@ export default function Device() {
 
   return (
     <div className="container mx-auto py-10 space-y-6">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
-              <div className="flex items-center gap-4">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 border-b">
+              <div className="flex min-w-0 items-center gap-4">
                 <div className="h-16 w-16 flex items-center justify-center bg-muted/20 rounded-full border">
                   <DeviceIcon name={device.name} className="h-8 w-8" />
                 </div>

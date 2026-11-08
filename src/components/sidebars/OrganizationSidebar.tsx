@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom"
 import { useSidebarHubsQuery } from "@/graphql/queries/sidebar_hubs.generated"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { useIsOrgAdmin, useMyOrgMembership } from "@/hooks/useIsOrgAdmin"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, KeyRound, UserCircle, Plug, Tags, AppWindow } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, KeyRound, UserCircle, Plug, Tags, AppWindow, Server } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
@@ -40,9 +40,10 @@ export function OrganizationSidebar() {
     // so the navigation renders without waiting for any org-specific query.
     const org = activeOrg ?? { id: activeOrgId, name: null, slug: "" }
 
-    const isActive = (path: string, exact = false) => {
+    const isActive = (path: string, exact = false, exclude?: string) => {
         if (exact) return location.pathname === path
-        return location.pathname.startsWith(path)
+        if (exclude && location.pathname.startsWith(exclude)) return false
+        return location.pathname === path || location.pathname.startsWith(`${path}/`)
     }
 
     const base = `/organization/${org.id}`
@@ -80,11 +81,13 @@ export function OrganizationSidebar() {
         { to: `${base}/danger-zone`, label: "Settings", icon: Settings },
     ]
 
-    const resourceItems = [
+    const resourceItems: { to: string; label: string; icon: typeof Layers; exact?: boolean; exclude?: string }[] = [
         { to: `${base}/hubs`, label: "Hubs", icon: Layers },
         { to: `${base}/clients`, label: "Clients", icon: AppWindow },
+        { to: `${base}/service-instances`, label: "Service Instances", icon: Server },
         { to: `${base}/mesh`, label: "Mesh", icon: Network },
-        { to: `${base}/devices`, label: "Devices", icon: Smartphone, exact: true },
+        // Device detail pages too, but not the groups pages that live under /devices.
+        { to: `${base}/devices`, label: "Devices", icon: Smartphone, exclude: `${base}/devices/groups` },
         { to: `${base}/devices/groups`, label: "Device Groups", icon: Boxes },
         { to: `${base}/permissions`, label: "Permissions", icon: Shield },
     ]
@@ -115,7 +118,7 @@ export function OrganizationSidebar() {
             <SidebarMenu>
               {resourceItems.map((item) => (
                 <SidebarMenuItem key={item.to}>
-                  <SidebarMenuButton asChild isActive={isActive(item.to, item.exact)} tooltip={item.label}>
+                  <SidebarMenuButton asChild isActive={isActive(item.to, item.exact, item.exclude)} tooltip={item.label}>
                     <Link to={item.to}>
                       <item.icon />
                       <span>{item.label}</span>
@@ -174,7 +177,7 @@ export function OrganizationSidebar() {
                     <SidebarMenu>
                       {hubLinks.map((link) => (
                         <SidebarMenuItem key={link.label}>
-                          <SidebarMenuButton asChild isActive={isActive(link.to, link.exact)}>
+                          <SidebarMenuButton asChild isActive={isActive(link.to, link.exact)} tooltip={`${hub.name}: ${link.label}`}>
                             <Link to={link.to}>
                               <link.icon />
                               <span>{link.label}</span>

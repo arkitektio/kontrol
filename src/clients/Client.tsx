@@ -1,3 +1,4 @@
+import { aliasUrl } from "@/lib/aliasUrl"
 import { ClientLabel } from "@/components/ClientLabel"
 import { clientInitials, clientLabel } from "@/lib/clientLabel"
 import { cn } from "@/lib/utils"
@@ -53,12 +54,14 @@ export default function Client() {
                     {client.accessState === PriorAccessState.Revoked && <Badge variant="destructive">Rejected</Badge>}
                     {client.accessState === PriorAccessState.Expired && <Badge variant="outline">No active session</Badge>}
                     <span className="text-muted-foreground">by {client.user?.username}</span>
+                    {client.organization && (
                     <Link
-                        to={`/organization/${client.organization?.id}/clients/${client.id}/report`}
+                        to={`/organization/${client.organization.id}/clients/${client.id}/report`}
                         className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                         <Activity className="h-4 w-4" /> Latest report
                     </Link>
+                    )}
                 </div>
               </div>
               {client.accessState !== PriorAccessState.Revoked && (isAdmin || (!!client.user && client.user.id === meData?.me?.id)) && (
@@ -128,8 +131,11 @@ export default function Client() {
                     <div className="grid gap-2">
                         {client.scopes?.map(scope => (
                             <div key={scope.id} className="p-2 border rounded-md">
-                                 <Link to={`/organization/${client.organization?.id}/scopes/${scope.id}`}>{scope.identifier}
-                                </Link>
+                                 {client.organization ? (
+                                   <Link to={`/organization/${client.organization.id}/scopes/${scope.id}`}>{scope.identifier}</Link>
+                                 ) : (
+                                   <span>{scope.identifier}</span>
+                                 )}
                                 <div className="text-xs text-muted-foreground">
                                     {scope.description}
                                 </div>
@@ -146,14 +152,16 @@ export default function Client() {
                     <div className="grid gap-2">
                         {client.usedAliases?.map(usedAlias => (
                             <div key={usedAlias.id} className={cn("p-2 border rounded-md", usedAlias.valid ? "border-green-500/40" : "border-red-500/40")}>
-                                <div className="font-medium">{usedAlias.key}</div>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium">{usedAlias.key}</span>
+                                    <Badge variant={usedAlias.valid ? "secondary" : "destructive"} className="text-xs">
+                                        {usedAlias.valid ? "valid" : "invalid"}
+                                    </Badge>
+                                </div>
                                 {usedAlias.alias && (
                                     <Link to={`/instance-aliases/${usedAlias.alias.id}`}>
                                     <code className="text-xs text-muted-foreground">
-                                        {usedAlias.alias.ssl ? 'https://' : 'http://'}
-                                        {usedAlias.alias.host}
-                                        {usedAlias.alias.port ? `:${usedAlias.alias.port}` : ''}
-                                        {usedAlias.alias.path ? `/${usedAlias.alias.path}` : ''}
+                                        {aliasUrl(usedAlias.alias, usedAlias.alias.layer?.name ?? "")}
                                     </code>
                                     </Link>
                                 )}

@@ -14,6 +14,7 @@ import { Lock, Shield, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RequestedScopes } from "@/components/RequestedScopes";
+import { useActiveOrganization } from "@/hooks/useActiveOrganization";
 
 interface AuthorizeFormData {
   organization: string;
@@ -27,6 +28,16 @@ export default function Authorize() {
   const state = searchParams.get("state");
   const nonce = searchParams.get("nonce");
   const { data: orgData, loading: orgLoading } = useListOrganizationsQuery();
+  const { activeOrgId } = useActiveOrganization();
+  // Shown so the user can see where the browser goes next; lok checks it against
+  // the client's registered redirect URIs, this is only for the reader.
+  const redirectHost = (() => {
+    try {
+      return redirectUri ? new URL(redirectUri).host : null;
+    } catch {
+      return null;
+    }
+  })();
 
   const [globalError, setGlobalError] = useState<string | null>(null);
 
@@ -54,12 +65,12 @@ export default function Authorize() {
   // POST with `organization_id=` (a slug is a mutable, user-chosen handle and is
   // no longer an identity). Matches MeshConfigurePage / HubConfigurePage, which
   // already submit `.id`.
+  // The organization the user is working in comes first, then their first one.
   useEffect(() => {
-    const firstOrg = orgData?.organizations.at(0)?.id;
-    if (firstOrg && !selectedOrganization) {
-      setValue("organization", firstOrg);
-    }
-  }, [orgData, selectedOrganization, setValue]);
+    if (selectedOrganization || !orgData?.organizations.length) return;
+    const active = orgData.organizations.find((org) => org.id === activeOrgId);
+    setValue("organization", (active ?? orgData.organizations[0]).id);
+  }, [orgData, activeOrgId, selectedOrganization, setValue]);
 
   // The consent decision is a real (full-page) form POST to lok's standard
   // authorization endpoint, so the browser follows the resulting 302 to the
@@ -177,13 +188,13 @@ export default function Authorize() {
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Select Context</Label>
+                        <Label htmlFor="authorize-organization">Organization</Label>
                         <Controller
                             control={control}
                             name="organization"
                             render={({ field }) => (
                                 <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isLoading}>
-                                    <SelectTrigger className="h-14">
+                                    <SelectTrigger id="authorize-organization" className="h-14">
                                         <SelectValue placeholder="Select context..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -210,6 +221,11 @@ export default function Authorize() {
                     </div>
                 </div>
             </CardContent>
+            {redirectHost && (
+              <p className="px-6 pb-4 text-xs text-muted-foreground">
+                Either way, you will be sent back to <span className="font-mono text-foreground">{redirectHost}</span>.
+              </p>
+            )}
             <CardFooter className="flex justify-between border-t bg-muted/50 px-6 py-4">
                 <Button variant="ghost" type="button" onClick={() => submitDecision(false)}>Deny</Button>
                 <Button type="submit" disabled={isLoading || isSubmitting || !selectedOrganization}>

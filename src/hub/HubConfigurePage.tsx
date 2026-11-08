@@ -6,6 +6,7 @@ import { useListOrganizationsQuery } from "@/graphql/queries/organization.genera
 import { useMeQuery } from "@/graphql/queries/me.generated"
 import { type HubDeviceCodeFragment } from "@/graphql/fragments/hub_device_code.generated"
 import { ConfigureCardSkeleton } from "@/components/skeletons"
+import { aliasPath } from "@/lib/aliasUrl"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HUB_ADMIN_REQUIRED } from "@/hooks/useIsOrgAdmin"
 import { QueryError } from "@/components/status"
@@ -38,12 +39,12 @@ function aliasHost(alias: StagingAlias): string {
 function aliasLabel(alias: StagingAlias): string {
   if (alias.kind === "mesh") {
     const port = alias.port ? `:${alias.port}` : "";
-    return `${alias.ssl ? "https" : "http"}://<hub>.<org>.<mesh suffix>${port}${alias.path ? `/${alias.path}` : ""} (reachable on the mesh only)`;
+    return `${alias.ssl ? "https" : "http"}://<hub>.<org>.<mesh suffix>${port}${aliasPath(alias.path)} (reachable on the mesh only)`;
   }
   if (alias.host) {
     const scheme = alias.ssl ? "https" : "http";
     const port = alias.port ? `:${alias.port}` : "";
-    return `${scheme}://${alias.host}${port}${alias.path ?? ""}`;
+    return `${scheme}://${alias.host}${port}${aliasPath(alias.path)}`;
   }
   return alias.name || alias.kind;
 }
@@ -210,6 +211,9 @@ export function HubConfigurePage() {
               <div className="min-w-0">
                 <p className="text-lg leading-tight font-semibold break-words">{manifest?.identifier || "Unknown hub"}</p>
                 <p className="text-muted-foreground text-sm">Hub</p>
+                <p className="text-muted-foreground mt-1 text-xs" title="Check that it matches the code the hub printed">
+                  Code <span className="text-foreground font-mono">{hubDeviceCode.code}</span>
+                </p>
               </div>
             </div>
           </div>

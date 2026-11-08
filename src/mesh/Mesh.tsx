@@ -16,7 +16,7 @@ import { Badge } from "../components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
-import { timeAgo } from "@/lib/time"
+import { absoluteTime, timeAgo } from "@/lib/time"
 import { useIsOrgAdmin } from "@/hooks/useIsOrgAdmin"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
@@ -119,7 +119,11 @@ function NodeCard({ orgId, machine }: { orgId: string; machine: ListMachineFragm
               aria-hidden
               className={`h-2 w-2 rounded-full ${machine.connected ? "bg-green-500" : "bg-muted-foreground/40"}`}
             />
-            {machine.connected ? "Online" : machine.lastSeen ? timeAgo(machine.lastSeen) : "Never seen"}
+            {machine.connected ? "Online" : machine.lastSeen ? (
+              <span title={absoluteTime(machine.lastSeen)}>{timeAgo(machine.lastSeen)}</span>
+            ) : (
+              "Never seen"
+            )}
           </div>
         </div>
         <div className="space-y-0.5 text-xs text-muted-foreground">

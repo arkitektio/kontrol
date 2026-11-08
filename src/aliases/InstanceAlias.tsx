@@ -1,8 +1,10 @@
+import { aliasPath, aliasUrl } from "@/lib/aliasUrl"
 import { useParams, Link, useNavigate } from "react-router-dom"
 import { useDetailInstanceAliasQuery } from "@/graphql/queries/instance_alias.generated"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { Globe, Lock, Server, ExternalLink, Shield } from "lucide-react"
+import { Globe, Lock, Server, ExternalLink, Shield, ArrowRight } from "lucide-react"
+import { Command } from "../components/Command"
 import { Button } from "../components/ui/button"
 import { Separator } from "../components/ui/separator"
 import { UpdateAliasSheet } from "./UpdateAliasSheet"
@@ -32,18 +34,13 @@ export default function InstanceAlias() {
   const displayHost = isMesh ? alias.resolvedHost : alias.host
 
   const buildFullUrl = () => {
-    if (isMesh) {
-      const host = alias.resolvedHost || "[hub not on the mesh]"
-      return `${alias.ssl ? "https" : "http"}://${host}${alias.port ? `:${alias.port}` : ""}${alias.path ? `/${alias.path}` : ""}`;
-    }
-    if (!alias.host || alias.host === "") {
-      const protocol = window.location.protocol;
-      const hostname = window.location.hostname;
+    if (isMesh) return aliasUrl(alias, "[hub not on the mesh]")
+    if (!alias.host) {
+      // A relative alias: served from wherever the client reached lok.
       const port = window.location.port ? `:${window.location.port}` : "";
-      const path = alias.path || "";
-      return `${protocol}//${hostname}${port}/${path}`;
+      return `${window.location.protocol}//${window.location.hostname}${port}${aliasPath(alias.path)}`;
     }
-    return `${alias.ssl ? "https" : "http"}://${alias.host}${alias.port ? `:${alias.port}` : ""}${alias.path ? `/${alias.path}` : ""}`;
+    return aliasUrl(alias)
   }
 
   const fullUrl = buildFullUrl();
@@ -67,7 +64,11 @@ export default function InstanceAlias() {
             aliasId={alias.id}
             aliasUrl={fullUrl}
             onSuccess={() => {
-              navigate("/instance-aliases")
+              navigate(
+                alias.instance?.id
+                  ? `/organization/${alias.organization.id}/service-instances/${alias.instance.id}`
+                  : "/instance-aliases",
+              )
             }}
           />
         </div>
@@ -76,8 +77,8 @@ export default function InstanceAlias() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
               <div className="flex items-center gap-2">
                 {alias.ssl ? (
                   <Lock className="h-5 w-5 text-green-500" />
@@ -88,16 +89,16 @@ export default function InstanceAlias() {
                   {displayHost || (isMesh ? "[Mesh Alias]" : "[Relative Alias]")}
                 </CardTitle>
               </div>
-              <CardDescription className="font-mono">
-                {fullUrl}
-              </CardDescription>
+              <div className="max-w-xl">
+                <Command label="Copy URL">{fullUrl}</Command>
+              </div>
             </div>
-            <a href={fullUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" asChild>
+              <a href={fullUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Open
-              </Button>
-            </a>
+              </a>
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -145,7 +146,7 @@ export default function InstanceAlias() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Challenge:</span>
-                  <span className="font-mono text-xs break-all">{alias.challenge}</span>
+                  <span className="font-mono text-xs break-all text-right">{alias.challenge}</span>
                 </div>
               </div>
             </div>
@@ -158,16 +159,18 @@ export default function InstanceAlias() {
             <div className="flex items-center justify-between p-3 border rounded-md">
               <div className="space-y-1">
                 <div className="font-medium">Instance ID</div>
-                <div className="text-sm text-muted-foreground font-mono">
-                  {alias.instance?.id}
+                <div className="text-sm text-muted-foreground font-mono" title="Service instance id">
+                  {alias.instance?.id ?? "—"}
                 </div>
               </div>
-              <Link to={`/organization/${alias.organization.id}/service-instances/${alias.instance?.id}`}>
-                <Button variant="outline" size="sm">
-                  View Instance
-                  <ExternalLink className="h-3 w-3 ml-2" />
+              {alias.instance?.id && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/organization/${alias.organization.id}/service-instances/${alias.instance.id}`}>
+                    View Instance
+                    <ArrowRight className="h-3 w-3 ml-2" />
+                  </Link>
                 </Button>
-              </Link>
+              )}
             </div>
           </div>
         </CardContent>

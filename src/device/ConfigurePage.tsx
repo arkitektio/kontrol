@@ -85,6 +85,8 @@ export function ConfigurePage() {
   const [declinedRequirements, setDeclinedRequirements] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
+  // Where the approved client lives in kontrol, for an "Open" link on success.
+  const [approvedClientPath, setApprovedClientPath] = useState<string | null>(null);
   const [deviceName, setDeviceName] = useState("");
   const [deviceNotice, setDeviceNotice] = useState<string | null>(null);
   const [allowMesh, setAllowMesh] = useState(true);
@@ -223,7 +225,11 @@ export function ConfigurePage() {
           },
         },
       });
-      setAuthorized(!!result.data?.acceptDeviceCode?.id);
+      const approved = result.data?.acceptDeviceCode;
+      setAuthorized(!!approved?.id);
+      if (approved?.id && approved.organization?.id) {
+        setApprovedClientPath(`/organization/${approved.organization.id}/clients/${approved.id}`);
+      }
       if (isNodeManifest) {
         const trimmedName = deviceName.trim();
         setDeviceNotice(
@@ -269,6 +275,11 @@ export function ConfigurePage() {
                 You can close this tab and return to the application.
               </p>
             </div>
+            {authorized && approvedClientPath && (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={approvedClientPath}>View the app in kontrol</Link>
+              </Button>
+            )}
             {deviceNotice && (
               <p className="bg-muted/50 text-muted-foreground w-full rounded-lg px-4 py-3 text-sm">
                 {deviceNotice}
@@ -319,6 +330,9 @@ export function ConfigurePage() {
                 <p className="text-lg leading-tight font-semibold break-words">{appIdentifier}</p>
                 <p className="text-muted-foreground text-sm">
                   Version {manifest?.version ?? deviceCode.client?.release?.version}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs" title="Check that it matches the code the app printed">
+                  Code <span className="text-foreground font-mono">{deviceCode.code}</span>
                 </p>
               </div>
             </div>
@@ -441,7 +455,9 @@ export function ConfigurePage() {
             {optionalReqs.length > 0 && (
               <Collapsible className="space-y-2">
                 <CollapsibleTrigger className="group text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-xs font-semibold tracking-wide uppercase">
-                  <span>Optional services ({optionalReqs.length})</span>
+                  <span>
+                    Optional services · {optionalReqs.filter((r) => !declinedRequirements.has(r.key)).length} of {optionalReqs.length} shared
+                  </span>
                   <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-2 pt-1">
@@ -481,6 +497,7 @@ export function ConfigurePage() {
                           {canToggle && (
                             <Switch
                               checked={!declined}
+                              aria-label={`Share ${req.key} with this app`}
                               onCheckedChange={() => toggleRequirement(req.key)}
                               className="mt-0.5 shrink-0"
                             />

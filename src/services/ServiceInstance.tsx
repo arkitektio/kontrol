@@ -1,3 +1,4 @@
+import { aliasUrl } from "@/lib/aliasUrl"
 import { useParams, Link } from "react-router-dom"
 import { useGetServiceInstanceQuery } from "@/graphql/queries/service_instance.generated"
 import { Card, CardContent, CardHeader } from "../components/ui/card"
@@ -73,10 +74,7 @@ export default function ServiceInstance() {
                                     <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center justify-between">
                                           <div className="flex flex-col">
                                                 <code className="text-sm">
-                                                    {alias.ssl ? 'https://' : 'http://'}
-                                                    {alias.host || alias.layer?.name}
-                                                    {alias.port ? `:${alias.port}` : ''}
-                                                    {alias.path || ''}
+                                                    {aliasUrl(alias, alias.layer?.name ?? "")}
                                                 </code>
                                           </div>
                                           <Badge variant="outline" className="text-xs">{alias.kind}</Badge>
@@ -166,9 +164,13 @@ export default function ServiceInstance() {
                          <Separator className="my-2" />
                          <div className="flex justify-between items-center">
                              <span className="font-medium">Service Info</span>
-                             <Link to={instance.release.service.id ? `/services/${instance.release.service.id}` : '#'} className="text-sm text-muted-foreground hover:underline">
-                                {instance.release.service.name}
-                             </Link>
+                             {instance.release.service.id ? (
+                               <Link to={`/services/${instance.release.service.id}`} className="text-sm text-muted-foreground hover:underline">
+                                  {instance.release.service.name}
+                               </Link>
+                             ) : (
+                               <span className="text-sm text-muted-foreground">{instance.release.service.name}</span>
+                             )}
                          </div>
                     </CardContent>
                  </Card>

@@ -80,14 +80,20 @@ function AuthKeyList({ orgId, meshId }: { orgId: string; meshId: string }) {
   const mesh = data.layer
   const keys = (mesh.authKeys ?? []).filter((key) => !isSidecarKey(key.tags))
 
+  // Tailscale ACL tags must look like `tag:name`; catch it here rather than as a
+  // server error after submit.
+  const parsedTags = newKeyTags.split(",").map((t) => t.trim()).filter((t) => t.length > 0)
+  const badTags = parsedTags.filter((t) => !/^tag:[A-Za-z0-9-]+$/.test(t))
+
   const handleCreateKey = async () => {
+    if (badTags.length) return
     try {
       const result = await createAuthKey({
         variables: {
           input: {
             layerId: mesh.id,
             ephemeral: newKeyEphemeral,
-            tags: newKeyTags.split(",").map((t) => t.trim()).filter((t) => t.length > 0),
+            tags: parsedTags,
           },
         },
       })
@@ -141,6 +147,12 @@ function AuthKeyList({ orgId, meshId }: { orgId: string; meshId: string }) {
               </DialogContent>
               ) : (
               <DialogContent>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void handleCreateKey()
+                  }}
+                >
                 <DialogHeader>
                   <DialogTitle>Create Auth Key</DialogTitle>
                   <DialogDescription>
@@ -155,11 +167,21 @@ function AuthKeyList({ orgId, meshId }: { orgId: string; meshId: string }) {
                     </Label>
                     <Input
                       id="tags"
-                      placeholder="tag:value, tag2"
+                      placeholder="tag:gpu, tag:lab"
                       value={newKeyTags}
                       onChange={(e) => setNewKeyTags(e.target.value)}
                       className="sm:col-span-3"
+                      aria-invalid={badTags.length > 0}
+                      aria-describedby="tags-hint"
                     />
+                    <p
+                      id="tags-hint"
+                      className={`text-xs sm:col-span-3 sm:col-start-2 ${badTags.length ? "text-destructive" : "text-muted-foreground"}`}
+                    >
+                      {badTags.length
+                        ? `Not a tag: ${badTags.join(", ")}. Tags look like tag:name (letters, digits, dashes).`
+                        : "Optional, comma-separated. Machines joining with this key get these tags."}
+                    </p>
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
                     <Label htmlFor="ephemeral" className="sm:text-right">
@@ -178,13 +200,14 @@ function AuthKeyList({ orgId, meshId }: { orgId: string; meshId: string }) {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="secondary" onClick={() => setCreateKeyDialogOpen(false)}>
+                  <Button type="button" variant="secondary" onClick={() => setCreateKeyDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleCreateKey} disabled={creatingKey}>
+                  <Button type="submit" disabled={creatingKey || badTags.length > 0}>
                     {creatingKey ? "Creating..." : "Create"}
                   </Button>
                 </DialogFooter>
+                </form>
               </DialogContent>
               )}
             </Dialog>
@@ -219,7 +242,7 @@ function AuthKeyList({ orgId, meshId }: { orgId: string; meshId: string }) {
                 <div className="flex items-center gap-2">
                   <Key className="h-4 w-4 shrink-0 text-muted-foreground" />
                   {/* lok only returns the key to its creator and to admins. */}
-                  <div className="truncate font-mono text-sm">{key.key ?? "Hidden key"}</div>
+                  <div className="truncate font-mono text-sm" title={key.key ?? undefined}>{key.key ?? "Hidden key"}</div>
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Created {timeAgo(key.createdAt)}

@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
 import { useLocation, Link } from "react-router-dom"
 import { gql, useFragment, type DocumentNode } from "@apollo/client"
 import { ChevronRight } from "lucide-react"
@@ -115,17 +115,6 @@ function CrumbLabel({ crumb }: { crumb: BreadcrumbSegment }) {
   return crumb.entity ? <EntityCrumbLabel entity={crumb.entity} /> : <>{crumb.label}</>
 }
 
-const APP_TITLE = "Kontrol"
-
-function useDocumentTitle(label: string | null) {
-  useEffect(() => {
-    document.title = label ? `${label} · ${APP_TITLE}` : APP_TITLE
-    return () => {
-      document.title = APP_TITLE
-    }
-  }, [label])
-}
-
 function EntityTitle({ entity }: { entity: { typename: string; id: string } }) {
   useDocumentTitle(useEntityLabel(entity))
   return null
@@ -198,7 +187,17 @@ export const RouteBreadcrumbs = () => {
     <Breadcrumb>
       <PageTitle crumbs={breadcrumbs} />
       <BreadcrumbList>
-        {breadcrumbs.map((crumb, index) => {
+        {(() => {
+          // On a phone only the current crumb fits; keep the nearest page above it
+          // too, so a detail page still has a way back.
+          let backIndex = -1
+          for (let i = breadcrumbs.length - 2; i >= 0; i--) {
+            if (isNavigablePath(breadcrumbs[i].path)) {
+              backIndex = i
+              break
+            }
+          }
+          return breadcrumbs.map((crumb, index) => {
           const isLast = index === breadcrumbs.length - 1
           const isActive = location.pathname === crumb.path
           // Crumbs are cumulative path prefixes, and some prefixes are pure
@@ -210,7 +209,7 @@ export const RouteBreadcrumbs = () => {
 
           return (
             <div key={crumb.path} className="flex items-center gap-1.5">
-              <BreadcrumbItem className={isActive ? "" : "hidden md:block"}>
+              <BreadcrumbItem className={isActive || index === backIndex ? "" : "hidden md:block"}>
                 {isActive ? (
                   <span className="text-foreground font-medium"><CrumbLabel crumb={crumb} /></span>
                 ) : isNavigable ? (
@@ -224,13 +223,14 @@ export const RouteBreadcrumbs = () => {
                 )}
               </BreadcrumbItem>
               {!isLast && (
-                <BreadcrumbSeparator className="hidden md:block">
+                <BreadcrumbSeparator className={index === backIndex ? "" : "hidden md:block"}>
                   <ChevronRight className="h-4 w-4" />
                 </BreadcrumbSeparator>
               )}
             </div>
           )
-        })}
+          })
+        })()}
       </BreadcrumbList>
     </Breadcrumb>
   )

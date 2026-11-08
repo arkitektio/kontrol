@@ -1,3 +1,4 @@
+import { absoluteTime } from "@/lib/time"
 import { Link, useParams, useNavigate } from "react-router-dom"
 import { useGetHubQuery, HubsDocument } from "@/graphql/queries/hub.generated"
 import { useDeleteHubMutation, useUpdateHubMutation } from "@/graphql/mutations/hub.generated"
@@ -98,8 +99,8 @@ export default function HubOverview() {
   return (
     <div className="space-y-6">
       {/* Hub header — only on the overview page */}
-      <div className="flex flex-row items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-row flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted">
             <Layers className="h-7 w-7" />
           </div>
@@ -223,7 +224,7 @@ function HubHealthCard({ hub }: { hub: HubHealth }) {
           <Activity className="h-4 w-4" />
           Health
         </CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-xs" title={hub.lastSeenAt ? absoluteTime(hub.lastSeenAt) : undefined}>
           {hub.lastSeenAt
             ? `Last reported ${formatDistanceToNow(new Date(hub.lastSeenAt), { addSuffix: true })}${hub.version ? ` · version ${hub.version}` : ""}`
             : "This hub has not reported its health yet. A running hub server reports once a minute; this page updates on its own."}

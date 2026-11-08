@@ -8,7 +8,7 @@ import { ConfigureCardSkeleton } from "@/components/skeletons"
 import { Skeleton } from "@/components/ui/skeleton"
 import { QueryError } from "@/components/status"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -68,12 +68,16 @@ export function MeshConfigurePage() {
   // The bar the backend enforces on acceptMeshDeviceCode: owner or `admin` role.
   const mayAddMachine = Boolean(targetOrganization?.amIAdmin);
 
-  // Pre-fill the machine name with the value the machine suggested.
+  // Pre-fill the machine name with the value the machine suggested — once per
+  // request, so clearing the field to retype it doesn't put the suggestion back.
+  const prefilledFor = useRef<string | null>(null);
   useEffect(() => {
-    if (meshDeviceCode?.requestedMachineName && !machineName) {
+    if (!meshDeviceCode || prefilledFor.current === meshDeviceCode.id) return;
+    prefilledFor.current = meshDeviceCode.id;
+    if (meshDeviceCode.requestedMachineName) {
       setValue("machineName", meshDeviceCode.requestedMachineName);
     }
-  }, [meshDeviceCode, machineName, setValue]);
+  }, [meshDeviceCode, setValue]);
 
   if (!code) return null;
 
@@ -93,6 +97,16 @@ export function MeshConfigurePage() {
       <div className="flex flex-col items-center justify-center gap-1 py-16 text-center">
         <p className="text-sm font-medium">This authorization link is invalid or has expired.</p>
         <p className="text-sm text-muted-foreground">Start joining the mesh again on the machine to get a new link.</p>
+      </div>
+    );
+  }
+
+  // Declined earlier (here or in another tab): accepting is no longer possible.
+  if (meshDeviceCode.denied && !submitted) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-1 py-16 text-center">
+        <p className="text-sm font-medium">This request was declined.</p>
+        <p className="text-sm text-muted-foreground">Start joining the mesh again on the machine if you want to add it after all.</p>
       </div>
     );
   }
@@ -176,6 +190,9 @@ export function MeshConfigurePage() {
                   {meshDeviceCode.requestedMachineName || "A new machine"}
                 </p>
                 <p className="text-muted-foreground text-sm">Wants to join your mesh</p>
+                <p className="text-muted-foreground mt-1 text-xs" title="Check that it matches the code the machine printed">
+                  Code <span className="font-mono text-foreground">{meshDeviceCode.code}</span>
+                </p>
               </div>
             </div>
           </div>

@@ -92,7 +92,7 @@ export default function AuthKey() {
                 <Key className="h-8 w-8" />
             </div>
             <div className="space-y-1">
-              <CardTitle className="text-2xl flex items-center gap-2">
+              <CardTitle className="text-2xl flex flex-wrap items-center gap-2 break-all">
                 {authKey.key ?? "Hidden key"}
                 {authKey.ephemeral && (
                     <Badge variant="outline">Ephemeral</Badge>

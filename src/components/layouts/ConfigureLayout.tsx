@@ -6,6 +6,18 @@ import { useMeQuery } from "@/graphql/queries/me.generated"
 import { useUser } from "@/auth"
 import { logout } from "@/lib/allauth"
 import { ErrorBoundary } from "../ErrorBoundary"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
+
+/** Tab titles for the task flows, so a background tab says what is waiting. */
+const TITLES: [prefix: string, title: string][] = [
+    ["/configure/", "Approve app"],
+    ["/hubconfigure/", "Connect hub"],
+    ["/meshconfigure/", "Add machine to mesh"],
+    ["/invite/", "Invitation"],
+    ["/authorize", "Authorize"],
+    ["/deeplink/", "Open link"],
+    ["/smartlink/", "Open link"],
+]
 
 // Focused layout for redirect-driven task flows (device configure, OAuth
 // authorize, invite redeem). No top bar — just a bold personal greeting over the
@@ -18,6 +30,7 @@ export function ConfigureLayout() {
     const navigate = useNavigate()
 
     const username = data?.me?.username
+    useDocumentTitle(TITLES.find(([prefix]) => location.pathname.startsWith(prefix))?.[1] ?? null)
 
     // "Change user" = drop this session and return to sign-in pointed back at the
     // page we're on, so re-authenticating as someone else lands right back here.
