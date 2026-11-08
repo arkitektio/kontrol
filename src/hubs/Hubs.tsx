@@ -116,7 +116,7 @@ export default function Hubs() {
               <span>Prefer to run your own infrastructure?</span>
             </div>
             <Button variant="ghost" size="sm" asChild className="text-xs h-7 px-3 flex-shrink-0">
-              <a href="https://arkitekt.live/docs/hosting" target="_blank" rel="noopener noreferrer">
+              <a href="https://arkitekt.live/docs/tutorials/first-hub" target="_blank" rel="noopener noreferrer">
                 Self-hosting guide <ArrowRight className="ml-1 w-3 h-3" />
               </a>
             </Button>

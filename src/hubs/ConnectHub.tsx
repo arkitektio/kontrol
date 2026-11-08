@@ -12,8 +12,9 @@ import { Plug, Boxes, Terminal, ArrowRight, ShieldAlert } from "lucide-react"
  * Onboarding page shown when an organization has no hub yet. A hub is a
  * pre-configured stack of Arkitekt services and clients; this page explains the
  * two ways to connect one — deploy a managed stack via a Kommunity Partner, or
- * connect a self-hosted Arkitekt server with the `arkitekt-server hub connect`
- * CLI. Linked from the sidebar call-to-action.
+ * self-host one with Konstruktor (`konstruktor hub create`), whose device-code
+ * authorization step attaches the hub to an organization. Linked from the
+ * sidebar call-to-action.
  *
  * Both routes end in an admin-only mutation, so a plain member is told up front to
  * ask an admin. The page (and the call-to-action leading here) stays visible for
@@ -109,28 +110,34 @@ export default function ConnectHub() {
                 <Terminal className="h-5 w-5" />
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-lg">Connect your own server</CardTitle>
-                <CardDescription>Already self-hosting? Connect it from the command line.</CardDescription>
+                <CardTitle className="text-lg">Run your own hub</CardTitle>
+                <CardDescription>Self-host a hub on your own machine with Konstruktor.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              If you run your own Arkitekt server, register it as a hub for this organization with the{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">arkitekt-server</code> CLI. It
-              walks you through authenticating and links the server's services and clients into this
-              organization.
+              Konstruktor installs and manages a hub on any machine with Docker. It comes as a desktop app
+              and as the{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">konstruktor</code> command
+              line tool. To create a hub from a terminal:
             </p>
 
-            <Command>arkitekt-server hub connect</Command>
+            <Command>konstruktor hub create ~/MyHubs/lab-hub</Command>
             <p className="text-xs text-muted-foreground">
-              The command prints a link. Open it here, approve the hub, and it appears under Hubs.
+              Konstruktor shows a code and a link. Open the link, sign in, pick this organization and accept.
+              The hub then shows up under Hubs.
             </p>
 
-            <div className="mt-auto">
+            <div className="mt-auto flex flex-wrap gap-2">
               <Button variant="outline" asChild>
-                <a href="https://arkitekt.live/docs/hosting" target="_blank" rel="noopener noreferrer">
-                  Read the documentation <ArrowRight className="ml-1 h-4 w-4" />
+                <a href="https://arkitekt.live/docs/tutorials/first-hub" target="_blank" rel="noopener noreferrer">
+                  Install your first hub <ArrowRight className="ml-1 h-4 w-4" />
+                </a>
+              </Button>
+              <Button variant="ghost" asChild>
+                <a href="https://arkitekt.live/docs/guides/install-cli" target="_blank" rel="noopener noreferrer">
+                  Command line guide
                 </a>
               </Button>
             </div>
