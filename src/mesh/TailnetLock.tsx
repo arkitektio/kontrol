@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { useLayersQuery } from "@/graphql/queries/layer.generated"
 import { useTailnetLockQuery } from "@/graphql/queries/tailnet_lock.generated"
 import {
@@ -15,17 +15,7 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 import { ListPageSkeleton } from "@/components/skeletons"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../components/ui/alert-dialog"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 import { ShieldCheck, AlertTriangle, Circle, CircleCheck } from "lucide-react"
 import { Command } from "../components/Command"
 import { AdminOnly } from "../components/AdminOnly"
@@ -78,6 +68,7 @@ function TailnetLockDetail({ meshId, orgId }: { meshId: string; orgId?: string }
   const refetch = { refetchQueries: ["TailnetLock"] }
   const [enable, { loading: enabling }] = useEnableTailnetLockMutation(refetch)
   const [disable, { loading: disabling }] = useDisableTailnetLockMutation(refetch)
+  const [confirmRevoke, setConfirmRevoke] = useState(false)
 
   if (loading) return <ListPageSkeleton columns={2} count={4} />
   if (error) return <QueryError error={error} resource="tailnet lock" />
@@ -103,6 +94,7 @@ function TailnetLockDetail({ meshId, orgId }: { meshId: string; orgId?: string }
       // The most likely failure is ionscale refusing while the authority is
       // still active; toastError passes that deliberate message through.
       toastError(e, "Could not revoke the capability")
+      return false
     }
   }
 
@@ -160,28 +152,26 @@ function TailnetLockDetail({ meshId, orgId }: { meshId: string; orgId?: string }
             action={
               <AdminOnly orgId={orgId} note="Only organization admins can change this.">
                 {lock.capabilityEnabled ? (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={disabling}>
-                      {disabling ? "Revoking..." : "Revoke"}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Revoke the tailnet-lock capability?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Machines on this mesh will no longer be able to set up a key authority.
-                        {lock.authorityActive
-                          ? " This mesh currently has an active authority, so the control plane will refuse — shut the authority down from a machine first with `tailscale lock disable`."
-                          : ""}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDisable}>Revoke</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <>
+                  <Button variant="outline" size="sm" disabled={disabling} onClick={() => setConfirmRevoke(true)}>
+                    {disabling ? "Revoking..." : "Revoke"}
+                  </Button>
+                  <ConfirmActionDialog
+                    open={confirmRevoke}
+                    onOpenChange={setConfirmRevoke}
+                    title="Revoke the tailnet-lock capability?"
+                    description={
+                      "Machines on this mesh will no longer be able to set up a key authority." +
+                      (lock.authorityActive
+                        ? " This mesh currently has an active authority, so the control plane will refuse — shut the authority down from a machine first with `tailscale lock disable`."
+                        : "")
+                    }
+                    confirmLabel="Revoke"
+                    pendingLabel="Revoking…"
+                    destructive
+                    onConfirm={handleDisable}
+                  />
+                </>
               ) : (
                 <Button size="sm" onClick={handleEnable} disabled={enabling}>
                   {enabling ? "Granting..." : "Grant capability"}

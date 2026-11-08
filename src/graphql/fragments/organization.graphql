@@ -26,6 +26,10 @@ fragment Organization on ManagementOrganization {
   }
   memberships {
     id
+    isScoped
+    collaborationGrants {
+      id
+    }
     roles {
       identifier
     }

@@ -77,7 +77,9 @@ export const CreateInviteDialog = ({
   availableRoles,
   roleSets = [],
 }: CreateInviteDialogProps) => {
-  const [createdInviteToken, setCreatedInviteToken] = useState<string | null>(null);
+  // The server's own link (lok's KONTROL_FRONTEND_URL), not this tab's origin, so it
+  // matches what the invite pages show even behind a proxy.
+  const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
 
@@ -105,15 +107,15 @@ export const CreateInviteDialog = ({
         },
       },
     }).then((res) => {
-      if (res.data?.createInvite?.token) {
-        setCreatedInviteToken(res.data.createInvite.token);
+      if (res.data?.createInvite?.inviteUrl) {
+        setCreatedInviteUrl(res.data.createInvite.inviteUrl);
       }
     }).catch((e) => toastError(e, "Couldn't create the invite"));
   };
 
   const handleCopy = async () => {
-    if (createdInviteToken) {
-        const url = `${window.location.origin}/invite/${createdInviteToken}`;
+    if (createdInviteUrl) {
+        const url = createdInviteUrl;
         // navigator.clipboard requires a secure context (https/localhost).
         if (!navigator.clipboard) {
             toast.error("Clipboard is unavailable in this context");
@@ -130,7 +132,7 @@ export const CreateInviteDialog = ({
   };
 
   const handleClose = () => {
-    setCreatedInviteToken(null);
+    setCreatedInviteUrl(null);
     form.reset();
     onOpenChange(false);
   }
@@ -139,21 +141,21 @@ export const CreateInviteDialog = ({
     <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{createdInviteToken ? "Invite Created" : "Create Invite"}</DialogTitle>
+          <DialogTitle>{createdInviteUrl ? "Invite Created" : "Create Invite"}</DialogTitle>
           <DialogDescription>
-            {createdInviteToken 
+            {createdInviteUrl 
                 ? "Share this link with the person you want to invite." 
                 : "Create a new invite link for this organization."}
           </DialogDescription>
         </DialogHeader>
 
-        {createdInviteToken ? (
+        {createdInviteUrl ? (
             <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                     <div className="grid flex-1 gap-2">
                         <Input
                             readOnly
-                            value={`${window.location.origin}/invite/${createdInviteToken}`}
+                            value={createdInviteUrl}
                         />
                     </div>
                     <Button type="button" size="sm" className="px-3" aria-label="Copy invite link" onClick={handleCopy}>

@@ -3,7 +3,8 @@ import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
-import { absoluteTime, timeAgo } from "@/lib/time"
+import { absoluteTime } from "@/lib/time"
+import { cancelInviteDescription, collaborationSummary, inviteExpiry } from "./inviteText"
 import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty"
 import { useCancelInviteMutation } from "@/graphql/mutations/invite.generated"
@@ -27,12 +28,7 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { SettingsStackSkeleton } from "@/components/skeletons"
 
-/** "Expires in 2 days" / "Expired 3 hours ago" / "No expiry". */
-function inviteExpiry(expiresAt?: string | null): string {
-  if (!expiresAt) return "No expiry"
-  const expired = new Date(expiresAt).getTime() < Date.now()
-  return `${expired ? "Expired" : "Expires"} ${timeAgo(expiresAt)}`
-}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function Invites() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -88,8 +84,12 @@ export default function Invites() {
     }
   }
 
-  const handleCopy = (token: string) => {
-    const url = `${window.location.origin}/invite/${token}`
+  const handleCopy = (token: string, url: string) => {
+    // navigator.clipboard requires a secure context (https/localhost).
+    if (!navigator.clipboard) {
+      toast.error("Clipboard is unavailable in this context")
+      return
+    }
     navigator.clipboard.writeText(url).then(
       () => {
         setCopied(token)
@@ -100,29 +100,45 @@ export default function Invites() {
     )
   }
 
-  const handleSendEmail = (token: string) => {
-    setSelectedInvite(token)
+  const handleSendEmail = (inviteId: string) => {
+    setSelectedInvite(inviteId)
     setSendEmailOpen(true)
   }
 
-  const handleSendEmailSubmit = () => {
-    if (!selectedInvite || !recipientEmail) {
-      toast.error("Please enter a valid email address")
-      return
-    }
-
-    const inviteUrl = `${window.location.origin}/invite/${selectedInvite}`
-    const subject = `You're invited to join ${orgName}`
-    const body = `You've been invited to join ${orgName}.\n\nClick the link below to accept:\n${inviteUrl}`
-    
-    // Open default email client
-    window.location.href = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    
-    toast.success("Opening your mail app")
+  const closeEmailDialog = () => {
     setSendEmailOpen(false)
     setRecipientEmail("")
     setSelectedInvite(null)
   }
+
+  const emailInvite = org.invites?.find((i) => i.id === selectedInvite)
+  const emailValid = EMAIL_RE.test(recipientEmail.trim())
+
+  const handleSendEmailSubmit = () => {
+    if (!emailInvite || !emailValid) {
+      toast.error("Enter a valid email address")
+      return
+    }
+
+    const inviteUrl = emailInvite.inviteUrl
+    const [subject, body] = emailInvite.collaborations
+      ? [
+          `Let's collaborate in ${orgName}`,
+          `I'd like to share some of my work in ${orgName} with you. You join as a guest and see only what I shared; you don't become a member.\n\nOpen the link below to review and accept:\n${inviteUrl}`,
+        ]
+      : [
+          `You're invited to join ${orgName}`,
+          `You've been invited to join ${orgName}.\n\nClick the link below to accept:\n${inviteUrl}`,
+        ]
+
+    // Open default email client
+    window.location.href = `mailto:${recipientEmail.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+
+    toast.success("Opening your mail app")
+    closeEmailDialog()
+  }
+
+  const cancelTargetInvite = org.invites?.find((i) => i.id === cancelTarget)
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">
@@ -135,9 +151,9 @@ export default function Invites() {
 
       <Card>
         <CardHeader>
-            <CardTitle>Active Invites</CardTitle>
+            <CardTitle>Invite links</CardTitle>
             <CardDescription>
-                Pending invitations to join the organization
+                Every invite of the organization, pending or not. Only pending links can still be accepted.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -186,15 +202,11 @@ export default function Invites() {
                       </span>
                     </div>
                     <div className="text-sm text-muted-foreground font-mono break-all">
-                      {`${window.location.origin}/invite/${i.token}`}
+                      {i.inviteUrl}
                     </div>
                     {i.collaborations && (
                       <div className="space-y-1 text-sm">
-                        <p className="text-muted-foreground">
-                          Shares {i.collaborations.length} {i.collaborations.length === 1 ? "collaboration" : "collaborations"}, no membership ·{" "}
-                          accepted {i.uses}
-                          {i.maxUses != null ? ` of ${i.maxUses}` : ""} {i.uses === 1 ? "time" : "times"}
-                        </p>
+                        <p className="text-muted-foreground">{collaborationSummary(i)}</p>
                         <div className="flex flex-wrap gap-1">
                           {i.collaborations.map((c) => (
                             <code
@@ -214,7 +226,7 @@ export default function Invites() {
                       <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleCopy(i.token)}
+                          onClick={() => handleCopy(i.token, i.inviteUrl)}
                       >
                           {copied === i.token ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
                           Copy
@@ -222,7 +234,7 @@ export default function Invites() {
                       <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleSendEmail(i.token)}
+                          onClick={() => handleSendEmail(i.id)}
                       >
                           <Mail className="w-4 h-4 mr-2" />
                           Email
@@ -251,7 +263,7 @@ export default function Invites() {
                       )}
                     </div>
                   
-                  {i.acceptedBy && (
+                  {i.acceptedBy && !i.collaborations && (
                       <div className="text-sm text-muted-foreground pt-2 border-t">
                         Accepted by <span className="font-medium text-foreground">{i.acceptedBy.username}</span>
                       </div>
@@ -268,7 +280,7 @@ export default function Invites() {
         open={cancelTarget !== null}
         onOpenChange={(open) => !open && setCancelTarget(null)}
         title="Cancel this invite?"
-        description="The invite link will stop working. People who already joined keep their membership."
+        description={cancelInviteDescription(!!cancelTargetInvite?.collaborations)}
         confirmLabel="Cancel invite"
         pendingLabel="Canceling..."
         destructive
@@ -286,7 +298,7 @@ export default function Invites() {
         onConfirm={() => takeBackTarget && handleTakeBack(takeBackTarget)}
       />
 
-      <Dialog open={sendEmailOpen} onOpenChange={setSendEmailOpen}>
+      <Dialog open={sendEmailOpen} onOpenChange={(open) => (open ? setSendEmailOpen(true) : closeEmailDialog())}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Email this invite</DialogTitle>
@@ -304,6 +316,7 @@ export default function Invites() {
                 placeholder="colleague@example.com"
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
+                aria-invalid={recipientEmail.trim() !== "" && !emailValid}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleSendEmailSubmit()
@@ -313,14 +326,10 @@ export default function Invites() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setSendEmailOpen(false)
-              setRecipientEmail("")
-              setSelectedInvite(null)
-            }}>
+            <Button variant="outline" onClick={closeEmailDialog}>
               Cancel
             </Button>
-            <Button onClick={handleSendEmailSubmit}>
+            <Button onClick={handleSendEmailSubmit} disabled={!emailValid}>
               Open in your mail app
             </Button>
           </DialogFooter>

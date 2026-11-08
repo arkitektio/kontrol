@@ -11,7 +11,8 @@ import { IssueMandateKeyDialog } from "../../components/IssueMandateKeyDialog"
 import { Card, CardHeader, CardDescription } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
-import { timeAgo } from "@/lib/time"
+import { absoluteTime, timeAgo } from "@/lib/time"
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog"
 import { toastError } from "@/lib/errors"
 import { QueryError } from "@/components/status"
 import { ListPageSkeleton } from "@/components/skeletons"
@@ -42,6 +43,7 @@ function describe(mandate: ListMandateFragment): string {
 export default function HubMandates() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [revokeTarget, setRevokeTarget] = useState<ListMandateFragment | null>(null)
 
   const { data, loading, error, refetch } = useMandatesQuery({
     variables: { filters: { organization: orgId, hub: name }, pagination: { limit: 250 } },
@@ -58,6 +60,7 @@ export default function HubMandates() {
       refetch()
     } catch (e) {
       toastError(e, "Couldn't revoke the mandate")
+      return false
     }
   }
 
@@ -103,16 +106,20 @@ export default function HubMandates() {
                   <div>
                     {mandate.clients.length} device{mandate.clients.length === 1 ? "" : "s"}
                     {mandate.maxClients ? ` of ${mandate.maxClients}` : ""}
-                    {mandate.lastUsedAt ? ` · used ${timeAgo(mandate.lastUsedAt)}` : " · never used"}
+                    {mandate.lastUsedAt ? (
+                      <span title={absoluteTime(mandate.lastUsedAt)}> · used {timeAgo(mandate.lastUsedAt)}</span>
+                    ) : (
+                      " · never used"
+                    )}
                   </div>
-                  <div>
+                  <div title={mandate.expiresAt ? absoluteTime(mandate.expiresAt) : undefined}>
                     {mandate.expiresAt
                       ? `${!mandate.isLive && !mandate.revocationReason ? "Expired" : "Expires"} ${timeAgo(mandate.expiresAt)}`
                       : "No expiry"}
                   </div>
                 </CardDescription>
                 {mandate.isLive ? (
-                  <Button size="sm" variant="ghost" className="justify-start px-0 text-destructive" onClick={() => handleRevoke(mandate)}>
+                  <Button size="sm" variant="ghost" className="justify-start px-0 text-destructive" onClick={() => setRevokeTarget(mandate)}>
                     Revoke
                   </Button>
                 ) : null}
@@ -121,6 +128,25 @@ export default function HubMandates() {
           ))}
         </div>
       )}
+
+      <ConfirmActionDialog
+        open={!!revokeTarget}
+        onOpenChange={(open) => !open && setRevokeTarget(null)}
+        title="Revoke this mandate key?"
+        description={
+          revokeTarget
+            ? `Apps logged in with "${revokeTarget.label || describe(revokeTarget)}" are logged out of this hub` +
+              (revokeTarget.clients.length
+                ? ` (${revokeTarget.clients.length} device${revokeTarget.clients.length === 1 ? "" : "s"})`
+                : "") +
+              ", and keys issued under it stop working too. This can't be undone; issue a new key to let them back in."
+            : undefined
+        }
+        confirmLabel="Revoke"
+        pendingLabel="Revoking…"
+        destructive
+        onConfirm={() => (revokeTarget ? handleRevoke(revokeTarget) : undefined)}
+      />
 
       <IssueMandateKeyDialog open={dialogOpen} onOpenChange={setDialogOpen} hubId={name!} onIssued={() => refetch()} />
     </section>

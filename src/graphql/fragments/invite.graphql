@@ -131,4 +131,12 @@ fragment DetailInvite on ManagementInvite {
   inviteUrl
   createdAt
   expiresAt
+  collaborations {
+    instance
+    collaboration
+    roles
+  }
+  uses
+  maxUses
+  mesh
 }

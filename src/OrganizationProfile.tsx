@@ -10,7 +10,7 @@ import { Input } from "./components/ui/input"
 import { Label } from "./components/ui/label"
 import { CreateInviteDialog } from "./components/CreateInviteDialog"
 import { useMediaUpload } from "./hooks/use-upload"
-import { timeAgo } from "./lib/time"
+import { cancelInviteDescription, collaborationSummary, inviteExpiry } from "./invite/inviteText"
 import { Pen, Camera, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
@@ -21,11 +21,6 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 import { ProfilePageSkeleton } from "@/components/skeletons"
 
 /** "Expires in 2 days" / "Expired 3 hours ago" / "No expiry". */
-function inviteExpiry(expiresAt?: string | null): string {
-  if (!expiresAt) return "No expiry"
-  const expired = new Date(expiresAt).getTime() < Date.now()
-  return `${expired ? "Expired" : "Expires"} ${timeAgo(expiresAt)}`
-}
 
 export default function OrganizationProfile() {
   const { orgId } = useParams<{ orgId: string }>()
@@ -56,6 +51,10 @@ export default function OrganizationProfile() {
 
   const org = data.organization
   const profile = org.profile
+  // Guests (scoped memberships) hold only shared collaborations; they are not members.
+  const fullMembers = org.memberships.filter((m) => !m.isScoped)
+  const guestCount = org.memberships.length - fullMembers.length
+  const pendingInvites = (org.invites ?? []).filter((i) => i.status === "PENDING")
   // `name` is optional on the backend; the handle is always there.
   const displayName = org.name || org.slug
   // lok: the profile is owner/admin-editable, but only the owner may create invites.
@@ -288,7 +287,10 @@ export default function OrganizationProfile() {
                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                         @{org.slug}
                         <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                        <span>{org.memberships.length} {org.memberships.length === 1 ? "member" : "members"}</span>
+                        <span>
+                            {fullMembers.length} {fullMembers.length === 1 ? "member" : "members"}
+                            {guestCount > 0 && ` · ${guestCount} ${guestCount === 1 ? "guest" : "guests"}`}
+                        </span>
                     </p>
                 </div>
             )}
@@ -328,7 +330,15 @@ export default function OrganizationProfile() {
                                         {membership.user.email}
                                     </div>
                                 </div>
-                                <div className="flex gap-1">
+                                <div className="flex flex-wrap justify-end gap-1">
+                                    {membership.isScoped && (
+                                        <span
+                                            className="text-xs border px-2 py-1 rounded-md text-muted-foreground"
+                                            title="Not a member: only these collaborations are shared with them"
+                                        >
+                                            guest · {membership.collaborationGrants.length} shared
+                                        </span>
+                                    )}
                                     {membership.roles.map(r => (
                                         <span key={r.identifier} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-md">
                                             {r.identifier}
@@ -341,16 +351,17 @@ export default function OrganizationProfile() {
                 </CardContent>
             </Card>
 
-            {(org.invites?.length || 0) > 0 && (
+            {pendingInvites.length > 0 && (
                 <Card>
                     <CardHeader>
-                    <CardTitle>Active Invites</CardTitle>
+                    <CardTitle>Pending invites</CardTitle>
                     <CardDescription>
-                        Pending invitations
+                        Links that can still be accepted.{" "}
+                        <Link to={`/organization/${org.id}/invites`} className="underline">All invites</Link>
                     </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                    {org.invites?.map(i => (
+                    {pendingInvites.map(i => (
                         <div
                         key={i.id}
                         className="p-3 rounded-lg border bg-card text-card-foreground shadow-sm"
@@ -383,11 +394,14 @@ export default function OrganizationProfile() {
                                 )}
                             </div>
                         </div>
+                        {i.collaborations && (
+                            <p className="mb-2 text-xs text-muted-foreground">{collaborationSummary(i)}</p>
+                        )}
                         <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
                             <span>
                                 {inviteExpiry(i.expiresAt)}
                             </span>
-                            {i.acceptedBy && (
+                            {i.acceptedBy && !i.collaborations && (
                             <span>
                                 Accepted by <span className="font-medium">{i.acceptedBy.username}</span>
                             </span>
@@ -406,7 +420,7 @@ export default function OrganizationProfile() {
         open={cancelTarget !== null}
         onOpenChange={(open) => !open && setCancelTarget(null)}
         title="Cancel this invite?"
-        description="The invite link will stop working. People who already joined keep their membership."
+        description={cancelInviteDescription(!!org.invites?.find((i) => i.id === cancelTarget)?.collaborations)}
         confirmLabel="Cancel invite"
         pendingLabel="Canceling..."
         destructive

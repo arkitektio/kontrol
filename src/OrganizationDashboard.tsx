@@ -78,6 +78,7 @@ function SharedWithMe({ membership }: { membership: NonNullable<ReturnType<typeo
             grants={membership.collaborationGrants}
             canRevoke={() => true}
             revokeLabel="Give back"
+            self
             onRevoked={(_, last) => {
               if (last) navigate("/home")
             }}

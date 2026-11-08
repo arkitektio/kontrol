@@ -156,9 +156,13 @@ export default function Membership() {
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-3xl">
                                     <DialogHeader>
-                                        <DialogTitle>Edit Roles</DialogTitle>
+                                        <DialogTitle>
+                                            {membership.isScoped ? `Make ${membership.user?.username} a member` : "Edit Roles"}
+                                        </DialogTitle>
                                         <DialogDescription>
-                                            Select the roles for {membership.user?.username}
+                                            {membership.isScoped
+                                                ? `${membership.user?.username} is a guest who sees only the collaborations shared with them. Saving with at least one role makes them a full member of the organization: they see all of it, with these roles, and their shared collaborations are no longer listed separately.`
+                                                : `Select the roles for ${membership.user?.username}`}
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="grid min-w-0 gap-4 py-2">

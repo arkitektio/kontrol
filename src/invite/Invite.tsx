@@ -10,7 +10,8 @@ import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
 import { absoluteTime, timeAgo } from "@/lib/time"
 import { ConfirmActionDialog } from "../components/ConfirmActionDialog"
-import { Copy, XCircle, Clock } from "lucide-react"
+import { Copy, XCircle, Clock, FolderOpen, Undo2 } from "lucide-react"
+import { cancelInviteDescription, collaborationSummary, inviteExpiry, isInviteExpired } from "./inviteText"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -21,6 +22,7 @@ export default function Invite() {
   const navigate = useNavigate()
   const [cancelInvite] = useCancelInviteMutation()
   const [cancelOpen, setCancelOpen] = useState(false)
+  const [takeBackOpen, setTakeBackOpen] = useState(false)
 
   const { data, loading, error, refetch } = useGetInviteQuery({
     variables: { id: id! },
@@ -55,7 +57,19 @@ export default function Invite() {
     }
   }
 
-  const isExpired = new Date(invite.expiresAt) < new Date()
+  const handleTakeBack = async () => {
+    try {
+      await cancelInvite({ variables: { input: { id: invite.id, revokeShared: true } } })
+      toast.success("Taken back from everyone it was shared with")
+      refetch()
+    } catch (e) {
+      toastError(e, "Couldn't take it back")
+      return false
+    }
+  }
+
+  const isExpired = isInviteExpired(invite.expiresAt)
+  const collaborations = invite.collaborations
 
   const goBack = () => {
       // `idx` is react-router's history position; 0 means this page was opened
@@ -67,6 +81,11 @@ export default function Invite() {
 
   const copyLink = () => {
       if (invite.inviteUrl) {
+          // navigator.clipboard requires a secure context (https/localhost).
+          if (!navigator.clipboard) {
+              toast.error("Clipboard is unavailable in this context")
+              return
+          }
           navigator.clipboard.writeText(invite.inviteUrl).then(
               () => toast.success("Link copied to clipboard"),
               (e) => toastError(e, "Couldn't copy the link"),
@@ -78,14 +97,14 @@ export default function Invite() {
     <div className="container max-w-2xl py-10 space-y-6">
         <div className="flex items-center justify-between">
              <h1 className="text-3xl font-bold tracking-tight">Invite Details</h1>
-             <Badge variant={isPending ? "outline" : isAccepted ? "default" : "destructive"}>
-                {invite.status}
+             <Badge variant={isPending && !isExpired ? "outline" : isAccepted ? "default" : "destructive"}>
+                {isPending && isExpired ? "EXPIRED" : invite.status}
              </Badge>
         </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Organization Invitation</CardTitle>
+          <CardTitle>{collaborations ? "Collaboration invite" : "Organization invitation"}</CardTitle>
           <CardDescription title={absoluteTime(invite.createdAt)}>
             Created {timeAgo(invite.createdAt)}
           </CardDescription>
@@ -97,7 +116,7 @@ export default function Invite() {
                      <AvatarFallback>{orgName.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                     <p className="text-sm text-muted-foreground">Invited to</p>
+                     <p className="text-sm text-muted-foreground">{collaborations ? "Shares from" : "Invited to"}</p>
                     <div className="font-semibold text-lg">{orgName}</div>
                 </div>
             </div>
@@ -114,15 +133,38 @@ export default function Invite() {
                      </div>
                 </div>
                  <div>
-                     <p className="text-sm font-medium text-muted-foreground mb-1">{isExpired ? "Expired" : "Expires"}</p>
+                     <p className="text-sm font-medium text-muted-foreground mb-1">Expiry</p>
                      <div className="flex items-center gap-2">
                          <Clock className="w-4 h-4 text-muted-foreground" />
-                         <span title={absoluteTime(invite.expiresAt)}>{timeAgo(invite.expiresAt)}</span>
+                         <span title={invite.expiresAt ? absoluteTime(invite.expiresAt) : undefined}>{inviteExpiry(invite.expiresAt)}</span>
                      </div>
                 </div>
             </div>
             
-            {invite.acceptedBy && (
+            {collaborations && (
+                <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">What it shares</p>
+                    <p className="text-sm text-muted-foreground">
+                        {collaborationSummary(invite)}.{" "}
+                        {invite.mesh
+                            ? "Guests' apps may join the mesh, reaching only the hubs these collaborations run on."
+                            : "Guests' apps don't join the mesh."}
+                    </p>
+                    <ul className="space-y-2">
+                        {collaborations.map((c) => (
+                            <li key={`${c.instance}/${c.collaboration}`} className="flex items-center gap-3 rounded-md border p-2">
+                                <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="flex-1 truncate font-mono text-xs" title={`Collaboration ${c.collaboration} of service instance ${c.instance}`}>
+                                    {c.instance}/{c.collaboration}
+                                </span>
+                                <span className="text-xs text-muted-foreground">{c.roles.length ? c.roles.join(", ") : "view only"}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {invite.acceptedBy && !collaborations && (
                  <div>
                      <p className="text-sm font-medium text-muted-foreground mb-1">Accepted By</p>
                      <div className="flex items-center gap-2">
@@ -151,7 +193,9 @@ export default function Invite() {
 
             {invite.createdMemberships && invite.createdMemberships.length > 0 && (
                 <div className="space-y-3">
-                    <p className="text-sm font-medium text-muted-foreground">Created Memberships ({invite.createdMemberships.length})</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                        {collaborations ? "Guests" : "Created Memberships"} ({invite.createdMemberships.length})
+                    </p>
                     <div className="space-y-2">
                         {invite.createdMemberships.map((membership) => (
                             <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
@@ -181,12 +225,20 @@ export default function Invite() {
         </CardContent>
         <CardFooter className="justify-between border-t pt-6">
             <Button variant="ghost" onClick={goBack}>Back</Button>
-            {isPending && mayCancel && (
-                <Button variant="destructive" onClick={() => setCancelOpen(true)}>
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Cancel Invite
-                </Button>
-            )}
+            <div className="flex flex-wrap gap-2">
+                {mayCancel && collaborations && invite.uses > 0 && (
+                    <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setTakeBackOpen(true)}>
+                        <Undo2 className="w-4 h-4 mr-2" />
+                        Take back
+                    </Button>
+                )}
+                {isPending && mayCancel && (
+                    <Button variant="destructive" onClick={() => setCancelOpen(true)}>
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Cancel Invite
+                    </Button>
+                )}
+            </div>
         </CardFooter>
       </Card>
 
@@ -194,11 +246,22 @@ export default function Invite() {
         open={cancelOpen}
         onOpenChange={setCancelOpen}
         title="Cancel this invite?"
-        description="The invite link will stop working. People who already joined keep their membership."
+        description={cancelInviteDescription(!!collaborations)}
         confirmLabel="Cancel invite"
         pendingLabel="Canceling..."
         destructive
         onConfirm={handleCancel}
+      />
+
+      <ConfirmActionDialog
+        open={takeBackOpen}
+        onOpenChange={setTakeBackOpen}
+        title="Take back what this invite shared?"
+        description="The link stops working, and everyone who accepted it loses the collaborations it shared. Anyone left with none is removed from the organization."
+        confirmLabel="Take back"
+        pendingLabel="Taking back..."
+        destructive
+        onConfirm={handleTakeBack}
       />
     </div>
   )
