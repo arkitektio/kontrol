@@ -49,9 +49,24 @@ fragment HubManifest on ManagementHubManifest {
   }
   clients {
     manifest {
-      ...Manifest
+      ...HubClientManifest
     }
     description
     identifier
+  }
+}
+
+# What a hub's own app asks for: the approval page resolves its scopes against
+# the hub's services and the organization before anything is accepted.
+fragment HubClientManifest on ManagementStagingManifest {
+  identifier
+  version
+  description
+  scopes
+  requirements {
+    key
+    service
+    optional
+    description
   }
 }

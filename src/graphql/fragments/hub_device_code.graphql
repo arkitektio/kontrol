@@ -1,6 +1,7 @@
 fragment HubDeviceCode on ManagementHubDeviceCode {
   id
-  code 
+  code
+  expiresAt
   manifest {
     ...HubManifest
   }

@@ -1,9 +1,42 @@
 import { useGrantScopesQuery, type GrantScopesQuery } from "@/graphql/queries/grant_scopes.generated";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { serviceLabel, type StagedScope } from "@/lib/scopes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type GrantScope = GrantScopesQuery["scopes"][number];
+
+
+/** An offered or staged scope, in the one shape the list renders. */
+interface Resolved {
+  identifier: string;
+  description: string | null;
+  isAllScope: boolean;
+  /** "" for lok's own and the OIDC scopes. */
+  serviceId: string;
+  serviceName: string | null;
+}
+
+const fromOffered = (scope: GrantScope): Resolved => {
+  const service = scope.creatingInstance?.release.service;
+  return {
+    identifier: scope.identifier,
+    description: scope.description,
+    isAllScope: scope.isAllScope,
+    serviceId: service?.identifier ?? "",
+    serviceName: service?.name ?? null,
+  };
+};
+
+const fromStaged = (scope: StagedScope): Resolved => ({
+  identifier: scope.key,
+  description: scope.description ?? null,
+  isAllScope: Boolean(scope.isAll),
+  serviceId: scope.service,
+  serviceName: scope.service,
+});
+
 
 // lok makes the OIDC scopes in every organization but gives them no description
 // (the server then echoes the key back), so say here what they hand an app.
@@ -15,23 +48,17 @@ const OIDC_DESCRIPTIONS: Record<string, string> = {
   roles: "See which roles you hold in the organization.",
 };
 
-const describe = (scope: GrantScope | undefined, key: string) => {
+const describe = (scope: Resolved | undefined, key: string) => {
   if (scope && scope.description && scope.description !== scope.identifier) return scope.description;
   return OIDC_DESCRIPTIONS[key] ?? null;
 };
 
-// Services often register with their reverse-DNS identifier as the name
-// (`live.arkitekt.mikro`): show the last segment, capitalized.
-const serviceLabel = (name: string) => {
-  const last = name.includes(".") ? name.split(".").pop()! : name;
-  return last.charAt(0).toUpperCase() + last.slice(1);
-};
 
 interface Group {
   name: string;
   /** The requested all-scope of this service, if the app asked for one: it covers the rest. */
-  all: GrantScope | null;
-  scopes: { key: string; scope: GrantScope }[];
+  all: Resolved | null;
+  scopes: { key: string; scope: Resolved }[];
 }
 
 /**
@@ -44,11 +71,17 @@ export function RequestedScopes({
   keys,
   organizationId,
   newKeys,
+  staged,
+  missingNote,
 }: {
   keys: string[];
   organizationId: string | null | undefined;
   /** Keys the app didn't hold before (a re-authorization): flagged as new. */
   newKeys?: Set<string>;
+  /** Scopes accepting will create (a hub's services): resolved like offered ones. */
+  staged?: StagedScope[];
+  /** Replaces the default "not granted" line for keys nothing resolves. */
+  missingNote?: (missing: string[]) => ReactNode;
 }) {
   const { data, loading } = useGrantScopesQuery({
     variables: { organization: organizationId ?? "" },
@@ -72,7 +105,9 @@ export function RequestedScopes({
   // organization offers then, so show the keys rather than call them all missing.
   if (offered.length === 0) return <BareKeys keys={unique} newKeys={newKeys} />;
 
-  const byKey = new Map(offered.map((s) => [s.identifier, s]));
+  // What the organization already has wins: a staged scope it already offers is the same scope.
+  const byKey = new Map<string, Resolved>((staged ?? []).map((s) => [s.key, fromStaged(s)]));
+  for (const scope of offered) byKey.set(scope.identifier, fromOffered(scope));
   const groups = new Map<string, Group>();
   const missing: string[] = [];
   for (const key of unique) {
@@ -82,9 +117,8 @@ export function RequestedScopes({
       continue;
     }
     // lok's own and the OIDC scopes have no creating instance.
-    const service = scope.creatingInstance?.release.service;
-    const id = service?.identifier ?? "";
-    const group = groups.get(id) ?? { name: service ? serviceLabel(service.name) : "Lok", all: null, scopes: [] };
+    const id = scope.serviceId;
+    const group = groups.get(id) ?? { name: scope.serviceName ? serviceLabel(scope.serviceName) : "Lok", all: null, scopes: [] };
     if (scope.isAllScope) group.all = scope;
     else group.scopes.push({ key, scope });
     groups.set(id, group);
@@ -118,7 +152,8 @@ export function RequestedScopes({
         </div>
       ))}
 
-      {missing.length > 0 && (
+      {missing.length > 0 && missingNote?.(missing)}
+      {missing.length > 0 && !missingNote && (
         <p className="text-muted-foreground text-xs">
           Not offered in this organization, so not granted: <span className="font-mono">{missing.join(", ")}</span>
         </p>
