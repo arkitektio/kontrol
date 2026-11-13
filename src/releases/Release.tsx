@@ -4,6 +4,7 @@ import { ClientLabel } from "../components/ClientLabel"
 import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Link } from "react-router-dom"
+import { BugReportList } from "../bugreports/BugReportList"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -54,6 +55,7 @@ export default function Release() {
             </div>
         </CardContent>
       </Card>
+      <BugReportList scope={{ release: release.id }} title="Bug reports" hideWhenEmpty />
     </div>
   )
 }

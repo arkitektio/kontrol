@@ -1,0 +1,14 @@
+query BugReports(
+  $filters: ManagementBugReportFilter
+  $pagination: OffsetPaginationInput
+) {
+  bugReports(filters: $filters, pagination: $pagination) {
+    ...ListBugReport
+  }
+}
+
+query DetailBugReport($id: ID!) {
+  bugReport(id: $id) {
+    ...DetailBugReport
+  }
+}

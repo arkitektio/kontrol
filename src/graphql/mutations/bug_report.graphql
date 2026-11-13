@@ -1,0 +1,21 @@
+mutation ResolveBugReport($id: ID!, $note: String) {
+  resolveBugReport(input: { id: $id, note: $note }) {
+    ...DetailBugReport
+  }
+}
+
+mutation UnresolveBugReport($id: ID!) {
+  unresolveBugReport(input: { id: $id }) {
+    ...DetailBugReport
+  }
+}
+
+mutation ForwardBugReport($id: ID!, $url: String, $forwarded: Boolean! = true) {
+  forwardBugReport(input: { id: $id, url: $url, forwarded: $forwarded }) {
+    ...DetailBugReport
+  }
+}
+
+mutation DeleteBugReport($id: ID!) {
+  deleteBugReport(input: { id: $id })
+}

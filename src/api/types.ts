@@ -18,6 +18,8 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
   /** The `ArrayLike` scalasr typsse represents a reference to a store previously created by the user n a datalayer */
   ExtraData: { input: any; output: any; }
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf). */
+  JSON: { input: any; output: any; }
   /** The Service identifier is a unique identifier for a service. It is used to identify the service in the database and in the code. We encourage you to use the reverse domain name notation. E.g. `com.example.myservice` */
   ServiceIdentifier: { input: any; output: any; }
   /** The `Version` represents a semver version string */
@@ -231,6 +233,10 @@ export type DeleteAliasInput = {
   id: Scalars['ID']['input'];
 };
 
+export type DeleteBugReportInput = {
+  id: Scalars['ID']['input'];
+};
+
 export type DeleteDeviceGroupInput = {
   id: Scalars['ID']['input'];
 };
@@ -278,6 +284,14 @@ export type DeleteProfileInput = {
 
 export type DeleteRoleSetInput = {
   id: Scalars['ID']['input'];
+};
+
+export type ForwardBugReportInput = {
+  /** False takes the mark back. */
+  forwarded?: Scalars['Boolean']['input'];
+  id: Scalars['ID']['input'];
+  /** The issue the report became, when it is known. */
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** __doc__ */
@@ -343,6 +357,94 @@ export type ManagementAppReleasesArgs = {
 export type ManagementAppOrdering =
   { id: Ordering; name?: never; }
   |  { id?: never; name: Ordering; };
+
+/** A bug a person reported from inside a client, with what the client recorded around it. It belongs to the client it was filed from and remembers that client's release. Owners and admins of an organization see all of its reports; anyone sees the ones they filed. */
+export type ManagementBugReport = {
+  __typename?: 'ManagementBugReport';
+  /** The app the report is about: the app of the release it was filed from. */
+  app?: Maybe<ManagementApp>;
+  /** The version the client says it runs. */
+  appVersion?: Maybe<Scalars['String']['output']>;
+  /** The client the report was filed from. Null once that client is gone. */
+  client?: Maybe<ManagementClient>;
+  /** When it was filed. */
+  createdAt: Scalars['DateTime']['output'];
+  /** What happened, in the reporter's words. */
+  description: Scalars['String']['output'];
+  /** What the client recorded: recent errors, failed requests, steps, console. Its shape is the client's. */
+  diagnostics: Scalars['JSON']['output'];
+  /** What the reporter expected instead. */
+  expected?: Maybe<Scalars['String']['output']>;
+  /** When an admin passed it on to the app's issue tracker. */
+  forwardedAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The admin who passed it on. */
+  forwardedBy?: Maybe<ManagementUser>;
+  /** The issue it became, when the admin recorded it. */
+  forwardedUrl?: Maybe<Scalars['String']['output']>;
+  /** Does the report carry a screenshot? */
+  hasScreenshot: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  /** Has an admin closed this report? */
+  isResolved: Scalars['Boolean']['output'];
+  /** The organization the report was filed in. */
+  organization: ManagementOrganization;
+  /** The operating system the client says it runs on. */
+  platform?: Maybe<Scalars['String']['output']>;
+  /** The release that client ran when the report was filed. */
+  release?: Maybe<ManagementRelease>;
+  /** Who filed it. */
+  reporter?: Maybe<ManagementUser>;
+  /** What the admin noted when closing it. */
+  resolutionNote?: Maybe<Scalars['String']['output']>;
+  /** When an admin closed it; null while it is open. */
+  resolvedAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The admin who closed it. */
+  resolvedBy?: Maybe<ManagementUser>;
+  /** The page the reporter was on. */
+  route?: Maybe<Scalars['String']['output']>;
+  /** The screenshot as a data URL. Kept in the database and served only here, to those who may read the report. Ask for it on one report, not on a list. */
+  screenshot?: Maybe<Scalars['String']['output']>;
+  /** The first line of what the reporter wrote. */
+  title: Scalars['String']['output'];
+};
+
+/**
+ * A bug a person reported from inside a client (Orkestrator's "Report a bug").
+ *
+ * Not a `Report`: that is a client's own configuration report. This is a user
+ * saying something went wrong, with what the client recorded around it.
+ *
+ * It hangs on the client that filed it (taken from the token, never from the
+ * payload), and remembers that client's release at the time, so an
+ * organization can read its reports per client, per release and per app. The
+ * release is kept separately because a client can be deleted or move on to a
+ * newer release, and the report is about the version it was filed from.
+ */
+export type ManagementBugReportFilter = {
+  AND?: InputMaybe<ManagementBugReportFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ManagementBugReportFilter>;
+  OR?: InputMaybe<ManagementBugReportFilter>;
+  /** Reports filed from any release of this app. */
+  app?: InputMaybe<Scalars['ID']['input']>;
+  /** Reports filed from this client. */
+  client?: InputMaybe<Scalars['ID']['input']>;
+  /** True: only reports already passed on to an issue tracker. False: only those that were not. */
+  forwarded?: InputMaybe<Scalars['Boolean']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  organization?: InputMaybe<Scalars['ID']['input']>;
+  /** Reports filed from any client of this release. */
+  release?: InputMaybe<Scalars['ID']['input']>;
+  /** Reports this user filed. */
+  reporter?: InputMaybe<Scalars['ID']['input']>;
+  /** True: only resolved reports. False: only the ones still open. */
+  resolved?: InputMaybe<Scalars['Boolean']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ManagementBugReportOrdering =
+  { createdAt: Ordering; id?: never; }
+  |  { createdAt?: never; id: Ordering; };
 
 /**
  * A client is a way of authenticating users with a release.
@@ -2432,6 +2534,7 @@ export type Mutation = {
   declineMeshDeviceCode: ManagementMeshDeviceCode;
   declineRoleRequest: ManagementRoleRequest;
   deleteAlias: Scalars['ID']['output'];
+  deleteBugReport: Scalars['ID']['output'];
   deleteDevice: Scalars['ID']['output'];
   deleteDeviceGroup: Scalars['ID']['output'];
   deleteHub: Scalars['ID']['output'];
@@ -2445,6 +2548,7 @@ export type Mutation = {
   deleteRoleSet: Scalars['ID']['output'];
   disableTailnetLock: ManagementLayer;
   enableTailnetLock: ManagementLayer;
+  forwardBugReport: ManagementBugReport;
   issueMandateKey: ManagementIssuedMandateKey;
   notifyMember: ManagementNotificationResult;
   /** Check the hub's public aliases from lok now: each must answer a fresh nonce with its instance key's signature to count as verified. */
@@ -2456,6 +2560,7 @@ export type Mutation = {
   /** Ask to become a member of an organization (named by its handle) that the caller is not in. Always answers true. */
   requestMembership: Scalars['Boolean']['output'];
   requestRole: ManagementRoleRequest;
+  resolveBugReport: ManagementBugReport;
   resolveReport: ManagementReport;
   revokeClientSessions: ManagementClient;
   /** Take back one granted collaboration. Taking back someone's last one removes them from the organization. */
@@ -2464,6 +2569,7 @@ export type Mutation = {
   revokeOrganizationSessions: Scalars['Int']['output'];
   setMembershipBrandHue: ManagementMembership;
   setMembershipNotifications: ManagementMembership;
+  unresolveBugReport: ManagementBugReport;
   unresolveReport: ManagementReport;
   updateAlias: ManagementInstanceAlias;
   updateDevice: ManagementDevice;
@@ -2617,6 +2723,11 @@ export type MutationDeleteAliasArgs = {
 };
 
 
+export type MutationDeleteBugReportArgs = {
+  input: DeleteBugReportInput;
+};
+
+
 export type MutationDeleteDeviceArgs = {
   input: DeleteDeviceInput;
 };
@@ -2682,6 +2793,11 @@ export type MutationEnableTailnetLockArgs = {
 };
 
 
+export type MutationForwardBugReportArgs = {
+  input: ForwardBugReportInput;
+};
+
+
 export type MutationIssueMandateKeyArgs = {
   input: IssueMandateKeyInput;
 };
@@ -2727,6 +2843,11 @@ export type MutationRequestRoleArgs = {
 };
 
 
+export type MutationResolveBugReportArgs = {
+  input: ResolveBugReportInput;
+};
+
+
 export type MutationResolveReportArgs = {
   input: ResolveReportInput;
 };
@@ -2759,6 +2880,11 @@ export type MutationSetMembershipBrandHueArgs = {
 
 export type MutationSetMembershipNotificationsArgs = {
   input: SetMembershipNotificationsInput;
+};
+
+
+export type MutationUnresolveBugReportArgs = {
+  input: UnresolveBugReportInput;
 };
 
 
@@ -2885,6 +3011,8 @@ export type Query = {
   _service: _Service;
   app: ManagementApp;
   apps: Array<ManagementApp>;
+  bugReport: ManagementBugReport;
+  bugReports: Array<ManagementBugReport>;
   client: ManagementClient;
   clients: Array<ManagementClient>;
   device: ManagementDevice;
@@ -2953,6 +3081,18 @@ export type QueryAppArgs = {
 export type QueryAppsArgs = {
   filters?: InputMaybe<AppFilter>;
   ordering?: Array<ManagementAppOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryBugReportArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryBugReportsArgs = {
+  filters?: InputMaybe<ManagementBugReportFilter>;
+  ordering?: Array<ManagementBugReportOrdering>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -3308,6 +3448,11 @@ export type RequestRoleInput = {
   role: Scalars['ID']['input'];
 };
 
+export type ResolveBugReportInput = {
+  id: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type ResolveReportInput = {
   id: Scalars['ID']['input'];
   note?: InputMaybe<Scalars['String']['input']>;
@@ -3424,6 +3569,10 @@ export type StrFilterLookup = {
 export type TailnetLockInput = {
   /** The ID of the Ionscale layer (mesh) to change. */
   layerId: Scalars['ID']['input'];
+};
+
+export type UnresolveBugReportInput = {
+  id: Scalars['ID']['input'];
 };
 
 export type UnresolveReportInput = {

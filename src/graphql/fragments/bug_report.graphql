@@ -1,0 +1,62 @@
+fragment ListBugReport on ManagementBugReport {
+  id
+  title
+  route
+  appVersion
+  createdAt
+  isResolved
+  forwardedAt
+  hasScreenshot
+  organization {
+    id
+  }
+  reporter {
+    id
+    username
+  }
+  client {
+    id
+    device {
+      id
+      name
+    }
+  }
+  release {
+    id
+    version
+    app {
+      id
+      identifier
+    }
+  }
+}
+
+# Everything one report carries. The screenshot is a data URL kept in the
+# database: ask for it here, on one report, never on a list.
+fragment DetailBugReport on ManagementBugReport {
+  ...ListBugReport
+  description
+  expected
+  platform
+  diagnostics
+  screenshot
+  resolvedAt
+  resolutionNote
+  resolvedBy {
+    id
+    username
+  }
+  forwardedUrl
+  forwardedBy {
+    id
+    username
+  }
+  client {
+    id
+    issueUrl
+    device {
+      id
+      name
+    }
+  }
+}

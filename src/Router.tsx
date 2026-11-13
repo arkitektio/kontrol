@@ -82,6 +82,8 @@ const Apps = lazyDefault(() => import('./apps/Apps'))
 const Client = lazyDefault(() => import('./clients/Client'))
 const Clients = lazyDefault(() => import('./clients/Clients'))
 const ReportPage = lazyDefault(() => import('./reports/ReportPage'))
+const BugReports = lazyDefault(() => import('./bugreports/BugReports'))
+const BugReport = lazyDefault(() => import('./bugreports/BugReport'))
 const ConfigurePage = lazyNamed(() => import('./device/ConfigurePage'), 'ConfigurePage')
 const Device = lazyDefault(() => import('./devices/Device'))
 const DeviceGroup = lazyDefault(() => import('./devices/DeviceGroup'))
@@ -485,6 +487,14 @@ export function createRoutes() {
                 {
                   path: 'clients/:id/report',
                   element: <AuthenticatedRoute><ReportPage /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'bug-reports',
+                  element: <AuthenticatedRoute><BugReports /></AuthenticatedRoute>,
+                },
+                {
+                  path: 'bug-reports/:id',
+                  element: <AuthenticatedRoute><BugReport /></AuthenticatedRoute>,
                 },
                 {
                   path: 'service-instances',

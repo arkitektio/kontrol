@@ -14,6 +14,7 @@ import { RevokeClientSessionsDialog } from "./RevokeClientSessionsDialog"
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
 import { PriorAccessState } from "@/api/types"
 import { timeAgo } from "@/lib/time"
+import { BugReportList } from "../bugreports/BugReportList"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -175,6 +176,8 @@ export default function Client() {
                         )}
                     </div>
                 </div>
+
+                <BugReportList scope={{ client: client.id }} title="Bug reports" hideWhenEmpty />
             </CardContent>
         </div>
     </div>

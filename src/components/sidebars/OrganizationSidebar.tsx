@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom"
 import { useSidebarHubsQuery } from "@/graphql/queries/sidebar_hubs.generated"
 import { useActiveOrganization } from "@/hooks/useActiveOrganization"
 import { useIsOrgAdmin, useMyOrgMembership } from "@/hooks/useIsOrgAdmin"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, KeyRound, UserCircle, Plug, Tags, AppWindow, Server } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Shield, ShieldCheck, Boxes, Layers, Network, ChevronRight, KeyRound, UserCircle, Plug, Tags, AppWindow, Server, Bug } from "lucide-react"
 
 export function OrganizationSidebar() {
     const location = useLocation()
@@ -84,6 +84,7 @@ export function OrganizationSidebar() {
     const resourceItems: { to: string; label: string; icon: typeof Layers; exact?: boolean; exclude?: string }[] = [
         { to: `${base}/hubs`, label: "Hubs", icon: Layers },
         { to: `${base}/clients`, label: "Clients", icon: AppWindow },
+        { to: `${base}/bug-reports`, label: "Bug Reports", icon: Bug },
         { to: `${base}/service-instances`, label: "Service Instances", icon: Server },
         { to: `${base}/mesh`, label: "Mesh", icon: Network },
         // Device detail pages too, but not the groups pages that live under /devices.

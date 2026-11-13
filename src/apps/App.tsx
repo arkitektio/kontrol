@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom"
+import { BugReportList } from "../bugreports/BugReportList"
 import { useDetailAppQuery } from "@/graphql/queries/app.generated"
 import { Card, CardContent, CardHeader } from "../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
@@ -54,6 +55,7 @@ export default function App() {
             </div>
         </CardContent>
       </Card>
+      <BugReportList scope={{ app: app.id }} title="Bug reports" hideWhenEmpty />
     </div>
   )
 }
