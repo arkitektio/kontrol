@@ -69,6 +69,7 @@ export default function BugReport() {
             {report.title}
             <Badge variant={report.isResolved ? "secondary" : "outline"}>{report.isResolved ? "Resolved" : "Open"}</Badge>
             {report.forwardedAt ? <Badge variant="secondary">Forwarded</Badge> : null}
+            {report.githubIssueState === "closed" ? <Badge variant="secondary">Closed on GitHub</Badge> : null}
           </span>
         }
         description={
@@ -136,8 +137,19 @@ export default function BugReport() {
       ) : null}
       {report.forwardedAt ? (
         <section className="rounded-md border px-3 py-2 text-sm">
-          Forwarded to the app's issue tracker{report.forwardedBy ? ` by ${report.forwardedBy.username}` : ""}{" "}
-          {timeAgo(report.forwardedAt)}
+          Forwarded to{" "}
+          {report.forwardedUrl ? (
+            <a href={report.forwardedUrl} target="_blank" rel="noreferrer noopener" className="underline">
+              {report.githubRepo && report.githubIssueNumber
+                ? `${report.githubRepo}#${report.githubIssueNumber}`
+                : "the app's issue tracker"}
+            </a>
+          ) : (
+            "the app's issue tracker"
+          )}
+          {report.forwardedBy ? ` by ${report.forwardedBy.username}` : ""} {timeAgo(report.forwardedAt)}
+          {report.githubIssueState ? ` · ${report.githubIssueState === "closed" ? "closed" : "open"} on GitHub` : ""}
+          {report.screenshotPublished ? " · screenshot published with it" : ""}
         </section>
       ) : null}
 

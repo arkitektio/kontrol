@@ -16,6 +16,26 @@ mutation ForwardBugReport($id: ID!, $url: String, $forwarded: Boolean! = true) {
   }
 }
 
+mutation FileBugReportIssue(
+  $id: ID!
+  $title: String!
+  $body: String!
+  $includeScreenshot: Boolean! = false
+  $again: Boolean! = false
+) {
+  fileBugReportIssue(
+    input: {
+      id: $id
+      title: $title
+      body: $body
+      includeScreenshot: $includeScreenshot
+      again: $again
+    }
+  ) {
+    ...DetailBugReport
+  }
+}
+
 mutation DeleteBugReport($id: ID!) {
   deleteBugReport(input: { id: $id })
 }

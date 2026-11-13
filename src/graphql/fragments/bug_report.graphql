@@ -47,6 +47,10 @@ fragment DetailBugReport on ManagementBugReport {
     username
   }
   forwardedUrl
+  githubRepo
+  githubIssueNumber
+  githubIssueState
+  screenshotPublished
   forwardedBy {
     id
     username

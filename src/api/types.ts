@@ -286,6 +286,17 @@ export type DeleteRoleSetInput = {
   id: Scalars['ID']['input'];
 };
 
+/** Open a GitHub issue from a bug report, through lok's GitHub App. The title and body are what the admin reviewed. */
+export type FileBugReportIssueInput = {
+  /** Open another issue although lok already opened one for this report. */
+  again?: Scalars['Boolean']['input'];
+  body: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
+  /** Publish the screenshot with the issue. It becomes readable without signing in, by anyone with the issue. */
+  includeScreenshot?: Scalars['Boolean']['input'];
+  title: Scalars['String']['input'];
+};
+
 export type ForwardBugReportInput = {
   /** False takes the mark back. */
   forwarded?: Scalars['Boolean']['input'];
@@ -381,6 +392,14 @@ export type ManagementBugReport = {
   forwardedBy?: Maybe<ManagementUser>;
   /** The issue it became, when the admin recorded it. */
   forwardedUrl?: Maybe<Scalars['String']['output']>;
+  /** Whether lok can open the GitHub issue for this report itself (the app declared a repository and lok's GitHub App is installed there), and the issue it would open, for an admin to review. Ask for it on one report, not on a list: it may call GitHub. */
+  githubForwarding: ManagementGithubForwarding;
+  /** The number of the issue lok opened. */
+  githubIssueNumber?: Maybe<Scalars['Int']['output']>;
+  /** `open` or `closed`, as GitHub last reported it. */
+  githubIssueState?: Maybe<Scalars['String']['output']>;
+  /** owner/name of the repository lok opened the issue in, when lok opened it. */
+  githubRepo?: Maybe<Scalars['String']['output']>;
   /** Does the report carry a screenshot? */
   hasScreenshot: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
@@ -404,6 +423,8 @@ export type ManagementBugReport = {
   route?: Maybe<Scalars['String']['output']>;
   /** The screenshot as a data URL. Kept in the database and served only here, to those who may read the report. Ask for it on one report, not on a list. */
   screenshot?: Maybe<Scalars['String']['output']>;
+  /** Is the screenshot published with the forwarded issue (readable without signing in)? */
+  screenshotPublished: Scalars['Boolean']['output'];
   /** The first line of what the reporter wrote. */
   title: Scalars['String']['output'];
 };
@@ -791,6 +812,21 @@ export type ManagementGithubAccount = ManagementSocialAccount & {
   provider: Scalars['String']['output'];
   /** The unique identifier of the account. This is unique for the provider. */
   uid: Scalars['String']['output'];
+};
+
+/** Forwarding a bug report to GitHub through lok's GitHub App. */
+export type ManagementGithubForwarding = {
+  __typename?: 'ManagementGithubForwarding';
+  /** Can lok open the issue itself? When false, forward with the prefilled link. */
+  available: Scalars['Boolean']['output'];
+  /** The issue body lok proposes, rendered from the report. Review it: the repository is usually public. */
+  body: Scalars['String']['output'];
+  /** Why lok cannot open the issue itself, when it cannot. */
+  reason?: Maybe<Scalars['String']['output']>;
+  /** owner/name of the repository the app declared. */
+  repo?: Maybe<Scalars['String']['output']>;
+  /** The issue title lok proposes. */
+  title: Scalars['String']['output'];
 };
 
 /**
@@ -2548,6 +2584,7 @@ export type Mutation = {
   deleteRoleSet: Scalars['ID']['output'];
   disableTailnetLock: ManagementLayer;
   enableTailnetLock: ManagementLayer;
+  fileBugReportIssue: ManagementBugReport;
   forwardBugReport: ManagementBugReport;
   issueMandateKey: ManagementIssuedMandateKey;
   notifyMember: ManagementNotificationResult;
@@ -2790,6 +2827,11 @@ export type MutationDisableTailnetLockArgs = {
 
 export type MutationEnableTailnetLockArgs = {
   input: TailnetLockInput;
+};
+
+
+export type MutationFileBugReportIssueArgs = {
+  input: FileBugReportIssueInput;
 };
 
 

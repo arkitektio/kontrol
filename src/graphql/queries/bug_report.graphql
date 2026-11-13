@@ -12,3 +12,18 @@ query DetailBugReport($id: ID!) {
     ...DetailBugReport
   }
 }
+
+# Whether lok can open the GitHub issue itself, and the issue it proposes. It
+# may call GitHub: ask for it when an admin starts forwarding, not with the page.
+query BugReportGithubForwarding($id: ID!) {
+  bugReport(id: $id) {
+    id
+    githubForwarding {
+      available
+      repo
+      reason
+      title
+      body
+    }
+  }
+}
