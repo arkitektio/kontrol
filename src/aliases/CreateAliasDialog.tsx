@@ -13,6 +13,7 @@ import {
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import { Switch } from "../components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -23,7 +24,14 @@ import {
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
-import { HOST_ERROR, PORT_ERROR, parsePort } from "./aliasValidation"
+import {
+  HOST_ERROR,
+  PORT_ERROR,
+  PRIORITY_ERROR,
+  PRIORITY_HELP,
+  parsePort,
+  parsePriority,
+} from "./aliasValidation"
 
 interface CreateAliasDialogProps {
   /** Create the alias for this instance instead of asking which one. */
@@ -43,6 +51,8 @@ export const CreateAliasDialog = ({ instanceId, trigger, onSuccess }: CreateAlia
   const [port, setPort] = useState("80")
   const [path, setPath] = useState("")
   const [kind, setKind] = useState("absolute")
+  const [priority, setPriority] = useState("")
+  const [enabled, setEnabled] = useState(true)
 
   const { data: instancesData } = useListServiceInstancesQuery({ skip: !open || Boolean(instanceId) })
   const [createAlias] = useCreateAliasMutation()
@@ -53,6 +63,8 @@ export const CreateAliasDialog = ({ instanceId, trigger, onSuccess }: CreateAlia
     setPort("80")
     setPath("")
     setKind("absolute")
+    setPriority("")
+    setEnabled(true)
     setError(null)
   }
 
@@ -79,6 +91,11 @@ export const CreateAliasDialog = ({ instanceId, trigger, onSuccess }: CreateAlia
       setError(PORT_ERROR)
       return
     }
+    const priorityNumber = parsePriority(priority)
+    if (priorityNumber === undefined) {
+      setError(PRIORITY_ERROR)
+      return
+    }
 
     setIsCreating(true)
     setError(null)
@@ -91,6 +108,8 @@ export const CreateAliasDialog = ({ instanceId, trigger, onSuccess }: CreateAlia
             port: portNumber,
             path: path.trim() || undefined,
             kind,
+            priority: priorityNumber,
+            enabled,
           }
         },
         // From an instance page the alias list is not mounted: refresh the instance
@@ -209,6 +228,29 @@ export const CreateAliasDialog = ({ instanceId, trigger, onSuccess }: CreateAlia
               value={path}
               onChange={(e) => setPath(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="priority">Priority</Label>
+            <Input
+              id="priority"
+              type="number"
+              step={1}
+              placeholder="Default for its reach"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">{PRIORITY_HELP}</p>
+          </div>
+
+          <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+            <div className="space-y-1">
+              <Label htmlFor="enabled">Enabled</Label>
+              <p className="text-xs text-muted-foreground">
+                A disabled alias is not handed to clients at all.
+              </p>
+            </div>
+            <Switch id="enabled" checked={enabled} onCheckedChange={setEnabled} />
           </div>
 
           {error && (

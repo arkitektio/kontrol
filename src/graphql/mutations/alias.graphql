@@ -16,3 +16,15 @@ mutation UpdateAlias($input: UpdateAliasInput!) {
     ...InstanceAlias
   }
 }
+
+
+mutation CreateAliasRule($input: CreateAliasRuleInput!) {
+  createAliasRule(input: $input) {
+    ...AliasRule
+  }
+}
+
+
+mutation DeleteAliasRule($input: DeleteAliasRuleInput!) {
+  deleteAliasRule(input: $input)
+}

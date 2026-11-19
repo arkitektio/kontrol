@@ -9,6 +9,7 @@ import { PageHeader } from "../components/PageHeader"
 import { SearchInput } from "../components/SearchInput"
 import { ListEmpty } from "../components/ListEmpty"
 import { matchesSearch } from "../components/matchesSearch"
+import { cn } from "@/lib/utils"
 
 import { QueryError } from "@/components/status"
 
@@ -38,15 +39,28 @@ export default function InstanceAliases() {
     return `${alias.ssl ? "https" : "http"}://${alias.host}${alias.port ? `:${alias.port}` : ""}${alias.path ? `/${alias.path}` : ""}`;
   }
 
-  const visible = aliases.filter((alias) =>
-    matchesSearch(
-      search,
-      buildUrl(alias),
-      alias.kind,
-      alias.instance?.identifier,
-      alias.instance?.release?.service?.identifier,
-    ),
-  )
+  // In the order clients try them: lower effective priority first. The server's
+  // `priority` ordering sorts the raw (nullable) column, so sort here instead.
+  // Copy first: Apollo's result arrays are frozen.
+  const visible = [...aliases]
+    .sort(
+      (a, b) =>
+        a.effectivePriority - b.effectivePriority ||
+        (a.instance?.release?.service?.identifier ?? "").localeCompare(
+          b.instance?.release?.service?.identifier ?? "",
+        ) ||
+        a.id.localeCompare(b.id),
+    )
+    .filter((alias) =>
+      matchesSearch(
+        search,
+        buildUrl(alias),
+        alias.kind,
+        alias.reach,
+        alias.instance?.identifier,
+        alias.instance?.release?.service?.identifier,
+      ),
+    )
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">
@@ -74,7 +88,12 @@ export default function InstanceAliases() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {visible.map((alias) => (
             <Link key={alias.id} to={`/instance-aliases/${alias.id}`}>
-              <Card className="hover:shadow-md transition-all duration-200 cursor-pointer h-full hover:border-primary/50">
+              <Card
+                className={cn(
+                  "hover:shadow-md transition-all duration-200 cursor-pointer h-full hover:border-primary/50",
+                  !alias.enabled && "opacity-60",
+                )}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -97,12 +116,31 @@ export default function InstanceAliases() {
                 <CardContent>
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className="text-xs font-mono"
+                        title={
+                          alias.priority == null
+                            ? `Priority ${alias.effectivePriority}: the default for ${alias.reach} (lower is tried first)`
+                            : `Priority ${alias.effectivePriority} (lower is tried first)`
+                        }
+                      >
+                        #{alias.effectivePriority}
+                      </Badge>
                       <Badge variant="outline" className="text-xs">
                         {alias.kind}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {alias.reach}
                       </Badge>
                       <Badge variant="secondary" className="text-xs">
                         {alias.instance?.identifier || "Unknown"}
                       </Badge>
+                      {!alias.enabled && (
+                        <Badge variant="destructive" className="text-xs">
+                          disabled
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{alias.layer?.name || "Unknown Layer"}</span>

@@ -10,6 +10,7 @@ import { Separator } from "../components/ui/separator"
 import { UpdateAliasSheet } from "./UpdateAliasSheet"
 import { DeleteAliasDialog } from "./DeleteAliasDialog"
 import { AdminOnly } from "../components/AdminOnly"
+import { AliasRules } from "./AliasRules"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -88,6 +89,11 @@ export default function InstanceAlias() {
                 <CardTitle className="text-2xl">
                   {displayHost || (isMesh ? "[Mesh Alias]" : "[Relative Alias]")}
                 </CardTitle>
+                {!alias.enabled && (
+                  <Badge variant="destructive" className="text-xs" title="Clients are not handed this alias at all.">
+                    disabled
+                  </Badge>
+                )}
               </div>
               <div className="max-w-xl">
                 <Command label="Copy URL">{fullUrl}</Command>
@@ -141,6 +147,25 @@ export default function InstanceAlias() {
                   <Badge variant="outline">{alias.kind}</Badge>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Reach:</span>
+                  <Badge variant="outline">{alias.reach}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Priority:</span>
+                  <span className="font-mono" title="Lower is tried first">
+                    {alias.effectivePriority}
+                    {alias.priority == null && (
+                      <span className="font-sans text-muted-foreground"> (default for {alias.reach})</span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Enabled:</span>
+                  <Badge variant={alias.enabled ? "default" : "destructive"} className="text-xs">
+                    {alias.enabled ? "Yes" : "No"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Layer:</span>
                   <span>{alias.layer?.name || "Unknown"}</span>
                 </div>
@@ -175,6 +200,8 @@ export default function InstanceAlias() {
           </div>
         </CardContent>
       </Card>
+
+      <AliasRules alias={alias} />
     </div>
   )
 }

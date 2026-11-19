@@ -13,6 +13,7 @@ import {
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
+import { Switch } from "../components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -23,7 +24,14 @@ import {
 import { Edit } from "lucide-react"
 import { toast } from "sonner"
 import { toastError } from "@/lib/errors"
-import { HOST_ERROR, PORT_ERROR, parsePort } from "./aliasValidation"
+import {
+  HOST_ERROR,
+  PORT_ERROR,
+  PRIORITY_ERROR,
+  PRIORITY_HELP,
+  parsePort,
+  parsePriority,
+} from "./aliasValidation"
 
 interface UpdateAliasSheetProps {
   alias: InstanceAliasFragment
@@ -39,6 +47,8 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
   const [port, setPort] = useState(alias.port?.toString() || "80")
   const [path, setPath] = useState(alias.path || "")
   const [kind, setKind] = useState(alias.kind || "absolute")
+  const [priority, setPriority] = useState(alias.priority?.toString() ?? "")
+  const [enabled, setEnabled] = useState(alias.enabled)
 
   const [updateAlias] = useUpdateAliasMutation()
 
@@ -48,6 +58,8 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
       setPort(alias.port?.toString() || "80")
       setPath(alias.path || "")
       setKind(alias.kind || "absolute")
+      setPriority(alias.priority?.toString() ?? "")
+      setEnabled(alias.enabled)
       setError(null)
     }
   }, [open, alias])
@@ -64,6 +76,11 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
       setError(PORT_ERROR)
       return
     }
+    const priorityNumber = parsePriority(priority)
+    if (priorityNumber === undefined) {
+      setError(PRIORITY_ERROR)
+      return
+    }
 
     setIsUpdating(true)
     setError(null)
@@ -76,6 +93,9 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
             port: portNumber,
             path: path.trim() || undefined,
             kind,
+            // Omitted when unchanged; an explicit null puts it back to the reach default.
+            priority: priorityNumber === (alias.priority ?? null) ? undefined : priorityNumber,
+            enabled: enabled === alias.enabled ? undefined : enabled,
           }
         },
         // The response updates the cached alias (and with it any list); the detail
@@ -163,6 +183,34 @@ export const UpdateAliasSheet = ({ alias, onSuccess }: UpdateAliasSheetProps) =>
               value={path}
               onChange={(e) => setPath(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-priority">Priority</Label>
+            <Input
+              id="edit-priority"
+              type="number"
+              step={1}
+              // While unset, effectivePriority is the reach default the alias falls back to.
+              placeholder={
+                alias.priority == null
+                  ? `${alias.effectivePriority} (default for ${alias.reach})`
+                  : `Default for ${alias.reach}`
+              }
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">{PRIORITY_HELP}</p>
+          </div>
+
+          <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+            <div className="space-y-1">
+              <Label htmlFor="edit-enabled">Enabled</Label>
+              <p className="text-xs text-muted-foreground">
+                A disabled alias is not handed to clients at all.
+              </p>
+            </div>
+            <Switch id="edit-enabled" checked={enabled} onCheckedChange={setEnabled} />
           </div>
 
           <div className="p-3 bg-muted rounded text-xs">

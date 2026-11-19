@@ -58,6 +58,8 @@ export type AcceptMeshDeviceCodeInput = {
   ephemeral?: Scalars['Boolean']['input'];
   machineName?: InputMaybe<Scalars['String']['input']>;
   organization: Scalars['ID']['input'];
+  /** Let the machine join as a peer relay of the organization: every node of its mesh may then send traffic through it where it finds no direct path. Only what the approver says counts, not what the machine asked for (`requestedRelay`). */
+  relay?: Scalars['Boolean']['input'];
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -118,12 +120,24 @@ export type ConnectKommunityPartnerInput = {
 };
 
 export type CreateAliasInput = {
+  enabled?: Scalars['Boolean']['input'];
   host?: InputMaybe<Scalars['String']['input']>;
   instance: Scalars['ID']['input'];
   kind: Scalars['String']['input'];
   path?: InputMaybe<Scalars['String']['input']>;
   port: Scalars['Int']['input'];
+  priority?: InputMaybe<Scalars['Int']['input']>;
   public?: Scalars['Boolean']['input'];
+};
+
+export type CreateAliasRuleInput = {
+  alias: Scalars['ID']['input'];
+  app?: InputMaybe<Scalars['ID']['input']>;
+  client?: InputMaybe<Scalars['ID']['input']>;
+  effect: Scalars['String']['input'];
+  priority?: InputMaybe<Scalars['Int']['input']>;
+  role?: InputMaybe<Scalars['ID']['input']>;
+  user?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type CreateDeviceGroupInput = {
@@ -230,6 +244,10 @@ export type DeeplinkAppInput = {
 };
 
 export type DeleteAliasInput = {
+  id: Scalars['ID']['input'];
+};
+
+export type DeleteAliasRuleInput = {
   id: Scalars['ID']['input'];
 };
 
@@ -345,6 +363,28 @@ export const MachineKind = {
 } as const;
 
 export type MachineKind = typeof MachineKind[keyof typeof MachineKind];
+/** Disables or re-ranks one alias for some clients: one client, every client of an app, of a user, or of a member holding a role. The most specific rule wins (client, app, user, role). */
+export type ManagementAliasRule = {
+  __typename?: 'ManagementAliasRule';
+  /** The alias the rule is about. */
+  alias: ManagementInstanceAlias;
+  /** Every client of this app. */
+  app?: Maybe<ManagementApp>;
+  /** This one client. */
+  client?: Maybe<ManagementClient>;
+  /** When the rule was made. */
+  createdAt: Scalars['DateTime']['output'];
+  /** 'disable' (these clients are not handed the alias) or 'priority' (they get it ranked at `priority`). */
+  effect: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  /** The alias's priority for these clients (effect 'priority' only), lower first. */
+  priority?: Maybe<Scalars['Int']['output']>;
+  /** Every client of a member holding this role. */
+  role?: Maybe<ManagementRole>;
+  /** Every client of this user. */
+  user?: Maybe<ManagementUser>;
+};
+
 /** An App is the Arkitekt equivalent of a Software Application. It is a collection of `Releases` that can be all part of the same application. E.g the App `Napari` could have the releases `0.1.0` and `0.2.0`. */
 export type ManagementApp = {
   __typename?: 'ManagementApp';
@@ -995,6 +1035,10 @@ export type ManagementInstanceAlias = {
   __typename?: 'ManagementInstanceAlias';
   /** The challenge of the alias. This is used to verify that the alias is reachable. */
   challenge: Scalars['String']['output'];
+  /** Where clients without a rule for this alias get it, lower first: priority, or its reach's default (internal 10, loopback 20, lan 30, mesh 40, public 50; one more for the other of plain and https). */
+  effectivePriority: Scalars['Int']['output'];
+  /** Whether clients are handed this alias at all. */
+  enabled: Scalars['Boolean']['output'];
   /** The host of the alias (e.g. 'example.com'). Not set for a mesh alias, which resolves to its hub node's MagicDNS name. */
   host?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
@@ -1014,6 +1058,8 @@ export type ManagementInstanceAlias = {
   path?: Maybe<Scalars['String']['output']>;
   /** The port of the alias (e.g. 8080 for 'example.com:8080'). If not set, the scheme's default port is used. */
   port?: Maybe<Scalars['Int']['output']>;
+  /** Where the hub's owner ranks this alias, lower first. Null: its reach's default (see effectivePriority). */
+  priority?: Maybe<Scalars['Int']['output']>;
   /** The HTTP status of lok's last probe, if it got one. */
   probeHttpStatus?: Maybe<Scalars['Int']['output']>;
   /** How long lok's last probe took, in milliseconds. */
@@ -1028,6 +1074,8 @@ export type ManagementInstanceAlias = {
   reach: Scalars['String']['output'];
   /** For a mesh alias, the host it currently resolves to (its hub node's MagicDNS name, or mesh IP). Null for other kinds, or while the hub is not on the mesh. */
   resolvedHost?: Maybe<Scalars['String']['output']>;
+  /** Rules that disable or re-rank this alias for some clients. */
+  rules: Array<ManagementAliasRule>;
   /** Deprecated: see `reach`. The scope of the alias. E.g 'local' means that the alias can only be used within the local network. */
   scope: Scalars['String']['output'];
   /** Is this alias using SSL? If true, the alias will be accessed via https:// instead of http://. */
@@ -1054,8 +1102,9 @@ export type ManagementInstanceAliasFilter = {
 };
 
 export type ManagementInstanceAliasOrdering =
-  { id: Ordering; name?: never; }
-  |  { id?: never; name: Ordering; };
+  { id: Ordering; name?: never; priority?: never; }
+  |  { id?: never; name: Ordering; priority?: never; }
+  |  { id?: never; name?: never; priority: Ordering; };
 
 /** The health one instance reported in a hub health report. */
 export type ManagementInstanceHealth = {
@@ -1607,7 +1656,11 @@ export type ManagementMeshDeviceCode = {
   expiresAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
   machineName?: Maybe<Scalars['String']['output']>;
+  /** Whether the machine was let in as a peer relay (set on accept). */
+  relay: Scalars['Boolean']['output'];
   requestedMachineName?: Maybe<Scalars['String']['output']>;
+  /** Whether the machine asks to join as a peer relay: to forward UDP for the organization's nodes that find no direct path to each other. It forwards what it cannot read, but carries the traffic and sees who talks to whom; accept with `relay: true` to let it. */
+  requestedRelay: Scalars['Boolean']['output'];
   user?: Maybe<ManagementUser>;
 };
 
@@ -2552,6 +2605,7 @@ export type Mutation = {
   changeOrganizationOwner: ManagementOrganization;
   connectKommunityPartner: ManagementHub;
   createAlias: ManagementInstanceAlias;
+  createAliasRule: ManagementAliasRule;
   createDevice: ManagementDevice;
   createDeviceGroup: ManagementDeviceGroup;
   createInvite: ManagementInvite;
@@ -2570,6 +2624,7 @@ export type Mutation = {
   declineMeshDeviceCode: ManagementMeshDeviceCode;
   declineRoleRequest: ManagementRoleRequest;
   deleteAlias: Scalars['ID']['output'];
+  deleteAliasRule: Scalars['ID']['output'];
   deleteBugReport: Scalars['ID']['output'];
   deleteDevice: Scalars['ID']['output'];
   deleteDeviceGroup: Scalars['ID']['output'];
@@ -2680,6 +2735,11 @@ export type MutationCreateAliasArgs = {
 };
 
 
+export type MutationCreateAliasRuleArgs = {
+  input: CreateAliasRuleInput;
+};
+
+
 export type MutationCreateDeviceArgs = {
   input: CreateDeviceInput;
 };
@@ -2757,6 +2817,11 @@ export type MutationDeclineRoleRequestArgs = {
 
 export type MutationDeleteAliasArgs = {
   input: DeleteAliasInput;
+};
+
+
+export type MutationDeleteAliasRuleArgs = {
+  input: DeleteAliasRuleInput;
 };
 
 
@@ -3622,11 +3687,13 @@ export type UnresolveReportInput = {
 };
 
 export type UpdateAliasInput = {
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
   host?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   kind: Scalars['String']['input'];
   path?: InputMaybe<Scalars['String']['input']>;
   port: Scalars['Int']['input'];
+  priority?: InputMaybe<Scalars['Int']['input']>;
   public?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
