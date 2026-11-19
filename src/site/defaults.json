@@ -7,5 +7,6 @@
   "secondaryCta": { "label": "Log in", "to": "/account/login" },
   "tertiaryCta": { "label": "Learn more", "to": "https://arkitekt.live" },
   "privacyPolicyUrl": "https://arkitekt.live/privacy",
+  "securityUrl": "/security",
   "links": [{ "label": "What is this?", "href": "https://arkitekt.live" }]
 }

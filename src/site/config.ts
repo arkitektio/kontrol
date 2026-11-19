@@ -48,6 +48,14 @@ export type SiteConfig = {
    * sentence then stands without a link rather than linking somewhere wrong.
    */
   privacyPolicyUrl: string | null
+  /**
+   * The page for reporting security vulnerabilities, linked from the footer of
+   * every public page (BSI TR-03183-3 4.5.1b: an easy-to-find link on the home
+   * page that works without JavaScript, so it must be in the prerendered HTML).
+   * Defaults to /security, which the gateway routes to lok's disclosure pages.
+   * Set to null if the deployment publishes no security contact.
+   */
+  securityUrl: string | null
   links: SiteLink[]
 }
 
@@ -134,6 +142,7 @@ export function mergeSite(base: SiteConfig, override: unknown): SiteConfig {
       "privacyPolicyUrl" in o,
       base.privacyPolicyUrl,
     ),
+    securityUrl: optionalStr(o.securityUrl, "securityUrl" in o, base.securityUrl),
     // An explicit empty array is meaningful: "I want no links".
     links: links(o.links, base.links),
   }

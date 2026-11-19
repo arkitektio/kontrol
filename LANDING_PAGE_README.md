@@ -36,6 +36,7 @@ file degrades to the defaults rather than breaking the page. See
 | `secondaryCta` | `{ label, to }` — the outline button. Defaults to Log in. |
 | `tertiaryCta` | `{ label, to }` — an optional third, quieter button. Defaults to a "Learn more" link to arkitekt.live. Set to `null` to drop it. |
 | `privacyPolicyUrl` | Target of the `?` next to the sign-up identifier field, which says the address is only used for sign-in. Set to `null` if the deployment has no policy — the sentence then stands without a link rather than pointing somewhere wrong. |
+| `securityUrl` | Footer link to the page for reporting security vulnerabilities (default `/security`, which the gateway routes to lok's disclosure pages; BSI TR-03183-3 wants it reachable from the home page). Set to `null` if the deployment publishes no security contact. |
 | `links` | `[{ label, href }]` in the top bar. Defaults to one "What is this?" link to arkitekt.live. Pass `[]` for none. |
 
 A CTA `to` starting with `/` is an in-app route and renders as a react-router

@@ -142,6 +142,26 @@ export function LandingLayout({
           )}
         </ErrorBoundary>
       </main>
+
+      {/*
+        * Plain anchors, not <Link>: /security is served by lok, not by the SPA,
+        * and BSI TR-03183-3 4.5.1b wants it reachable from the home page without
+        * JavaScript, i.e. present in the prerendered HTML.
+        */}
+      {!minimal && (site.securityUrl || site.privacyPolicyUrl) && (
+        <footer className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 px-6 py-6 text-sm md:px-10">
+          {site.securityUrl && (
+            <a href={site.securityUrl} className="hover:text-foreground transition-colors">
+              Security &amp; vulnerability reporting
+            </a>
+          )}
+          {site.privacyPolicyUrl && (
+            <a href={site.privacyPolicyUrl} className="hover:text-foreground transition-colors">
+              Privacy
+            </a>
+          )}
+        </footer>
+      )}
     </div>
   )
 }
