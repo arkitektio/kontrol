@@ -1,12 +1,12 @@
 import { Link, useParams } from "react-router-dom"
 import { useListServiceInstancesQuery } from "@/graphql/queries/service_instance.generated"
 import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
 import { Server } from "lucide-react"
 
 import { QueryError } from "@/components/status"
 
 import { SectionSkeleton } from "@/components/skeletons"
+import { ServiceVersionBadge } from "@/components/ServiceVersion"
 
 export default function HubServices() {
   const { orgId, name } = useParams<{ orgId: string; name: string }>()
@@ -37,7 +37,7 @@ export default function HubServices() {
                 <CardHeader className="py-3">
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="text-base truncate">{instance.identifier}</CardTitle>
-                    <Badge variant="secondary" className="text-xs shrink-0">v{instance.release.version}</Badge>
+                    <ServiceVersionBadge version={instance.release.version} />
                   </div>
                   <CardDescription className="text-xs">
                     {instance.release.service.identifier}

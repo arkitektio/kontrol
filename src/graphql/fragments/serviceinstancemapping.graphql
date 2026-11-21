@@ -8,4 +8,6 @@ fragment ListServiceInstanceMapping on ManagementServiceInstanceMapping {
     ...ListClient
   }
   optional
+  wantsVersion
+  satisfied
 }

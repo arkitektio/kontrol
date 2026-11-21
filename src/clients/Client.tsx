@@ -2,7 +2,7 @@ import { aliasUrl } from "@/lib/aliasUrl"
 import { ClientLabel } from "@/components/ClientLabel"
 import { clientInitials, clientLabel } from "@/lib/clientLabel"
 import { cn } from "@/lib/utils"
-import { Activity } from "lucide-react"
+import { Activity, AlertTriangle } from "lucide-react"
 import { Link, useParams } from "react-router-dom"
 import { useDetailClientQuery } from "@/graphql/queries/client.generated"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
 import { PriorAccessState } from "@/api/types"
 import { timeAgo } from "@/lib/time"
 import { BugReportList } from "../bugreports/BugReportList"
+import { ServiceVersionBadge, VersionCheck, unmetVersions } from "@/components/ServiceVersion"
 
 import { QueryError, ResourceNotFound } from "@/components/status"
 
@@ -36,6 +37,7 @@ export default function Client() {
   if (!data?.client) return <ResourceNotFound resource="client" id={id} />
 
   const client = data.client
+  const unmet = unmetVersions(client.mappings)
 
   return (
     <div className="container mx-auto py-10 relative min-h-screen">
@@ -95,6 +97,12 @@ export default function Client() {
                         </AlertDescription>
                     </Alert>
                 )}
+                {unmet > 0 && (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                        {unmet === 1 ? "One service runs" : `${unmet} services run`} a version this app wasn't written for. It is connected anyway; some features may not work.
+                    </p>
+                )}
                 <p className="text-sm text-muted-foreground">
                     Last report: {timeAgo(client.lastReportedAt)}
                     {client.functional ? "" : " · reported as not working — see the latest report"}
@@ -147,6 +155,36 @@ export default function Client() {
                         )}
                     </div>
                 </div>
+
+                {client.mappings.length > 0 && (
+                <div>
+                    <h3 className="font-semibold mb-2">Services</h3>
+                    <div className="grid gap-2">
+                        {client.mappings.map((m) => (
+                            <Link
+                                key={m.id}
+                                to={`/organization/${m.instance.organization.id}/service-instances/${m.instance.id}`}
+                                className={cn(
+                                    "p-2 border rounded-md hover:bg-muted/50 transition-colors",
+                                    m.satisfied === false && "border-amber-500/40",
+                                )}
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                        <span className="font-medium">{m.key}</span>
+                                        {m.optional && <span className="ml-2 text-xs text-muted-foreground">optional</span>}
+                                        <div className="text-xs text-muted-foreground font-mono truncate">
+                                            {m.instance.identifier} · {m.instance.release.service.identifier}
+                                        </div>
+                                    </div>
+                                    <ServiceVersionBadge version={m.instance.release.version} />
+                                </div>
+                                <VersionCheck wants={m.wantsVersion} satisfied={m.satisfied} running={m.instance.release.version} className="mt-1" />
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+                )}
 
                 <div>
                     <h3 className="font-semibold mb-2">Connected Services</h3>

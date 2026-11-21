@@ -21,12 +21,13 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Monitor, Smartphone, Globe, CheckCircle2, XCircle, Circle,
-  Loader2, ExternalLink, Github, ChevronDown, Check, X, History, ShieldAlert, UserRound, Network,
+  Loader2, ExternalLink, Github, ChevronDown, Check, X, History, ShieldAlert, UserRound, Network, AlertTriangle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useActiveOrganization } from "@/hooks/useActiveOrganization";
 import { RequestedScopes } from "@/components/RequestedScopes";
 import { applyBrand, DEFAULT_BRAND_CHROMA, DEFAULT_BRAND_HUE } from "@/lib/brand";
+import { VersionCheck } from "@/components/ServiceVersion";
 
 interface ConfigureFormData {
   hub: string;
@@ -170,10 +171,22 @@ export function ConfigurePage() {
   const requiredReqs = requirements.filter((r) => !r.optional);
   const optionalReqs = requirements.filter((r) => r.optional);
 
-  const mappingByKey = Object.fromEntries(
-    (validationData?.validateDeviceCode?.mappings ?? []).map((m) => [m.key, m.serviceInstance ?? null])
-  );
   const hasValidation = !!validationData && !!selectedHub && !validating;
+  const mappings = validationData?.validateDeviceCode?.mappings ?? [];
+  const mappingByKey = Object.fromEntries(mappings.map((m) => [m.key, m.serviceInstance ?? null]));
+  const potentialByKey = Object.fromEntries(mappings.map((m) => [m.key, m]));
+  // Advisory only: lok maps an instance outside the app's version range anyway.
+  const versionNote = (req: { key: string; version?: string | null }) => {
+    const m = hasValidation ? potentialByKey[req.key] : undefined;
+    const running = m?.serviceInstance?.release.version;
+    if (!req.version || (hasValidation && !m?.serviceInstance)) return null;
+    return (
+      <div className="mt-0.5 flex flex-wrap items-center gap-2">
+        <VersionCheck wants={m?.wantsVersion ?? req.version} satisfied={m?.satisfied} running={running} />
+      </div>
+    );
+  };
+  const unmet = hasValidation ? mappings.filter((m) => m.satisfied === false && !declinedRequirements.has(m.key)).length : 0;
   const canAllow = hasValidation && validationData!.validateDeviceCode.valid;
   // Why "Allow access" is disabled, once a hub is picked and the check has run.
   const blockedReason = !selectedHub || validating
@@ -422,6 +435,12 @@ export function ConfigurePage() {
                   Required services
                 </p>
                 <div className="space-y-2">
+                  {unmet > 0 && (
+                    <p className="flex items-start gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+                      <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
+                      {unmet === 1 ? "One service in this hub runs" : `${unmet} services in this hub run`} a version the app wasn't written for. You can still connect it; some features may not work.
+                    </p>
+                  )}
                   {requiredReqs.map((req) => {
                     const available = hasValidation ? mappingByKey[req.key] != null : undefined;
                     return (
@@ -443,6 +462,7 @@ export function ConfigurePage() {
                           {available === false && (
                             <p className="text-destructive mt-0.5 text-xs">Not available in this hub</p>
                           )}
+                          {versionNote(req)}
                         </div>
                       </div>
                     );
@@ -493,6 +513,7 @@ export function ConfigurePage() {
                             {available === false && hasValidation && (
                               <p className="text-muted-foreground/60 mt-0.5 text-xs">Not available in this hub</p>
                             )}
+                            {!declined && versionNote(req)}
                           </div>
                           {canToggle && (
                             <Switch

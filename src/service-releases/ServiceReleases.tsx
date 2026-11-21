@@ -11,6 +11,7 @@ import { GitBranch } from "lucide-react"
 import { QueryError } from "@/components/status"
 
 import { ListPageSkeleton } from "@/components/skeletons"
+import { ServiceVersionBadge } from "@/components/ServiceVersion"
 
 export default function ServiceReleases() {
   const [search, setSearch] = useState("")
@@ -42,7 +43,7 @@ export default function ServiceReleases() {
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Version {release.version}
+                  <ServiceVersionBadge version={release.version} />
                 </CardTitle>
               </CardHeader>
               <CardContent>

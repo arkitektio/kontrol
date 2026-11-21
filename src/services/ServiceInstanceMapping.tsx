@@ -6,6 +6,7 @@ import { ClientLabel } from "../components/ClientLabel"
 import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
+import { ServiceVersionBadge, VersionCheck } from "@/components/ServiceVersion"
 
 export default function ServiceInstanceMapping() {
   const { id } = useParams<{ id: string }>()
@@ -52,6 +53,18 @@ export default function ServiceInstanceMapping() {
                 </div>
                 <div>
                     <span className="font-semibold">Optional:</span> {mapping.optional ? "Yes" : "No"}
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="font-semibold">Runs:</span>
+                    <ServiceVersionBadge version={mapping.instance.release.version} />
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="font-semibold">Wants:</span>
+                    {mapping.wantsVersion ? (
+                        <VersionCheck wants={mapping.wantsVersion} satisfied={mapping.satisfied} running={mapping.instance.release.version} />
+                    ) : (
+                        <span className="text-sm text-muted-foreground">any version</span>
+                    )}
                 </div>
             </div>
         </CardContent>

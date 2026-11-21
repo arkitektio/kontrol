@@ -19,6 +19,8 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
 import { AdminOnly } from "../components/AdminOnly"
+import { ClientLabel } from "../components/ClientLabel"
+import { ServiceVersionBadge, VersionCheck, unmetVersions } from "@/components/ServiceVersion"
 
 export default function ServiceInstance() {
   const params = useParams<{ id: string; instanceId?: string }>()
@@ -46,7 +48,7 @@ export default function ServiceInstance() {
                   
                 <div>
                   <h1 className="text-2xl leading-none font-semibold">{instance.identifier}</h1>
-                  <p className="text-muted-foreground text-sm font-mono text-xs mt-1">{instance.release.service.identifier} v{instance.release.version}</p>
+                  <p className="text-muted-foreground text-xs font-mono mt-1 flex items-center gap-2">{instance.release.service.identifier} <ServiceVersionBadge version={instance.release.version} /></p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -150,7 +152,7 @@ export default function ServiceInstance() {
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium">Version</span>
-                             <Badge variant="secondary" className="font-mono text-xs">{instance.release.version}</Badge>
+                             <ServiceVersionBadge version={instance.release.version} />
                         </div>
                          {instance.device && (
                             <div className="flex justify-between items-center">
@@ -175,6 +177,36 @@ export default function ServiceInstance() {
                     </CardContent>
                  </Card>
             </div>
+
+            {instance.mappings.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="font-semibold text-lg">Apps using this instance</h3>
+                  {unmetVersions(instance.mappings) > 0 && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                      {unmetVersions(instance.mappings)} written for another version
+                    </span>
+                  )}
+                </div>
+                <Card className="py-0">
+                  <CardContent className="divide-y px-0">
+                    {instance.mappings.map((m) => (
+                      <Link
+                        key={m.id}
+                        to={`/organization/${m.client.organization?.id ?? instance.organization.id}/clients/${m.client.id}`}
+                        className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <ClientLabel client={m.client} className="text-sm font-medium" />
+                          <div className="text-xs text-muted-foreground font-mono">as {m.key}</div>
+                        </div>
+                        <VersionCheck wants={m.wantsVersion} satisfied={m.satisfied} running={instance.release.version} className="shrink-0" />
+                      </Link>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
         </div>
       </div>
     </div>

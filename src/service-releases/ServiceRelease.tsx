@@ -8,6 +8,7 @@ import { Badge } from "../components/ui/badge"
 import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
+import { ServiceVersionBadge } from "@/components/ServiceVersion"
 
 export default function ServiceRelease() {
   const { id } = useParams<{ id: string }>()
@@ -32,7 +33,7 @@ export default function ServiceRelease() {
           </Avatar>
           <div>
             <h1 className="text-2xl leading-none font-semibold">{release.service.name}</h1>
-            <p className="text-muted-foreground">Version {release.version}</p>
+            <div className="mt-1"><ServiceVersionBadge version={release.version} /></div>
             <Badge variant="outline" className="mt-2">{release.service.identifier}</Badge>
           </div>
         </CardHeader>
@@ -68,9 +69,7 @@ export default function ServiceRelease() {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium">{instance.identifier}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Version {instance.release.version}
-                        </div>
+                        <ServiceVersionBadge version={instance.release.version} className="mt-1" />
                       </div>
                       <Badge variant="secondary">
                         {instance.allowedUsers?.length ?? 0} {instance.allowedUsers?.length === 1 ? 'user' : 'users'}

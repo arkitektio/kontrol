@@ -14,9 +14,15 @@ query ValidateDeviceCode($deviceCode: ID!, $hub: ID!, $code: String!) {
     }
     mappings {
       key
+      wantsVersion
+      satisfied
       serviceInstance {
         id
         identifier
+        release {
+          id
+          version
+        }
       }
     }
   }

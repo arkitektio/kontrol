@@ -16,6 +16,7 @@ fragment DeviceCode on ManagementDeviceCode {
       service
       optional
       description
+      version
     }
     publicSources {
       kind

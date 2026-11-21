@@ -2,7 +2,7 @@ import type { ListServiceInstanceFragment } from "@/graphql/fragments/service_in
 import { Card } from './ui/card';
 import { Box } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Badge } from './ui/badge';
+import { ServiceVersionBadge } from "@/components/ServiceVersion"
 
 export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanceFragment }) => {
   const logo = instance.release.service.logo?.presignedUrl
@@ -21,9 +21,7 @@ export const ServiceInstanceCard = ({ instance }: { instance: ListServiceInstanc
                 <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                     
                     <span className='flex flex-row gap-2'><Box className="w-3.5 h-3.5 my-auto" />{instance.release.service.identifier}</span>
-                    <Badge variant="secondary" className="font-mono text-xs">
-                v{instance.release.version}
-              </Badge>
+                    <ServiceVersionBadge version={instance.release.version} />
                 </div>
               </div>
               

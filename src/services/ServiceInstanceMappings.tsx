@@ -9,6 +9,7 @@ import { ListEmpty } from "../components/ListEmpty"
 import { matchesSearch } from "../components/matchesSearch"
 import { clientLabel } from "../lib/clientLabel"
 import { Cable } from "lucide-react"
+import { ServiceVersionBadge, VersionCheck } from "@/components/ServiceVersion"
 
 import { QueryError } from "@/components/status"
 
@@ -54,9 +55,11 @@ export default function ServiceInstanceMappings() {
                 <div className="text-xs text-muted-foreground flex items-center gap-1">
                   Client: <ClientLabel client={mapping.client} />
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                   Instance: {mapping.instance.identifier}
+                  <ServiceVersionBadge version={mapping.instance.release.version} className="text-[10px] px-1.5 py-0" />
                 </div>
+                <VersionCheck wants={mapping.wantsVersion} satisfied={mapping.satisfied} running={mapping.instance.release.version} className="mt-1" />
               </CardContent>
             </Card>
           </Link>

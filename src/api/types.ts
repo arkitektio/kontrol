@@ -2280,6 +2280,10 @@ export type ManagementServiceInstanceMapping = {
   key: Scalars['String']['output'];
   /** Is this mapping optional? If a mapping is optional, you can configure the client without this mapping. */
   optional: Scalars['Boolean']['output'];
+  /** Whether the instance's reported version is within `wantsVersion`. Null when either is unknown. */
+  satisfied?: Maybe<Scalars['Boolean']['output']>;
+  /** The versions of the service the client was written for, as a specifier (`>=12.1,<14`). */
+  wantsVersion?: Maybe<Scalars['String']['output']>;
 };
 
 export type ManagementServiceInstanceMappingOrdering =
@@ -2403,6 +2407,7 @@ export type ManagementStagingRequirement = {
   key: Scalars['String']['output'];
   optional: Scalars['Boolean']['output'];
   service: Scalars['String']['output'];
+  version?: Maybe<Scalars['String']['output']>;
 };
 
 export type ManagementStagingServiceManifest = {
@@ -3082,7 +3087,11 @@ export type PotentialMapping = {
   __typename?: 'PotentialMapping';
   key: Scalars['String']['output'];
   reason?: Maybe<Scalars['String']['output']>;
+  /** Whether the instance's version is within `wantsVersion`. Null when either is unknown. Advisory: the instance is mapped either way. */
+  satisfied?: Maybe<Scalars['Boolean']['output']>;
   serviceInstance?: Maybe<ManagementServiceInstance>;
+  /** The requirement's version specifier (`>=12.1,<14`), if it named one. */
+  wantsVersion?: Maybe<Scalars['String']['output']>;
 };
 
 /** Temporary Credentials for a file upload that can be used by a Client (e.g. in a python datalayer) */
@@ -3595,7 +3604,7 @@ export type ServiceFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** ServiceInstanceMapping(id, client, instance, key, description, optional) */
+/** ServiceInstanceMapping(id, client, instance, key, description, optional, wants_version) */
 export type ServiceInstanceMappingFilter = {
   AND?: InputMaybe<ServiceInstanceMappingFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
