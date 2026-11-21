@@ -1,7 +1,7 @@
 import { useGrantScopesQuery, type GrantScopesQuery } from "@/graphql/queries/grant_scopes.generated";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { serviceLabel, type StagedScope } from "@/lib/scopes";
+import { serviceDisplayName, serviceLabel, type StagedScope } from "@/lib/scopes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ const fromOffered = (scope: GrantScope): Resolved => {
     description: scope.description,
     isAllScope: scope.isAllScope,
     serviceId: service?.identifier ?? "",
-    serviceName: service?.name ?? null,
+    serviceName: service ? serviceDisplayName(service) : null,
   };
 };
 

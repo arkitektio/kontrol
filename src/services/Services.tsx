@@ -12,6 +12,7 @@ import { Server } from "lucide-react"
 import { QueryError } from "@/components/status"
 
 import { ListPageSkeleton } from "@/components/skeletons"
+import { serviceDisplayName, serviceLabel } from "@/lib/scopes"
 
 export default function Services() {
   const [search, setSearch] = useState("")
@@ -42,11 +43,11 @@ export default function Services() {
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  {service.name}
+                  {serviceDisplayName(service)}
                 </CardTitle>
                 <Avatar className="h-8 w-8">
                     <AvatarImage src={service.logo?.presignedUrl || undefined} />
-                    <AvatarFallback>{service.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{serviceLabel(serviceDisplayName(service)).substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </CardHeader>
               <CardContent>

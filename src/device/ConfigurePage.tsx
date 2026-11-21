@@ -28,6 +28,7 @@ import { useActiveOrganization } from "@/hooks/useActiveOrganization";
 import { RequestedScopes } from "@/components/RequestedScopes";
 import { applyBrand, DEFAULT_BRAND_CHROMA, DEFAULT_BRAND_HUE } from "@/lib/brand";
 import { VersionCheck } from "@/components/ServiceVersion";
+import { useGrantScopesQuery } from "@/graphql/queries/grant_scopes.generated";
 
 interface ConfigureFormData {
   hub: string;
@@ -143,6 +144,13 @@ export function ConfigurePage() {
     applyBrand({ hue: activeHue, chroma: activeChroma });
   }, [activeHue, activeChroma]);
 
+  // What the selected organization offers: a requested scope it doesn't define was never
+  // granted, so it is not "new" on a re-authorization either (same query RequestedScopes runs).
+  const { data: grantScopes } = useGrantScopesQuery({
+    variables: { organization: selectedComp?.organization.id ?? "" },
+    skip: !selectedComp,
+  });
+
   if (!code) return null;
 
   if (loading) {
@@ -210,7 +218,10 @@ export function ConfigurePage() {
   const anyPrior = priorAuthorizations[0] ?? null;
   const prior = priorAuthorizations.find((p) => p.hub.id === selectedHub) ?? null;
   const priorScopes = new Set(prior?.scopes ?? []);
-  const newScopes = prior ? (manifest?.scopes ?? []).filter((scope) => !priorScopes.has(scope)) : [];
+  const offeredScopes = grantScopes?.scopes?.length ? new Set(grantScopes.scopes.map((s) => s.identifier)) : null;
+  const newScopes = prior && offeredScopes
+    ? [...new Set(manifest?.scopes ?? [])].filter((scope) => offeredScopes.has(scope) && !priorScopes.has(scope))
+    : [];
   const versionChanged = !!prior && !!manifest?.version && prior.version !== manifest.version;
   const relative = (iso: string) => formatDistanceToNow(new Date(iso), { addSuffix: true });
 

@@ -11,6 +11,11 @@ export interface StagedScope {
   isAll?: boolean;
 }
 
+/** A service as people should read it: its name, or its identifier when it has none
+ *  (hubs authorized by device code used to leave the name blank). */
+export const serviceDisplayName = (service: { name?: string | null; identifier: string }) =>
+  service.name?.trim() || service.identifier;
+
 // Services often register with their reverse-DNS identifier as the name
 // (`live.arkitekt.mikro`): show the last segment, capitalized.
 export const serviceLabel = (name: string) => {

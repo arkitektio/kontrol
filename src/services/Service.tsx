@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
+import { serviceDisplayName, serviceLabel } from "@/lib/scopes"
 
 export default function Service() {
   const { id } = useParams<{ id: string }>()
@@ -25,11 +26,11 @@ export default function Service() {
       <Card>
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={service.logo?.presignedUrl || undefined} alt={service.name} />
-            <AvatarFallback>{service.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={service.logo?.presignedUrl || undefined} alt={serviceDisplayName(service)} />
+            <AvatarFallback>{serviceLabel(serviceDisplayName(service)).substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-2xl leading-none font-semibold">{service.name}</h1>
+            <h1 className="text-2xl leading-none font-semibold">{serviceDisplayName(service)}</h1>
             <p className="text-muted-foreground">{service.identifier}</p>
           </div>
         </CardHeader>

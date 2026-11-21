@@ -9,6 +9,7 @@ import { QueryError, ResourceNotFound } from "@/components/status"
 
 import { DetailPageSkeleton } from "@/components/skeletons"
 import { ServiceVersionBadge } from "@/components/ServiceVersion"
+import { serviceDisplayName, serviceLabel } from "@/lib/scopes"
 
 export default function ServiceRelease() {
   const { id } = useParams<{ id: string }>()
@@ -28,11 +29,11 @@ export default function ServiceRelease() {
       <Card>
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={release.service.logo?.presignedUrl || undefined} alt={release.service.name} />
-            <AvatarFallback>{release.service.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={release.service.logo?.presignedUrl || undefined} alt={serviceDisplayName(release.service)} />
+            <AvatarFallback>{serviceLabel(serviceDisplayName(release.service)).substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-2xl leading-none font-semibold">{release.service.name}</h1>
+            <h1 className="text-2xl leading-none font-semibold">{serviceDisplayName(release.service)}</h1>
             <div className="mt-1"><ServiceVersionBadge version={release.version} /></div>
             <Badge variant="outline" className="mt-2">{release.service.identifier}</Badge>
           </div>
@@ -47,7 +48,7 @@ export default function ServiceRelease() {
                                 <AvatarFallback>{release.service.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <div className="font-medium">{release.service.name}</div>
+                                <div className="font-medium">{serviceDisplayName(release.service)}</div>
                                 <div className="text-xs text-muted-foreground font-mono">{release.service.identifier}</div>
                                 </div>
                         </div>

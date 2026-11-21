@@ -21,6 +21,7 @@ import { DetailPageSkeleton } from "@/components/skeletons"
 import { AdminOnly } from "../components/AdminOnly"
 import { ClientLabel } from "../components/ClientLabel"
 import { ServiceVersionBadge, VersionCheck, unmetVersions } from "@/components/ServiceVersion"
+import { serviceDisplayName } from "@/lib/scopes"
 
 export default function ServiceInstance() {
   const params = useParams<{ id: string; instanceId?: string }>()
@@ -168,10 +169,10 @@ export default function ServiceInstance() {
                              <span className="font-medium">Service Info</span>
                              {instance.release.service.id ? (
                                <Link to={`/services/${instance.release.service.id}`} className="text-sm text-muted-foreground hover:underline">
-                                  {instance.release.service.name}
+                                  {serviceDisplayName(instance.release.service)}
                                </Link>
                              ) : (
-                               <span className="text-sm text-muted-foreground">{instance.release.service.name}</span>
+                               <span className="text-sm text-muted-foreground">{serviceDisplayName(instance.release.service)}</span>
                              )}
                          </div>
                     </CardContent>
