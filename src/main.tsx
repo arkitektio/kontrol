@@ -2,6 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { config as zodConfig } from 'zod'
+
+// The CSP forbids eval; without this zod still probes `new Function` once and the
+// browser logs a CSP violation for it (zod then falls back to the same code path).
+zodConfig({ jitless: true })
 
 // Restore the brand hue/chroma and theme before the first render. A `brand-hue`,
 // `brand-chroma` or `theme` URL query param wins and is persisted; otherwise the

@@ -6,7 +6,7 @@
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-types.mjs && vite build && node scripts/prerender.mjs && node scripts/check-chunk-cycles.mjs",
+    "build": "node scripts/check-types.mjs && vite build && node scripts/prerender.mjs && node scripts/csp.mjs && node scripts/check-chunk-cycles.mjs",
     "lint": "eslint .",
     "typecheck": "node scripts/check-types.mjs",
     "preview": "vite preview",
