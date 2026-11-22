@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import FormErrors from '../components/FormErrors'
 import { providerSignup, type APIResponse } from '../lib/allauth'
 import { flowRoute } from '@/hooks/use-next'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { useNextParam } from "@/lib/safeNext";
 
 /**
  * The last step of signing up through a social provider when allauth still needs
@@ -16,7 +17,7 @@ export default function ProviderSignup () {
   const [email, setEmail] = useState('')
   const [response, setResponse] = useState<{ fetching: boolean, content: APIResponse | null }>({ fetching: false, content: null })
   const navigate = useNavigate()
-  const nextParam = useSearchParams()[0].get('next')
+  const nextParam = useNextParam()
 
   function submit (e: React.FormEvent) {
     e.preventDefault()

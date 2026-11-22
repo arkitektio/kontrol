@@ -4,12 +4,13 @@ import {
   Link
 } from 'react-router-dom'
 import { URLs, pathForPendingFlow, appendNext, useAuthStatus } from '../auth'
+import { safeNext } from '@/lib/safeNext'
 
 export default function ProviderCallback () {
   const location = useLocation()
   const params = new URLSearchParams(location.search)
   const error = params.get('error')
-  const nextParam = params.get('next')
+  const nextParam = safeNext(params.get('next'))
   const [auth, status] = useAuthStatus()
 
   let url: string = URLs.LOGIN_URL

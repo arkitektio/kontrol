@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import {
   useLoaderData,
-  useNavigate,
-  useSearchParams
+  useNavigate
 } from 'react-router-dom'
 import { getEmailVerification, verifyEmail } from '../lib/allauth'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { useNextParam } from "@/lib/safeNext";
 
 export async function loader ({ params }: any) {
   const key = params.key
@@ -23,7 +23,7 @@ export default function VerifyEmail () {
 
   const navigate = useNavigate()
   // Same as VerifyEmailByCode: land on the deep link the user was heading for.
-  const next = useSearchParams()[0].get("next")
+  const next = useNextParam()
 
   function submit () {
     setLoading(true)

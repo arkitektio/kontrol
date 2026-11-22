@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AuthenticatorType, getWebAuthnRequestOptionsForAuthentication, authenticateUsingWebAuthn } from '../lib/allauth'
 import { Button } from "@/components/ui/button"
 import {
@@ -10,11 +10,12 @@ import AuthenticateFlow from './AuthenticateFlow'
 import { flowRoute } from '@/hooks/use-next'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { useNextParam } from "@/lib/safeNext";
 
 export default function AuthenticateWebAuthn () {
   const [response, setResponse] = useState<{ fetching: boolean, content: any, error?: string }>({ fetching: false, content: null })
   const navigate = useNavigate()
-  const nextParam = useSearchParams()[0].get('next')
+  const nextParam = useNextParam()
   const next = nextParam || '/home'
 
   async function submit () {

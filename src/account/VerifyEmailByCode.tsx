@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { verifyEmail } from '../lib/allauth'
 import type { Error as ApiError } from '../lib/allauth'
 import { useConfig } from '../auth'
@@ -19,6 +19,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, MailCheck } from "lucide-react"
+import { useNextParam } from "@/lib/safeNext";
 
 const formSchema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -33,7 +34,7 @@ export default function VerifyEmailByCode () {
   const [done, setDone] = useState(false)
   // Present when the user reached email verification mid-flow carrying a `next`
   // (e.g. signup while verifying); land them on it once verified.
-  const next = useSearchParams()[0].get("next")
+  const next = useNextParam()
 
   const form = useForm<VerifyValues>({
     resolver: zodResolver(formSchema),

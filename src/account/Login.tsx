@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useConfig, appendNext, useCredentialKey } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { useLoginForm } from '@/hooks/use-next'
 import WebAuthnLoginButton from '@/mfa/WebAuthnLoginButton'
+import { useNextParam } from "@/lib/safeNext";
 
 /** The "or" rule between the password form and each alternative sign-in route. */
 const Divider = ({ label }: { label: string }) => (
@@ -31,7 +32,7 @@ const Divider = ({ label }: { label: string }) => (
 export const LoginForm = () => {
   const config = useConfig()
   const hasProviders = (config?.data?.socialaccount?.providers?.length ?? 0) > 0
-  const nextParam = useSearchParams()[0].get("next")
+  const nextParam = useNextParam()
   const next = nextParam || "/home"
 
   // Same as signup: label the single identifier field for the server's

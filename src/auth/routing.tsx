@@ -4,6 +4,7 @@ import {
 } from 'react-router-dom'
 import { useAuthStatus } from './hooks'
 import { Flows, AuthenticatorType } from '../lib/allauth'
+import { safeNext } from '@/lib/safeNext'
 
 export const URLs = Object.freeze({
   LOGIN_URL: '/account/login',
@@ -86,7 +87,8 @@ export function AnonymousRoute ({ children }) {
   // login for) instead of always dumping them on /home. This also makes the
   // login-success redirect deterministic — the imperative navigate(next) in
   // useNextFunc and this guard now resolve to the same destination.
-  const next = new URLSearchParams(location.search).get('next')
+  // Only a path on this site: `?next=//evil.com` used to redirect off-site (see safeNext).
+  const next = safeNext(new URLSearchParams(location.search).get('next'))
   return <Navigate to={next || URLs.LOGIN_REDIRECT_URL} />
 }
 

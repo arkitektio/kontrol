@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import FormErrors from '../components/FormErrors'
 import { Flows, type APIResponse } from '../lib/allauth'
 import { Button } from '@/components/ui/button'
@@ -13,13 +13,14 @@ import {
   create,
   parseCreationOptionsFromJSON
 } from '@github/webauthn-json/browser-ponyfill'
+import { useNextParam } from "@/lib/safeNext";
 
 export default function CreateSignupPasskey () {
   const [, authInfo] = useAuthStatus()
   const [name, setName] = useState('')
   const [response, setResponse] = useState<{ fetching: boolean, content: APIResponse | null }>({ fetching: false, content: null })
   const navigate = useNavigate()
-  const nextParam = useSearchParams()[0].get('next')
+  const nextParam = useNextParam()
 
   async function submit (e: React.FormEvent) {
     e.preventDefault()

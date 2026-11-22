@@ -14,8 +14,9 @@ import { handleFormErrors } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { useForm, type DefaultValues, type Resolver, type UseFormSetError } from "react-hook-form";
-import { useLocation, useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import * as z from "zod";
+import { useNextParam } from "@/lib/safeNext";
 
 export type FlowRoute = { path: string; state?: { reauth: APIResponse } };
 
@@ -88,7 +89,7 @@ const useNextFunc = (
   const location = useLocation();
   // Raw nullable value (not `|| '/home'`) so it can be re-attached to an
   // intermediate flow URL without pinning downstream steps to /home.
-  const nextParam = useSearchParams()[0].get("next");
+  const nextParam = useNextParam();
 
   const next = (content: APIResponse) => {
     if (content.status === 200) {

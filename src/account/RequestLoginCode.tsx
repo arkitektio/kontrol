@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { requestLoginCode } from '../lib/allauth'
-import { Navigate, Link, useSearchParams } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 import { appendNext } from '../auth'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { handleFormErrors } from "@/lib/utils"
+import { useNextParam } from "@/lib/safeNext";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -21,7 +22,7 @@ const formSchema = z.object({
 export const RequestLoginCodeForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const nextParam = useSearchParams()[0].get("next")
+  const nextParam = useNextParam()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

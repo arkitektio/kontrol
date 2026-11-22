@@ -23,6 +23,7 @@ import { useSiteConfig } from "@/site/config"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, KeyRound } from "lucide-react"
 import { toast } from "sonner"
+import { safeNext } from '@/lib/safeNext'
 
 const signupSchema = z.object({
   username: z.string(),
@@ -65,7 +66,7 @@ const SignupForm = () => {
   const [searchParams] = useSearchParams()
   // Preserve `?next` through signup so a deep link (e.g. an invite) survives account
   // creation: forward it to the login step, which honors `next` after authentication.
-  const next = searchParams.get('next')
+  const next = safeNext(searchParams.get('next'))
   const loginHref = next ? `/account/login?next=${encodeURIComponent(next)}` : '/account/login'
   // Label the single identifier field for the configured login method.
   const isEmailLogin = useCredentialKey() === 'email'

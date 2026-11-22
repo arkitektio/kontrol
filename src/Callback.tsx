@@ -4,6 +4,7 @@ import { URLs, appendNext, useAuth } from "./auth"
 import { flowRoute } from "./hooks/use-next"
 import { LoadingScreen } from "./components/LoadingScreen"
 import { Button } from "./components/ui/button"
+import { useNextParam } from "@/lib/safeNext";
 
 export default function Callback() {
 
@@ -11,7 +12,7 @@ export default function Callback() {
 
     const navigate = useNavigate()
     // Raw nullable so it can be re-attached to an intermediate flow URL.
-    const nextParam = useSearchParams()[0].get("next")
+    const nextParam = useNextParam()
 
 
     // A provider that refused or failed sends the user back with `?error=`.

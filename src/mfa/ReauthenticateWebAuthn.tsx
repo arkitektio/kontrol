@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { AuthenticatorType, Flows, getWebAuthnRequestOptionsForReauthentication, reauthenticateUsingWebAuthn, type APIResponse } from '../lib/allauth'
 import ReauthenticateFlow from '../account/ReauthenticateFlow'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import FormErrors from '../components/FormErrors'
 import {
   parseRequestOptionsFromJSON,
   get
 } from '@github/webauthn-json/browser-ponyfill'
+import { useNextParam } from "@/lib/safeNext";
 
 export default function ReauthenticateWebAuthn () {
   const [response, setResponse] = useState<{ fetching: boolean, content: APIResponse | null }>({ fetching: false, content: null })
   const navigate = useNavigate()
-  const nextParam = useSearchParams()[0].get('next')
+  const nextParam = useNextParam()
 
   async function submit () {
     setResponse((r) => ({ ...r, fetching: true, content: null }))

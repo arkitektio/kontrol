@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle, KeyRound } from 'lucide-react'
@@ -9,6 +9,7 @@ import {
   parseRequestOptionsFromJSON,
   get
 } from '@github/webauthn-json/browser-ponyfill'
+import { useNextParam } from "@/lib/safeNext";
 
 /**
  * Passwordless sign-in with a passkey. Only rendered when the server reports
@@ -19,7 +20,7 @@ export default function WebAuthnLoginButton () {
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const nextParam = useSearchParams()[0].get('next')
+  const nextParam = useNextParam()
 
   async function submit () {
     setFetching(true)

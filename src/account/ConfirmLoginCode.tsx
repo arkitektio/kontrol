@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { confirmLoginCode, Flows } from '../lib/allauth'
-import { Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, Link, useNavigate } from 'react-router-dom'
 import { useAuthStatus } from '../auth'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { handleFormErrors } from "@/lib/utils"
+import { useNextParam } from "@/lib/safeNext";
 
 const formSchema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -22,7 +23,7 @@ export const ConfirmLoginCodeForm = () => {
   const [, authInfo] = useAuthStatus()
   const [globalError, setGlobalError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const next = useSearchParams()[0].get('next') || '/home'
+  const next = useNextParam() || '/home'
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
