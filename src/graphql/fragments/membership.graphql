@@ -68,8 +68,11 @@ fragment ListMembership on ManagementMembership {
 }
 fragment CollaborationGrant on ManagementCollaborationGrant {
   id
-  instanceId
-  collaborationId
+  collaboration {
+    id
+    key
+    name
+  }
   roles
   createdAt
   expiresAt

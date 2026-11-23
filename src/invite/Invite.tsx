@@ -152,10 +152,10 @@ export default function Invite() {
                     </p>
                     <ul className="space-y-2">
                         {collaborations.map((c) => (
-                            <li key={`${c.instance}/${c.collaboration}`} className="flex items-center gap-3 rounded-md border p-2">
+                            <li key={c.collaboration} className="flex items-center gap-3 rounded-md border p-2">
                                 <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="flex-1 truncate font-mono text-xs" title={`Collaboration ${c.collaboration} of service instance ${c.instance}`}>
-                                    {c.instance}/{c.collaboration}
+                                <span className="flex-1 truncate font-mono text-xs" title={`Collaboration key ${c.collaboration}`}>
+                                    {c.name ?? c.collaboration}
                                 </span>
                                 <span className="text-xs text-muted-foreground">{c.roles.length ? c.roles.join(", ") : "view only"}</span>
                             </li>

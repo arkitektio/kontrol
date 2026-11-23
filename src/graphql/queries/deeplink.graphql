@@ -39,8 +39,8 @@ query LinkInvite($code: String!) {
     token
     valid
     collaborations {
-      instance
       collaboration
+      name
       roles
     }
     maxUses

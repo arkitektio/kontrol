@@ -20,8 +20,8 @@ fragment PublicInvite on ManagementInvite {
   public
   mesh
   collaborations {
-    instance
     collaboration
+    name
     roles
   }
   createdAt
@@ -132,8 +132,8 @@ fragment DetailInvite on ManagementInvite {
   createdAt
   expiresAt
   collaborations {
-    instance
     collaboration
+    name
     roles
   }
   uses

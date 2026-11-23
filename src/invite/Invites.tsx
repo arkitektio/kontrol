@@ -210,11 +210,11 @@ export default function Invites() {
                         <div className="flex flex-wrap gap-1">
                           {i.collaborations.map((c) => (
                             <code
-                              key={`${c.instance}/${c.collaboration}`}
+                              key={c.collaboration}
                               className="rounded bg-muted px-1.5 py-0.5 text-xs"
-                              title={`Collaboration ${c.collaboration} of service instance ${c.instance}`}
+                              title={`Collaboration key ${c.collaboration}`}
                             >
-                              {c.instance}/{c.collaboration} · {c.roles.length ? c.roles.join(", ") : "view only"}
+                              {c.name ?? c.collaboration} · {c.roles.length ? c.roles.join(", ") : "view only"}
                             </code>
                           ))}
                         </div>

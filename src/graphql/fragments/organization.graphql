@@ -65,8 +65,8 @@ fragment Organization on ManagementOrganization {
     token
     inviteUrl
     collaborations {
-      instance
       collaboration
+      name
       roles
     }
     uses

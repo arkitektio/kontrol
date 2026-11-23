@@ -9,18 +9,14 @@ import type { CollaborationGrantFragment } from "@/graphql/fragments/membership.
 import { toastError } from "@/lib/errors"
 import { absoluteTime, timeAgo } from "@/lib/time"
 
-/**
- * A collaboration by its service instance and its id there, e.g. `7/12`. Only
- * the ids: a guest may not see the organization's instances, so the grant's
- * `instance` cannot be selected here.
- */
+/** A collaboration by its name; lok owns it, one key across all of the organization's services. */
 export function collaborationLabel(grant: CollaborationGrantFragment) {
-  return `${grant.instanceId}/${grant.collaborationId}`
+  return grant.collaboration.name
 }
 
 /**
  * The collaborations granted to a guest (a scoped membership): each one by its
- * service instance and its id there, with the roles that hold inside it (none:
+ * name, with the roles that hold inside it (none:
  * view only).
  * `canRevoke` decides per collaboration whether to offer taking it back; taking
  * back the last one removes the person from the organization, which lok does and
@@ -75,7 +71,7 @@ export function SharedCollaborations({
                 <Boxes className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <code
                   className="truncate text-sm"
-                  title={`Collaboration ${grant.collaborationId} of service instance ${grant.instanceId}`}
+                  title={`Collaboration key ${grant.collaboration.key}`}
                 >
                   {collaborationLabel(grant)}
                 </code>

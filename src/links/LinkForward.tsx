@@ -246,10 +246,10 @@ export function LinkForward({
   // full member gets nothing from it. Matching lok exactly matters: accepting
   // nothing new spends no use, and a mismatch here would offer Accept forever.
   const heldRoles = new Map(
-    myMembership?.collaborationGrants.map((grant) => [`${grant.instanceId}/${grant.collaborationId}`, grant.roles]),
+    myMembership?.collaborationGrants.map((grant) => [grant.collaboration.key, grant.roles]),
   )
-  const offersSomethingNew = (shared: { instance: string; collaboration: string; roles: readonly string[] }) => {
-    const held = heldRoles.get(`${shared.instance}/${shared.collaboration}`)
+  const offersSomethingNew = (shared: { collaboration: string; roles: readonly string[] }) => {
+    const held = heldRoles.get(shared.collaboration)
     return held === undefined || shared.roles.some((role) => !held.includes(role))
   }
   const pendingShare =

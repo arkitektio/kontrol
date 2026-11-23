@@ -74,6 +74,8 @@ export type AppFilter = {
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
   NOT?: InputMaybe<AppFilter>;
   OR?: InputMaybe<AppFilter>;
+  /** Only the apps with one of these identifiers (exact match). */
+  identifiers?: InputMaybe<Array<Scalars['AppIdentifier']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
@@ -140,6 +142,12 @@ export type CreateAliasRuleInput = {
   user?: InputMaybe<Scalars['ID']['input']>;
 };
 
+export type CreateCollaborationInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  organization: Scalars['ID']['input'];
+};
+
 export type CreateDeviceGroupInput = {
   name: Scalars['String']['input'];
   organization: Scalars['ID']['input'];
@@ -152,9 +160,9 @@ export type CreateDeviceInput = {
 };
 
 export type CreateInviteInput = {
-  /** For a collaboration invite: whether the guests' apps may join the organization's mesh. They then reach only the hubs the granted collaborations run on, nothing else of the mesh. */
+  /** For a collaboration invite: whether the guests' apps may join the organization's mesh. They then reach only the organization's hubs, nothing else of the mesh. */
   allowMesh?: Scalars['Boolean']['input'];
-  /** Grant only these collaborations of the organization's service instances, each with the roles that hold inside it, instead of making the holder a member. Whoever accepts becomes a guest that reaches just these. */
+  /** Grant only these collaborations of the organization, each with the roles that hold inside it, instead of making the holder a member. Whoever accepts becomes a guest that reaches just these. */
   collaborations?: InputMaybe<Array<SharedCollaborationInput>>;
   expiresInDays?: InputMaybe<Scalars['Int']['input']>;
   /** For a collaboration invite: how many people may accept it. Null: anyone with the link until it expires. */
@@ -252,6 +260,10 @@ export type DeleteAliasRuleInput = {
 };
 
 export type DeleteBugReportInput = {
+  id: Scalars['ID']['input'];
+};
+
+export type DeleteCollaborationInput = {
   id: Scalars['ID']['input'];
 };
 
@@ -660,24 +672,61 @@ export type ManagementClientOrdering =
   |  { createdAt?: never; id?: never; lastReportedAt: Ordering; name?: never; }
   |  { createdAt?: never; id?: never; lastReportedAt?: never; name: Ordering; };
 
-/** One collaboration of a service instance granted to someone who is not a full member of the organization (a guest). The collaboration is named by its instance and its id there; `roles` are the organization's roles that hold for the guest inside it (none: view only), cut to the granter's own roles whenever a token is minted. */
+/** What a guest of an organization is let in to: one key across all of its services, each of which holds what was put in it there. lok names it and grants it; it never sees what is in it. */
+export type ManagementCollaboration = {
+  __typename?: 'ManagementCollaboration';
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<ManagementUser>;
+  description?: Maybe<Scalars['String']['output']>;
+  /** Who it is granted to. Only for the people who may see the grants. */
+  grants: Array<ManagementCollaborationGrant>;
+  id: Scalars['ID']['output'];
+  /** The collaboration's key: what a guest's token lists, and what every service names it by (shareWorkflow, addToCollaboration, inCollaboration). */
+  key: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  organization: ManagementOrganization;
+};
+
+
+/** What a guest of an organization is let in to: one key across all of its services, each of which holds what was put in it there. lok names it and grants it; it never sees what is in it. */
+export type ManagementCollaborationGrantsArgs = {
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+/**
+ * What a guest of an organization is let in to: one key across all of its services.
+ *
+ * lok names it and grants it; what is in it, each service of the organization
+ * holds itself (``arkitekt_service.collaborations``), under a row with the same
+ * ``key``, made the first time something is put in there. lok never learns what
+ * is in it: a guest's token lists the keys (``collabs``), and each service shows
+ * what it put in them.
+ */
+export type ManagementCollaborationFilter = {
+  AND?: InputMaybe<ManagementCollaborationFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ManagementCollaborationFilter>;
+  OR?: InputMaybe<ManagementCollaborationFilter>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  keys?: InputMaybe<Array<Scalars['ID']['input']>>;
+  organization?: InputMaybe<Scalars['ID']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** One collaboration of an organization granted to someone who is not a full member of it (a guest). `roles` are the organization's roles that hold for the guest inside it (none: view only), cut to the granter's own roles whenever a token is minted. */
 export type ManagementCollaborationGrant = {
   __typename?: 'ManagementCollaborationGrant';
-  /** The collaboration's id in its service. */
-  collaborationId: Scalars['String']['output'];
+  /** The collaboration granted. */
+  collaboration: ManagementCollaboration;
   createdAt: Scalars['DateTime']['output'];
   expiresAt?: Maybe<Scalars['DateTime']['output']>;
   /** Who granted it. */
   grantedBy?: Maybe<ManagementUser>;
-  /** The invite it was granted through. */
+  /** The invite it was granted through. Null unless you may see that invite (its organization's owner and admins, or whoever created it). */
   grantedThrough?: Maybe<ManagementInvite>;
   id: Scalars['ID']['output'];
-  /** The service instance the collaboration lives in. */
-  instance: ManagementServiceInstance;
-  /** The id of the service instance the collaboration lives in, as a guest's token names it. */
-  instanceId: Scalars['ID']['output'];
   membership: ManagementMembership;
-  /** Whether the guest's apps may join the organization's mesh to reach the hub the collaboration's instance runs on. */
+  /** Whether the guest's apps may join the organization's mesh to reach its hubs. */
   mesh: Scalars['Boolean']['output'];
   /** Identifiers of the organization's roles that hold inside the collaboration. Empty: view only. */
   roles: Array<Scalars['String']['output']>;
@@ -1136,7 +1185,7 @@ export type ManagementInvite = {
   inviteUrl: Scalars['String']['output'];
   /** For a collaboration invite: how many people may accept it. Null: anyone with the link until it expires. */
   maxUses?: Maybe<Scalars['Int']['output']>;
-  /** For a collaboration invite: whether its guests' apps may join the organization's mesh, reaching only the hubs the granted collaborations run on. */
+  /** For a collaboration invite: whether its guests' apps may join the organization's mesh, reaching only its hubs. */
   mesh: Scalars['Boolean']['output'];
   /** If true, anyone with the link can preview the invitation (organization, inviter, expiry) before signing in. Private invites require authentication before any details are shown. */
   public: Scalars['Boolean']['output'];
@@ -1568,7 +1617,7 @@ export type ManagementMembership = {
   brandHue?: Maybe<Scalars['Float']['output']>;
   /** The collaborations granted to this person as a guest. Empty for a full member. */
   collaborationGrants: Array<ManagementCollaborationGrant>;
-  /** The invite that created this membership */
+  /** The invite that created this membership. Null unless you may see that invite (its organization's owner and admins, or whoever created it). */
   createdThrough?: Maybe<ManagementInvite>;
   /** Whether the member has at least one device registered for notifications (e.g. through the companion app). Opting in does nothing until they do. */
   hasNotificationChannel: Scalars['Boolean']['output'];
@@ -2330,13 +2379,13 @@ export type ManagementServiceReleaseFilter = {
 export type ManagementServiceReleaseOrdering =
   { id: Ordering; };
 
-/** One collaboration a collaboration invite grants: a collaboration of a service instance, with the roles that hold inside it. */
+/** One collaboration a collaboration invite grants, by its key, with the roles that hold inside it. */
 export type ManagementSharedCollaboration = {
   __typename?: 'ManagementSharedCollaboration';
-  /** The collaboration's id in that service. */
-  collaboration: Scalars['String']['output'];
-  /** The service instance the collaboration lives in. */
-  instance: Scalars['ID']['output'];
+  /** The collaboration's key: what every service of the organization names it by. */
+  collaboration: Scalars['ID']['output'];
+  /** The collaboration's name; null once it is deleted. */
+  name?: Maybe<Scalars['String']['output']>;
   /** Identifiers of the organization's roles that hold inside the collaboration. Empty: view only. */
   roles: Array<Scalars['String']['output']>;
 };
@@ -2611,6 +2660,8 @@ export type Mutation = {
   connectKommunityPartner: ManagementHub;
   createAlias: ManagementInstanceAlias;
   createAliasRule: ManagementAliasRule;
+  /** Make a collaboration of the organization: one key its services put objects in, and invites grant. */
+  createCollaboration: ManagementCollaboration;
   createDevice: ManagementDevice;
   createDeviceGroup: ManagementDeviceGroup;
   createInvite: ManagementInvite;
@@ -2631,6 +2682,8 @@ export type Mutation = {
   deleteAlias: Scalars['ID']['output'];
   deleteAliasRule: Scalars['ID']['output'];
   deleteBugReport: Scalars['ID']['output'];
+  /** Delete a collaboration, and every grant of it. */
+  deleteCollaboration: Scalars['ID']['output'];
   deleteDevice: Scalars['ID']['output'];
   deleteDeviceGroup: Scalars['ID']['output'];
   deleteHub: Scalars['ID']['output'];
@@ -2669,6 +2722,7 @@ export type Mutation = {
   unresolveBugReport: ManagementBugReport;
   unresolveReport: ManagementReport;
   updateAlias: ManagementInstanceAlias;
+  updateCollaboration: ManagementCollaboration;
   updateDevice: ManagementDevice;
   updateHub: ManagementHub;
   updateIonscaleLayer: ManagementLayer;
@@ -2742,6 +2796,11 @@ export type MutationCreateAliasArgs = {
 
 export type MutationCreateAliasRuleArgs = {
   input: CreateAliasRuleInput;
+};
+
+
+export type MutationCreateCollaborationArgs = {
+  input: CreateCollaborationInput;
 };
 
 
@@ -2832,6 +2891,11 @@ export type MutationDeleteAliasRuleArgs = {
 
 export type MutationDeleteBugReportArgs = {
   input: DeleteBugReportInput;
+};
+
+
+export type MutationDeleteCollaborationArgs = {
+  input: DeleteCollaborationInput;
 };
 
 
@@ -3010,6 +3074,11 @@ export type MutationUpdateAliasArgs = {
 };
 
 
+export type MutationUpdateCollaborationArgs = {
+  input: UpdateCollaborationInput;
+};
+
+
 export type MutationUpdateDeviceArgs = {
   input: UpdateDeviceInput;
 };
@@ -3131,6 +3200,9 @@ export type Query = {
   bugReports: Array<ManagementBugReport>;
   client: ManagementClient;
   clients: Array<ManagementClient>;
+  collaboration: ManagementCollaboration;
+  collaborationGrants: Array<ManagementCollaborationGrant>;
+  collaborations: Array<ManagementCollaboration>;
   device: ManagementDevice;
   deviceCode: ManagementDeviceCode;
   deviceCodeByCode: ManagementDeviceCode;
@@ -3221,6 +3293,22 @@ export type QueryClientArgs = {
 export type QueryClientsArgs = {
   filters?: InputMaybe<ManagementClientFilter>;
   ordering?: Array<ManagementClientOrdering>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryCollaborationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryCollaborationGrantsArgs = {
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryCollaborationsArgs = {
+  filters?: InputMaybe<ManagementCollaborationFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -3628,10 +3716,8 @@ export type SetMembershipNotificationsInput = {
 };
 
 export type SharedCollaborationInput = {
-  /** The collaboration's id in that service. */
-  collaboration: Scalars['String']['input'];
-  /** The service instance the collaboration lives in (on a hub of the organization): its id, or, when called from an app, the app's own requirement key for it (e.g. 'mikro'), resolved through the app's service mappings. */
-  instance: Scalars['ID']['input'];
+  /** The collaboration's key (`createCollaboration`): one across all of the organization's services. */
+  collaboration: Scalars['ID']['input'];
   /** Identifiers of the organization's roles that hold for the guest inside the collaboration. Empty: view only. */
   roles?: Array<Scalars['String']['input']>;
 };
@@ -3704,6 +3790,12 @@ export type UpdateAliasInput = {
   port: Scalars['Int']['input'];
   priority?: InputMaybe<Scalars['Int']['input']>;
   public?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type UpdateCollaborationInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateDeviceInput = {
